@@ -3,7 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NOC Admin - Dynamic Menu from Google Sheets</title>
+    <title>NOC Admin - Network Operations Center</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         * {
             margin: 0;
@@ -12,132 +16,277 @@
         }
 
         body {
-            font-family: Arial, sans-serif;
-            min-height: 100vh;
+            height: 100vh;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
+            background: #f0f2f5;
         }
 
-        /* Navigation Styles */
-        .navbar {
-            background-color: #333;
-            padding: 0 20px;
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
+        /* Custom Navbar Styles */
+        .navbar-custom {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            padding: 0.5rem 1rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
 
-        /* Logo and Brand Area */
-        .brand {
+        .navbar-brand {
             display: flex;
             align-items: center;
             gap: 10px;
-            padding: 10px 0;
+            padding: 0;
         }
 
         .logo {
             width: 40px;
             height: 40px;
-            background-color: #4CAF50;
-            border-radius: 8px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
             font-weight: bold;
             font-size: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
         }
 
-        .brand h1 {
+        .brand-text {
+            line-height: 1.2;
+        }
+
+        .brand-text h1 {
             color: white;
-            font-size: 1.5rem;
-            font-weight: 500;
-            letter-spacing: 1px;
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin: 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
         }
 
-        /* Menu Container */
-        .menu-container {
-            flex: 1;
-            display: flex;
-            justify-content: flex-end;
-        }
-
-        .nav-menu {
-            list-style: none;
-            display: flex;
-            justify-content: flex-end;
-            flex-wrap: wrap;
-            position: relative;
-        }
-
-        .nav-item {
-            position: relative;
-        }
-
-        .nav-link {
+        .brand-text span {
+            font-size: 0.75rem;
+            color: #a8c6ff;
             display: block;
+        }
+
+        /* Navigation Menu */
+        .nav-menu {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .nav-item-custom {
+            position: relative;
+        }
+
+        .nav-link-custom {
             color: white;
-            text-decoration: none;
-            padding: 15px 20px;
-            transition: background-color 0.3s;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
 
-        .nav-link:hover {
-            background-color: #444;
+        .nav-link-custom:hover {
+            background: rgba(255,255,255,0.15);
+            color: white;
         }
 
-        /* Submenu Styles */
-        .submenu {
-            list-style: none;
+        .nav-link-custom i {
+            font-size: 0.8rem;
+            transition: transform 0.3s ease;
+        }
+
+        .nav-item-custom:hover .nav-link-custom i {
+            transform: rotate(180deg);
+        }
+
+        /* Dropdown Menu */
+        .dropdown-menu-custom {
             position: absolute;
             top: 100%;
             right: 0;
-            background-color: #444;
-            min-width: 200px;
-            display: none;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            background: white;
+            min-width: 280px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            padding: 0;
+            margin-top: 5px;
             z-index: 1000;
+            display: none;
+            animation: slideDown 0.3s ease;
         }
 
-        .nav-item:hover .submenu {
+        .nav-item-custom:hover .dropdown-menu-custom {
             display: block;
         }
 
-        .submenu-item {
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .dropdown-header-custom {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 10px 15px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .dropdown-item-custom {
+            display: block;
+            padding: 10px 15px;
+            color: #2c3e50;
+            text-decoration: none;
+            font-size: 0.95rem;
+            border-bottom: 1px solid #eef2f6;
+            position: relative;
+            padding-left: 35px;
+            transition: all 0.3s ease;
+        }
+
+        .dropdown-item-custom:last-child {
+            border-bottom: none;
+            border-radius: 0 0 12px 12px;
+        }
+
+        .dropdown-item-custom::before {
+            content: '🔗';
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 12px;
+            opacity: 0.6;
+        }
+
+        .dropdown-item-custom:hover {
+            background: #f8faff;
+            color: #1e3c72;
+            padding-left: 40px;
+        }
+
+        /* Mobile Toggle Button */
+        .navbar-toggler {
+            border: 2px solid rgba(255,255,255,0.3);
+            padding: 0.5rem 0.75rem;
+        }
+
+        .navbar-toggler:focus {
+            box-shadow: none;
+        }
+
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.8%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+        }
+
+        /* Collapsible Menu */
+        .navbar-collapse {
+            background: rgba(255,255,255,0.1);
+            border-radius: 12px;
+            margin-top: 1rem;
+            padding: 0.5rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .mobile-nav-item {
+            width: 100%;
+            margin-bottom: 2px;
+        }
+
+        .mobile-nav-link {
+            color: white;
+            padding: 12px 15px;
+            border-radius: 8px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .mobile-nav-link:hover {
+            background: rgba(255,255,255,0.15);
+        }
+
+        .mobile-submenu {
+            list-style: none;
+            padding-left: 0;
+            margin-top: 2px;
+            display: none;
+        }
+
+        .mobile-submenu.show {
+            display: block;
+        }
+
+        .mobile-submenu-header {
+            background: rgba(102, 126, 234, 0.3);
+            color: white;
+            padding: 8px 15px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            border-radius: 6px;
+            margin: 2px 0;
+        }
+
+        .mobile-submenu-item {
             width: 100%;
         }
 
-        .submenu-link {
+        .mobile-submenu-link {
             display: block;
+            padding: 10px 15px 10px 30px;
             color: white;
             text-decoration: none;
-            padding: 10px 15px;
-            transition: background-color 0.3s;
-            white-space: nowrap;
+            font-size: 0.9rem;
+            border-radius: 6px;
+            transition: background 0.3s ease;
+            position: relative;
         }
 
-        .submenu-link:hover {
-            background-color: #555;
+        .mobile-submenu-link::before {
+            content: '🔗';
+            position: absolute;
+            left: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 11px;
+            opacity: 0.7;
+        }
+
+        .mobile-submenu-link:hover {
+            background: rgba(255,255,255,0.1);
         }
 
         /* Iframe Container */
         .iframe-container {
             flex: 1;
             width: 100%;
-            background-color: #f5f5f5;
+            background: #f0f2f5;
             position: relative;
-            min-height: 500px;
+            overflow: hidden;
         }
 
         #content-frame {
             width: 100%;
             height: 100%;
             border: none;
-            position: absolute;
-            top: 0;
-            left: 0;
+            background: white;
         }
 
         /* Loading indicator */
@@ -146,80 +295,140 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 18px;
-            color: #666;
-            background: rgba(255, 255, 255, 0.9);
-            padding: 10px 20px;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            font-size: 16px;
+            color: #1e3c72;
+            background: white;
+            padding: 15px 30px;
+            border-radius: 50px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
             z-index: 1000;
+            display: none;
+            align-items: center;
+            gap: 10px;
         }
 
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            .navbar {
-                flex-direction: column;
-                align-items: flex-start;
-            }
+        .loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #1e3c72;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
 
-            .menu-container {
-                width: 100%;
-                justify-content: flex-start;
-            }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
 
-            .nav-menu {
-                justify-content: flex-start;
-                flex-direction: column;
-                width: 100%;
+        /* Welcome Message */
+        .welcome-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #7f8c8d;
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            pointer-events: none;
+            width: 90%;
+            max-width: 400px;
+        }
+
+        .welcome-message h2 {
+            font-size: 2rem;
+            color: #1e3c72;
+            margin-bottom: 10px;
+        }
+
+        .welcome-message p {
+            font-size: 1.1rem;
+        }
+
+        /* Desktop hover menu - hidden on mobile */
+        @media (max-width: 991.98px) {
+            .desktop-menu {
+                display: none !important;
             }
             
-            .submenu {
-                position: static;
-                width: 100%;
-                box-shadow: none;
-            }
-
-            .submenu-link {
-                padding-left: 30px;
+            .navbar-collapse {
+                max-height: 60vh;
+                overflow-y: auto;
             }
         }
 
-        /* Small screens */
-        @media (max-width: 480px) {
-            .brand h1 {
-                font-size: 1.2rem;
+        /* Desktop styles */
+        @media (min-width: 992px) {
+            .mobile-only {
+                display: none !important;
             }
-
-            .logo {
-                width: 35px;
-                height: 35px;
-                font-size: 18px;
+            
+            .navbar-collapse {
+                background: transparent;
+                margin-top: 0;
+                padding: 0;
+                backdrop-filter: none;
             }
         }
     </style>
 </head>
 <body>
-    <nav class="navbar" id="navbar">
-        <div class="brand">
-            <div class="logo">📊</div>
-            <h1>NOC Admin</h1>
-        </div>
-        <div class="menu-container" id="menu-container">
-            <!-- Menu will be populated by JavaScript -->
+    <!-- Bootstrap Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-custom">
+        <div class="container-fluid">
+            <!-- Brand -->
+            <a class="navbar-brand" href="#">
+                <div class="logo">📡</div>
+                <div class="brand-text">
+                    <h1>NOC Admin</h1>
+                    <span>Network Operations Center</span>
+                </div>
+            </a>
+
+            <!-- Mobile Toggle Button -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain" aria-controls="navbarMain" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <!-- Collapsible Menu -->
+            <div class="collapse navbar-collapse" id="navbarMain">
+                <!-- Desktop Menu (hidden on mobile) -->
+                <div class="desktop-menu ms-auto" id="desktop-menu-container">
+                    <!-- Desktop menu will be populated by JavaScript -->
+                </div>
+
+                <!-- Mobile Menu (hidden on desktop) -->
+                <div class="mobile-only w-100" id="mobile-menu-container">
+                    <!-- Mobile menu will be populated by JavaScript -->
+                </div>
+            </div>
         </div>
     </nav>
 
     <div class="iframe-container">
         <iframe id="content-frame" src="about:blank" title="Content"></iframe>
-        <div class="loading" id="loading" style="display: none;">Loading...</div>
+        <div class="loading" id="loading">
+            <div class="loading-spinner"></div>
+            Loading...
+        </div>
+        <div class="welcome-message" id="welcome-message">
+            <h2>Welcome to NOC Admin</h2>
+            <p>Select a menu item to get started</p>
+        </div>
     </div>
 
+    <!-- Bootstrap JS and Popper.js -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
     <script>
-        // Configuration - Replace these with your actual values
+        // Configuration
         const SPREADSHEET_ID = '1jd1xZe9x2mrZm5KAwGT12vMNYjbrnynsmelNKeK95jc';
         const API_KEY = 'AIzaSyBB1V3vJpNZ9X1GIF-YOwoa6YSt_iXMLo0';
         const SHEET_NAME = 'Menu';
-        const RANGE = 'A:C'; // Main Menu, Sub Menu, URL
+        const RANGE = 'A:D'; // Main menu, Sub Menu, link item, Url
 
         // Fetch data from Google Sheets
         async function fetchMenuData() {
@@ -236,11 +445,7 @@
                 return processSheetData(data.values);
             } catch (error) {
                 console.error('Error fetching menu data:', error);
-                document.getElementById('menu-container').innerHTML = `
-                    <div style="color: white; padding: 15px; text-align: center;">
-                        Error loading menu: ${error.message}. Please check if the sheet is publicly accessible.
-                    </div>
-                `;
+                showError('Error loading menu: ' + error.message);
                 return [];
             }
         }
@@ -249,104 +454,217 @@
         function processSheetData(rows) {
             if (!rows || rows.length < 2) return [];
 
-            // First row is headers, so we start from index 1
-            const menuData = [];
             const menuMap = new Map();
 
+            // Skip header row (index 0)
             for (let i = 1; i < rows.length; i++) {
                 const row = rows[i];
-                if (row.length < 3) continue;
+                if (row.length < 4) continue;
 
-                const [mainMenu, subMenu, url] = row;
+                const [mainMenu, subMenu, linkItem, url] = row;
 
-                if (!mainMenu || !subMenu || !url) continue;
+                if (!mainMenu || !subMenu || !linkItem || !url) continue;
 
                 if (!menuMap.has(mainMenu)) {
-                    const menuItem = {
-                        title: mainMenu,
-                        subItems: []
-                    };
-                    menuData.push(menuItem);
-                    menuMap.set(mainMenu, menuItem);
+                    menuMap.set(mainMenu, new Map());
                 }
 
-                menuMap.get(mainMenu).subItems.push({
-                    title: subMenu,
+                const subMenuMap = menuMap.get(mainMenu);
+                
+                if (!subMenuMap.has(subMenu)) {
+                    subMenuMap.set(subMenu, []);
+                }
+
+                subMenuMap.get(subMenu).push({
+                    title: linkItem,
                     url: url
                 });
             }
 
-            return menuData;
+            // Convert to array format for rendering
+            return Array.from(menuMap.entries()).map(([mainMenu, subMenuMap]) => ({
+                title: mainMenu,
+                subMenus: Array.from(subMenuMap.entries()).map(([subMenu, items]) => ({
+                    title: subMenu,
+                    items: items
+                }))
+            }));
         }
 
-        // Render the navigation menu
-        function renderMenu(menuData) {
-            const menuContainer = document.getElementById('menu-container');
+        // Render desktop menu (hover dropdowns)
+        function renderDesktopMenu(menuData) {
+            const container = document.getElementById('desktop-menu-container');
             
             if (menuData.length === 0) {
-                menuContainer.innerHTML = '<div style="color: white; padding: 15px; text-align: center;">No menu items found</div>';
+                container.innerHTML = '<div class="text-white">No menu items</div>';
                 return;
             }
 
-            const ul = document.createElement('ul');
-            ul.className = 'nav-menu';
+            const navMenu = document.createElement('div');
+            navMenu.className = 'nav-menu';
 
-            menuData.forEach(item => {
-                const li = document.createElement('li');
-                li.className = 'nav-item';
+            menuData.forEach(mainItem => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'nav-item-custom';
 
-                const a = document.createElement('a');
-                a.href = '#';
-                a.className = 'nav-link';
-                a.textContent = item.title;
-                
-                // Prevent default click behavior for main menu items
-                a.addEventListener('click', (e) => {
-                    e.preventDefault();
-                });
+                // Main menu link
+                const mainLink = document.createElement('a');
+                mainLink.className = 'nav-link-custom';
+                mainLink.innerHTML = `${mainItem.title} <i class="fas fa-chevron-down"></i>`;
+                mainLink.href = '#';
+                mainLink.addEventListener('click', (e) => e.preventDefault());
 
-                li.appendChild(a);
+                itemDiv.appendChild(mainLink);
 
-                if (item.subItems.length > 0) {
-                    const subUl = document.createElement('ul');
-                    subUl.className = 'submenu';
+                // Create dropdown menu
+                if (mainItem.subMenus.length > 0) {
+                    const dropdown = document.createElement('div');
+                    dropdown.className = 'dropdown-menu-custom';
 
-                    item.subItems.forEach(subItem => {
-                        const subLi = document.createElement('li');
-                        subLi.className = 'submenu-item';
+                    mainItem.subMenus.forEach(subMenu => {
+                        // Submenu header
+                        const header = document.createElement('div');
+                        header.className = 'dropdown-header-custom';
+                        header.textContent = subMenu.title;
+                        dropdown.appendChild(header);
 
-                        const subA = document.createElement('a');
-                        subA.href = '#';
-                        subA.className = 'submenu-link';
-                        subA.textContent = subItem.title;
-                        
-                        // Handle submenu item clicks
-                        subA.addEventListener('click', (e) => {
-                            e.preventDefault();
-                            loadUrlInIframe(subItem.url);
+                        // Submenu items
+                        subMenu.items.forEach(item => {
+                            const itemLink = document.createElement('a');
+                            itemLink.className = 'dropdown-item-custom';
+                            itemLink.textContent = item.title;
+                            itemLink.href = '#';
+                            itemLink.addEventListener('click', (e) => {
+                                e.preventDefault();
+                                loadUrlInIframe(item.url);
+                            });
+                            dropdown.appendChild(itemLink);
                         });
-
-                        subLi.appendChild(subA);
-                        subUl.appendChild(subLi);
                     });
 
-                    li.appendChild(subUl);
+                    itemDiv.appendChild(dropdown);
                 }
 
-                ul.appendChild(li);
+                navMenu.appendChild(itemDiv);
             });
 
-            menuContainer.innerHTML = '';
-            menuContainer.appendChild(ul);
+            container.innerHTML = '';
+            container.appendChild(navMenu);
+        }
+
+        // Render mobile menu (accordion style)
+        function renderMobileMenu(menuData) {
+            const container = document.getElementById('mobile-menu-container');
+            
+            if (menuData.length === 0) {
+                container.innerHTML = '<div class="text-white p-3">No menu items</div>';
+                return;
+            }
+
+            const menuDiv = document.createElement('div');
+            menuDiv.className = 'py-2';
+
+            menuData.forEach((mainItem, index) => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'mobile-nav-item';
+
+                // Main menu toggle
+                const mainToggle = document.createElement('div');
+                mainToggle.className = 'mobile-nav-link';
+                mainToggle.innerHTML = `${mainItem.title} <i class="fas fa-chevron-down"></i>`;
+                mainToggle.setAttribute('data-target', `submenu-${index}`);
+
+                itemDiv.appendChild(mainToggle);
+
+                // Create submenu container
+                const submenu = document.createElement('ul');
+                submenu.className = 'mobile-submenu';
+                submenu.id = `submenu-${index}`;
+
+                mainItem.subMenus.forEach(subMenu => {
+                    // Submenu header
+                    const headerLi = document.createElement('li');
+                    headerLi.className = 'mobile-submenu-header';
+                    headerLi.textContent = subMenu.title;
+                    submenu.appendChild(headerLi);
+
+                    // Submenu items
+                    subMenu.items.forEach(item => {
+                        const itemLi = document.createElement('li');
+                        itemLi.className = 'mobile-submenu-item';
+
+                        const itemLink = document.createElement('a');
+                        itemLink.className = 'mobile-submenu-link';
+                        itemLink.textContent = item.title;
+                        itemLink.href = '#';
+                        itemLink.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            loadUrlInIframe(item.url);
+                            // Close mobile menu after selection
+                            const navbarCollapse = document.getElementById('navbarMain');
+                            if (navbarCollapse.classList.contains('show')) {
+                                navbarCollapse.classList.remove('show');
+                            }
+                        });
+
+                        itemLi.appendChild(itemLink);
+                        submenu.appendChild(itemLi);
+                    });
+                });
+
+                itemDiv.appendChild(submenu);
+                menuDiv.appendChild(itemDiv);
+
+                // Add click event for mobile toggle
+                mainToggle.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('data-target');
+                    const targetSubmenu = document.getElementById(targetId);
+                    const icon = this.querySelector('i');
+                    
+                    // Toggle current submenu
+                    targetSubmenu.classList.toggle('show');
+                    icon.classList.toggle('fa-chevron-down');
+                    icon.classList.toggle('fa-chevron-up');
+                    
+                    // Close other open submenus
+                    document.querySelectorAll('.mobile-submenu').forEach(menu => {
+                        if (menu.id !== targetId && menu.classList.contains('show')) {
+                            menu.classList.remove('show');
+                            const otherIcon = document.querySelector(`[data-target="${menu.id}"] i`);
+                            if (otherIcon) {
+                                otherIcon.classList.remove('fa-chevron-up');
+                                otherIcon.classList.add('fa-chevron-down');
+                            }
+                        }
+                    });
+                });
+            });
+
+            container.innerHTML = '';
+            container.appendChild(menuDiv);
+        }
+
+        // Show error message
+        function showError(message) {
+            const desktopContainer = document.getElementById('desktop-menu-container');
+            const mobileContainer = document.getElementById('mobile-menu-container');
+            const errorHtml = `<div class="text-white p-3 bg-danger bg-opacity-50 rounded">${message}</div>`;
+            desktopContainer.innerHTML = errorHtml;
+            mobileContainer.innerHTML = errorHtml;
         }
 
         // Load URL in iframe
         function loadUrlInIframe(url) {
             const iframe = document.getElementById('content-frame');
             const loading = document.getElementById('loading');
+            const welcomeMessage = document.getElementById('welcome-message');
+            
+            // Hide welcome message
+            welcomeMessage.style.display = 'none';
             
             // Show loading indicator
-            loading.style.display = 'block';
+            loading.style.display = 'flex';
             
             // Handle URL - ensure it has protocol
             let fullUrl = url;
@@ -361,7 +679,7 @@
             
             iframe.onerror = function() {
                 loading.style.display = 'none';
-                alert('Error loading the page. Please check the URL.');
+                alert('Error loading the page. Please check the URL: ' + fullUrl);
             };
 
             iframe.src = fullUrl;
@@ -370,7 +688,12 @@
         // Initialize the application
         async function init() {
             const menuData = await fetchMenuData();
-            renderMenu(menuData);
+            renderDesktopMenu(menuData);
+            renderMobileMenu(menuData);
+            
+            // Ensure welcome message is visible initially
+            document.getElementById('welcome-message').style.display = 'block';
+            document.getElementById('loading').style.display = 'none';
         }
 
         // Start the application
