@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SD-WAN NOC · Live Dashboard</title>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #0b1a2f;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            padding: 20px;
+            color: #e6f0ff;
+        }
+        .dashboard {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 0 10px;
+        }
+        .header h1 {
+            font-size: 2.2rem;
+            font-weight: 500;
+            background: linear-gradient(135deg, #a8d0ff, #4d9eff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .status-badge {
+            background: #1e3a5f;
+            padding: 8px 20px;
+            border-radius: 40px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border: 1px solid #3d7bb3;
+            font-size: 0.95rem;
+        }
+        .status-badge i {
+            color: #4fc3ff;
+        }
+        .refresh-btn {
+            background: #1e3a5f;
+            border: 1px solid #3d7bb3;
+            color: white;
+            padding: 10px 24px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: 0.2s;
+        }
+        .refresh-btn:hover {
+            background: #264d7c;
+            border-color: #5b9eff;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 22px;
+            margin-bottom: 22px;
+        }
+        .card {
+            background: #132b44;
+            border-radius: 28px;
+            padding: 22px;
+            border: 1px solid #2d4b70;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+            backdrop-filter: blur(2px);
+        }
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #2d4b70;
+            padding-bottom: 14px;
+        }
+        .card-header i {
+            font-size: 1.8rem;
+            color: #7bb9ff;
+            background: #1e3f62;
+            padding: 12px;
+            border-radius: 18px;
+        }
+        .card-header h3 {
+            font-size: 1.3rem;
+            font-weight: 500;
+            color: #d6e9ff;
+        }
+        .card-header p {
+            font-size: 0.85rem;
+            color: #96b8db;
+            margin-top: 3px;
+        }
+        .chart-wrapper {
+            height: 240px;
+            position: relative;
+            margin: 10px 0 15px 0;
+        }
+        .stats-mini {
+            display: flex;
+            justify-content: space-around;
+            background: #0e2237;
+            padding: 12px;
+            border-radius: 40px;
+            border: 1px solid #2d4b70;
+            color: #c2dcff;
+            font-weight: 500;
+            margin-top: 15px;
+        }
+        .full-width {
+            grid-column: 1 / -1;
+        }
+        .split-panel {
+            display: flex;
+            gap: 22px;
+            flex-wrap: wrap;
+        }
+        .split-panel > div {
+            flex: 1 1 300px;
+            background: #102c41;
+            border-radius: 24px;
+            padding: 18px;
+            border: 1px solid #315f88;
+        }
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 15px;
+            justify-content: center;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+        .dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 4px;
+        }
+        .loading {
+            grid-column: 1/-1;
+            text-align: center;
+            padding: 60px;
+            background: #132b44;
+            border-radius: 50px;
+            font-size: 1.3rem;
+            color: #9bc0ff;
+        }
+        .error {
+            grid-column: 1/-1;
+            text-align: center;
+            padding: 40px;
+            background: #2f1e2e;
+            border-radius: 40px;
+            color: #ffa7a7;
+            border: 1px solid #a55;
+        }
+        .footer {
+            margin-top: 30px;
+            padding: 16px;
+            text-align: right;
+            color: #6d93c0;
+            border-top: 1px solid #1e3f62;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <div class="header">
+            <h1>
+                <i class="fas fa-globe"></i> 
+                SD-WAN NOC · REAL-TIME
+            </h1>
+            <div class="status-badge">
+                <i class="fas fa-cloud"></i>
+                <span id="lastUpdate">fetching live...</span>
+            </div>
+            <button class="refresh-btn" onclick="loadLiveData()">
+                <i class="fas fa-sync-alt"></i> refresh now
+            </button>
+        </div>
+
+        <div id="dashboardGrid" class="grid">
+            <div class="loading">
+                <i class="fas fa-circle-notch fa-spin fa-2x" style="margin-right: 15px;"></i>
+                Loading live data from Google Sheets...
+            </div>
+        </div>
+
+        <div class="footer">
+          
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const API_KEY = 'AIzaSyBB1V3vJpNZ9X1GIF-YOwoa6YSt_iXMLo0';
+        const SPREADSHEET_ID = '1HvCqLHC8IyllKskBXX1MtMfjQMGUyhMP7KuTuJxDhmU';
+        const SHEET_NAME = 'Working Status';
+        const RANGE = 'A:T';  // fetch all columns
+
+        let chartInstances = [];
+
+        // Main function to load data and build dashboard
+        async function loadLiveData() {
+            const grid = document.getElementById('dashboardGrid');
+            grid.innerHTML = `<div class="loading"><i class="fas fa-circle-notch fa-spin fa-2x" style="margin-right: 15px;"></i>fetching spreadsheet...</div>`;
+
+            try {
+                // Build Sheets API URL
+                const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(SHEET_NAME)}!${RANGE}?key=${API_KEY}`;
+                
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (!data.values || data.values.length < 2) {
+                    throw new Error('No data rows found');
+                }
+
+                // Update timestamp
+                document.getElementById('lastUpdate').innerHTML = 
+                    `<i class="far fa-check-circle" style="color:#6effa6;"></i> updated ${new Date().toLocaleTimeString()}`;
+
+                // Process the data (first row = headers)
+                const rows = data.values;
+                const headers = rows[0];
+                const sheetData = rows.slice(1).filter(row => row.length > 1 && row[0] && row[0].trim() !== '');
+
+                // Destroy old charts
+                chartInstances.forEach(chart => chart.destroy());
+                chartInstances = [];
+
+                // Build dashboard with real data
+                buildCharts(sheetData, headers);
+
+            } catch (error) {
+                console.error('API Error:', error);
+                grid.innerHTML = `
+                    <div class="error">
+                        <i class="fas fa-exclamation-triangle fa-2x" style="margin-bottom: 15px;"></i>
+                        <h3>Failed to load live data</h3>
+                        <p style="margin-top: 10px; color: #ffcaca;">${error.message}</p>
+                        <button onclick="loadLiveData()" style="margin-top: 20px; background: #1e3f62; border: none; color: white; padding: 12px 30px; border-radius: 40px; cursor: pointer;">
+                            <i class="fas fa-redo-alt"></i> retry
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        function buildCharts(rows, headers) {
+            // Find column indexes
+            const statusIdx = headers.findIndex(h => h?.toLowerCase().includes('status of work'));
+            const commissionedIdx = headers.findIndex(h => h?.toLowerCase().includes('commissioned'));
+            const typeIdx = headers.findIndex(h => h?.toLowerCase().includes('bsnl txn') || h?.toLowerCase().includes('tip'));
+            const remarksIdx = headers.findIndex(h => h?.toLowerCase().includes('treasury remarks'));
+            const issueIdx = headers.findIndex(h => h?.toLowerCase().includes('issue remarks'));
+            const nameIdx = 0; // Treasury name is first column
+
+            // 1. Count statuses
+            const statusCounts = { 'Completed': 0, 'WIP': 0, 'Other': 0 };
+            rows.forEach(row => {
+                const status = row[statusIdx] || '';
+                if (status.toLowerCase().includes('complete')) statusCounts.Completed++;
+                else if (status.toUpperCase().includes('WIP')) statusCounts.WIP++;
+                else statusCounts.Other++;
+            });
+
+            // 2. Commissioned (Yes/No/Blank)
+            const commissionedCounts = { 'YES': 0, 'NO': 0, 'Blank': 0 };
+            rows.forEach(row => {
+                const val = row[commissionedIdx] ? row[commissionedIdx].toString().toUpperCase() : '';
+                if (val === 'YES') commissionedCounts.YES++;
+                else if (val === 'NO') commissionedCounts.NO++;
+                else commissionedCounts.Blank++;
+            });
+
+            // 3. Connection type (FTTH vs TXMN)
+            const typeCounts = { 'FTTH': 0, 'TXMN': 0, 'Other': 0 };
+            rows.forEach(row => {
+                const type = row[typeIdx] ? row[typeIdx].toString().toUpperCase() : '';
+                if (type.includes('FTTH')) typeCounts.FTTH++;
+                else if (type.includes('TXMN')) typeCounts.TXMN++;
+                else typeCounts.Other++;
+            });
+
+            // 4. Working vs Not Working from remarks
+            let working = 0, notWorking = 0, unknown = 0;
+            rows.forEach(row => {
+                const remarks = row[remarksIdx] ? row[remarksIdx].toString() : '';
+                if (remarks.toLowerCase().includes('working fine') || remarks.toLowerCase().includes('ok')) working++;
+                else if (remarks.toLowerCase().includes('not working')) notWorking++;
+                else unknown++;
+            });
+
+            // 5. Top issue keywords (simplified)
+            const issues = {};
+            rows.forEach(row => {
+                const issue = row[issueIdx] ? row[issueIdx].toString() : '';
+                if (issue && issue.length > 3) {
+                    const key = issue.substring(0, 30);
+                    issues[key] = (issues[key] || 0) + 1;
+                }
+            });
+            const topIssues = Object.entries(issues).sort((a,b) => b[1] - a[1]).slice(0, 5);
+
+            // 6. Daily completions (from Treasury Remarks dates)
+            const dailyCompletions = {};
+            rows.forEach(row => {
+                const remarks = row[remarksIdx] ? row[remarksIdx].toString() : '';
+                const match = remarks.match(/(\d{2})-(\d{2})-(\d{4})/);
+                if (match) {
+                    const date = `${match[3]}-${match[2]}-${match[1]}`; // YYYY-MM-DD
+                    dailyCompletions[date] = (dailyCompletions[date] || 0) + 1;
+                }
+            });
+            const sortedDates = Object.keys(dailyCompletions).sort().slice(-7);
+            const lastWeekData = sortedDates.map(d => dailyCompletions[d]);
+
+            // Build HTML grid
+            const grid = document.getElementById('dashboardGrid');
+            grid.innerHTML = ''; // clear
+
+            // Helper to create cards
+            function addCard(icon, title, description, chartType, chartConfig, chartDataFn) {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <div class="card-header">
+                        <i class="fas ${icon}"></i>
+                        <div>
+                            <h3>${title}</h3>
+                            <p>${description}</p>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="chart-${chartInstances.length}"></canvas>
+                    </div>
+                    <div class="stats-mini" id="stats-${chartInstances.length}"></div>
+                `;
+                grid.appendChild(card);
+
+                const canvas = document.getElementById(`chart-${chartInstances.length}`);
+                const ctx = canvas.getContext('2d');
+                
+                const chart = new Chart(ctx, {
+                    type: chartType,
+                    data: chartConfig.data,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { labels: { color: '#c2dcff', font: { size: 11 } } }
+                        },
+                        ...chartConfig.options
+                    }
+                });
+                chartInstances.push(chart);
+
+                // Add stats
+                const statsDiv = document.getElementById(`stats-${chartInstances.length-1}`);
+                if (statsDiv && chartDataFn) statsDiv.innerHTML = chartDataFn();
+            }
+
+            // Card 1: Status of Work (Pie)
+            addCard(
+                'fa-clipboard-check',
+                'Work Status Overview',
+                'Completion status of all treasuries',
+                'pie',
+                {
+                    data: {
+                        labels: ['Completed', 'Work in Progress', 'Other/Blank'],
+                        datasets: [{
+                            data: [statusCounts.Completed, statusCounts.WIP, statusCounts.Other],
+                            backgroundColor: ['#2ecc71', '#f39c12', '#7f8c8d'],
+                            borderWidth: 0
+                        }]
+                    }
+                },
+                () => `✅ ${statusCounts.Completed} completed · 🔧 ${statusCounts.WIP} in progress`
+            );
+
+            // Card 2: Commissioned Status (Pie)
+            addCard(
+                'fa-check-circle',
+                'Commissioned Status',
+                'Officially commissioned (Yes/No)',
+                'doughnut',
+                {
+                    data: {
+                        labels: ['Commissioned (YES)', 'Not Commissioned', 'Not Specified'],
+                        datasets: [{
+                            data: [commissionedCounts.YES, commissionedCounts.NO, commissionedCounts.Blank],
+                            backgroundColor: ['#27ae60', '#e74c3c', '#95a5a6'],
+                        }]
+                    }
+                },
+                () => `✔️ ${commissionedCounts.YES} commissioned · ❌ ${commissionedCounts.NO} not commissioned`
+            );
+
+            // Card 3: Connection Type (Pie)
+            addCard(
+                'fa-network-wired',
+                'Connection Type',
+                'BSNL TXN / TIP distribution',
+                'pie',
+                {
+                    data: {
+                        labels: ['FTTH', 'TXMN', 'Other'],
+                        datasets: [{
+                            data: [typeCounts.FTTH, typeCounts.TXMN, typeCounts.Other],
+                            backgroundColor: ['#3498db', '#9b59b6', '#bdc3c7'],
+                        }]
+                    }
+                },
+                () => `📡 FTTH: ${typeCounts.FTTH}  ·  🛰️ TXMN: ${typeCounts.TXMN}`
+            );
+
+            // Card 4: Working Status from Remarks (Bar)
+            addCard(
+                'fa-heartbeat',
+                'Operational Status',
+                'Based on treasury remarks',
+                'bar',
+                {
+                    data: {
+                        labels: ['Working', 'Not Working', 'Unknown'],
+                        datasets: [{
+                            data: [working, notWorking, unknown],
+                            backgroundColor: ['#2ecc71', '#e67e22', '#7f8c8d'],
+                        }]
+                    },
+                    options: { scales: { y: { beginAtZero: true, grid: { color: '#2d4b70' } } } }
+                },
+                () => `🟢 ${working} working  ·  🔴 ${notWorking} not working`
+            );
+
+            // Card 5: Recent Completions (Line chart - last 7 dates)
+            if (sortedDates.length > 0) {
+                addCard(
+                    'fa-calendar-alt',
+                    'Last 7 days completions',
+                    'Daily completed count',
+                    'line',
+                    {
+                        data: {
+                            labels: sortedDates.map(d => d.slice(5)), // MM-DD
+                            datasets: [{
+                                data: lastWeekData,
+                                borderColor: '#4d9eff',
+                                backgroundColor: 'rgba(77, 158, 255, 0.2)',
+                                tension: 0.3,
+                                fill: true
+                            }]
+                        },
+                        options: {
+                            scales: { y: { beginAtZero: true, grid: { color: '#2d4b70' } } }
+                        }
+                    },
+                    () => `📅 total last 7d: ${lastWeekData.reduce((a,b) => a+b, 0)}`
+                );
+            }
+
+            // Card 6: Top Issue Keywords (Horizontal bar)
+            if (topIssues.length > 0) {
+                addCard(
+                    'fa-exclamation-triangle',
+                    'Frequent Issue Indicators',
+                    'From Issue Remarks column',
+                    'bar',
+                    {
+                        data: {
+                            labels: topIssues.map(i => i[0].substring(0, 20) + '...'),
+                            datasets: [{
+                                data: topIssues.map(i => i[1]),
+                                backgroundColor: '#e67e22',
+                            }]
+                        },
+                        options: {
+                            indexAxis: 'y',
+                            scales: { x: { grid: { color: '#2d4b70' } } }
+                        }
+                    },
+                    () => `⚠️ most mentioned: ${topIssues[0]?.[0].substring(0,15)}... (${topIssues[0]?.[1]})`
+                );
+            }
+
+            // Full width card: Summary table by district (simplified)
+            const districts = {};
+            rows.forEach(row => {
+                const name = row[0] || '';
+                if (name.includes('DISTRICT') || name.includes('TREASURY')) {
+                    const districtMatch = name.match(/([A-Za-z]+)\s+(DISTRICT|TREASURY)/i);
+                    const key = districtMatch ? districtMatch[1] : 'Other';
+                    districts[key] = (districts[key] || 0) + 1;
+                }
+            });
+
+            const districtCard = document.createElement('div');
+            districtCard.className = 'card full-width';
+            districtCard.innerHTML = `
+                <div class="card-header">
+                    <i class="fas fa-map-marked-alt"></i>
+                    <div>
+                        <h3>Treasury Distribution by Region</h3>
+                        <p>count per district (first word)</p>
+                    </div>
+                </div>
+                <div style="display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; padding: 15px;">
+                    ${Object.entries(districts).slice(0, 12).map(([d, c]) => 
+                        `<span style="background:#1e3f62; padding:8px 18px; border-radius:40px;">${d}: <strong>${c}</strong></span>`
+                    ).join('')}
+                </div>
+            `;
+            grid.appendChild(districtCard);
+        }
+
+        // Initialize on page load
+        window.onload = loadLiveData;
+    </script>
+</body>
+</html>
