@@ -20,14 +20,16 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            background: #f0f2f5;
+            background: #0a0c10;
+            color: #e1e9f0;
         }
 
-        /* Custom Navbar Styles */
+        /* Custom Navbar Styles - Dark Theme */
         .navbar-custom {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
             padding: 0.5rem 1rem;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            border-bottom: 1px solid #334155;
         }
 
         .navbar-brand {
@@ -40,7 +42,7 @@
         .logo {
             width: 40px;
             height: 40px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
             border-radius: 10px;
             display: flex;
             align-items: center;
@@ -48,7 +50,7 @@
             color: white;
             font-weight: bold;
             font-size: 20px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
         }
 
         .brand-text {
@@ -56,20 +58,20 @@
         }
 
         .brand-text h1 {
-            color: white;
+            color: #f1f5f9;
             font-size: 1.4rem;
             font-weight: 600;
             margin: 0;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
 
         .brand-text span {
             font-size: 0.75rem;
-            color: #a8c6ff;
+            color: #94a3b8;
             display: block;
         }
 
-        /* Navigation Menu */
+        /* Navigation Menu - Dark Theme */
         .nav-menu {
             display: flex;
             align-items: center;
@@ -81,7 +83,7 @@
         }
 
         .nav-link-custom {
-            color: white;
+            color: #e2e8f0;
             padding: 0.5rem 1rem;
             border-radius: 6px;
             font-weight: 500;
@@ -94,37 +96,45 @@
         }
 
         .nav-link-custom:hover {
-            background: rgba(255,255,255,0.15);
-            color: white;
+            background: rgba(51, 65, 85, 0.7);
+            color: #f1f5f9;
         }
 
         .nav-link-custom i {
             font-size: 0.8rem;
             transition: transform 0.3s ease;
+            color: #94a3b8;
         }
 
-        .nav-item-custom:hover .nav-link-custom i {
+        .nav-item-custom.active .nav-link-custom {
+            background: #334155;
+            color: #f1f5f9;
+        }
+
+        .nav-item-custom.active .nav-link-custom i {
             transform: rotate(180deg);
+            color: #f1f5f9;
         }
 
-        /* Dropdown Menu */
+        /* Dropdown Menu - Dark Theme */
         .dropdown-menu-custom {
             position: absolute;
             top: 100%;
             right: 0;
-            background: white;
-            min-width: 280px;
+            background: #1e293b;
+            min-width: 320px;
             border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.5);
             padding: 0;
-            margin-top: 5px;
+            margin-top: 8px;
             z-index: 1000;
             display: none;
-            animation: slideDown 0.3s ease;
+            border: 1px solid #334155;
         }
 
-        .nav-item-custom:hover .dropdown-menu-custom {
+        .dropdown-menu-custom.show {
             display: block;
+            animation: slideDown 0.2s ease;
         }
 
         @keyframes slideDown {
@@ -139,24 +149,25 @@
         }
 
         .dropdown-header-custom {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 10px 15px;
+            background: #0f172a;
+            color: #f1f5f9;
+            padding: 12px 16px;
             font-weight: 600;
             font-size: 0.95rem;
             border-radius: 12px 12px 0 0;
+            border-bottom: 1px solid #334155;
+            letter-spacing: 0.5px;
         }
 
         .dropdown-item-custom {
             display: block;
-            padding: 10px 15px;
-            color: #2c3e50;
+            padding: 12px 16px 12px 40px;
+            color: #cbd5e1;
             text-decoration: none;
             font-size: 0.95rem;
-            border-bottom: 1px solid #eef2f6;
+            border-bottom: 1px solid #2d3a4f;
             position: relative;
-            padding-left: 35px;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
         }
 
         .dropdown-item-custom:last-child {
@@ -167,40 +178,44 @@
         .dropdown-item-custom::before {
             content: '🔗';
             position: absolute;
-            left: 10px;
+            left: 16px;
             top: 50%;
             transform: translateY(-50%);
             font-size: 12px;
-            opacity: 0.6;
+            opacity: 0.5;
+            filter: brightness(0.8);
         }
 
         .dropdown-item-custom:hover {
-            background: #f8faff;
-            color: #1e3c72;
-            padding-left: 40px;
+            background: #2d3a4f;
+            color: #f1f5f9;
+            padding-left: 45px;
         }
 
-        /* Mobile Toggle Button */
+        /* Mobile Toggle Button - Dark Theme */
         .navbar-toggler {
-            border: 2px solid rgba(255,255,255,0.3);
+            border: 2px solid #475569;
             padding: 0.5rem 0.75rem;
+            background: transparent;
         }
 
         .navbar-toggler:focus {
             box-shadow: none;
+            border-color: #3b82f6;
         }
 
         .navbar-toggler-icon {
-            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.8%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28203, 213, 225, 1%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
         }
 
-        /* Collapsible Menu */
+        /* Collapsible Menu - Dark Theme */
         .navbar-collapse {
-            background: rgba(255,255,255,0.1);
+            background: #1a2534;
             border-radius: 12px;
             margin-top: 1rem;
-            padding: 0.5rem;
+            padding: 0.75rem;
             backdrop-filter: blur(10px);
+            border: 1px solid #334155;
         }
 
         .mobile-nav-item {
@@ -209,8 +224,8 @@
         }
 
         .mobile-nav-link {
-            color: white;
-            padding: 12px 15px;
+            color: #e2e8f0;
+            padding: 14px 16px;
             border-radius: 8px;
             font-weight: 500;
             display: flex;
@@ -218,16 +233,28 @@
             justify-content: space-between;
             cursor: pointer;
             transition: background 0.3s ease;
+            background: #1f2a3a;
+            border: 1px solid #334155;
+            margin-bottom: 2px;
         }
 
         .mobile-nav-link:hover {
-            background: rgba(255,255,255,0.15);
+            background: #2d3a4f;
+        }
+
+        .mobile-nav-link i {
+            color: #94a3b8;
+            transition: transform 0.3s ease;
+        }
+
+        .mobile-nav-link.active i {
+            transform: rotate(180deg);
         }
 
         .mobile-submenu {
             list-style: none;
             padding-left: 0;
-            margin-top: 2px;
+            margin: 2px 0 4px 0;
             display: none;
         }
 
@@ -236,13 +263,15 @@
         }
 
         .mobile-submenu-header {
-            background: rgba(102, 126, 234, 0.3);
-            color: white;
-            padding: 8px 15px;
+            background: #0f172a;
+            color: #f1f5f9;
+            padding: 10px 16px;
             font-weight: 600;
             font-size: 0.9rem;
             border-radius: 6px;
             margin: 2px 0;
+            border: 1px solid #334155;
+            letter-spacing: 0.3px;
         }
 
         .mobile-submenu-item {
@@ -251,68 +280,76 @@
 
         .mobile-submenu-link {
             display: block;
-            padding: 10px 15px 10px 30px;
-            color: white;
+            padding: 12px 16px 12px 36px;
+            color: #cbd5e1;
             text-decoration: none;
             font-size: 0.9rem;
             border-radius: 6px;
-            transition: background 0.3s ease;
+            transition: all 0.2s ease;
             position: relative;
+            background: #1f2a3a;
+            border: 1px solid #334155;
+            margin: 2px 0;
         }
 
         .mobile-submenu-link::before {
             content: '🔗';
             position: absolute;
-            left: 8px;
+            left: 12px;
             top: 50%;
             transform: translateY(-50%);
             font-size: 11px;
-            opacity: 0.7;
+            opacity: 0.6;
+            filter: brightness(0.8);
         }
 
         .mobile-submenu-link:hover {
-            background: rgba(255,255,255,0.1);
+            background: #2d3a4f;
+            color: #f1f5f9;
+            padding-left: 40px;
         }
 
-        /* Iframe Container */
+        /* Iframe Container - Dark Theme */
         .iframe-container {
             flex: 1;
             width: 100%;
-            background: #f0f2f5;
+            background: #0f172a;
             position: relative;
             overflow: hidden;
+            border-top: 1px solid #334155;
         }
 
         #content-frame {
             width: 100%;
             height: 100%;
             border: none;
-            background: white;
+            background: #ffffff; /* Keep iframe content normal */
         }
 
-        /* Loading indicator */
+        /* Loading indicator - Dark Theme */
         .loading {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             font-size: 16px;
-            color: #1e3c72;
-            background: white;
+            color: #f1f5f9;
+            background: #1e293b;
             padding: 15px 30px;
             border-radius: 50px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
             z-index: 1000;
             display: none;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
+            border: 1px solid #475569;
         }
 
         .loading-spinner {
             width: 20px;
             height: 20px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #1e3c72;
+            border: 3px solid #475569;
+            border-top: 3px solid #3b82f6;
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
@@ -322,31 +359,65 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* Welcome Message */
+        /* Welcome Message - Dark Theme */
         .welcome-message {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             text-align: center;
-            color: #7f8c8d;
-            background: white;
+            color: #94a3b8;
+            background: #1e293b;
             padding: 40px;
-            border-radius: 16px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            border-radius: 20px;
+            box-shadow: 0 25px 40px -15px rgba(0, 0, 0, 0.6);
             pointer-events: none;
             width: 90%;
-            max-width: 400px;
+            max-width: 450px;
+            border: 1px solid #334155;
         }
 
         .welcome-message h2 {
-            font-size: 2rem;
-            color: #1e3c72;
-            margin-bottom: 10px;
+            font-size: 2.2rem;
+            color: #f1f5f9;
+            margin-bottom: 15px;
+            font-weight: 600;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
 
         .welcome-message p {
             font-size: 1.1rem;
+            color: #94a3b8;
+        }
+
+        /* Error Message - Dark Theme */
+        .error-message {
+            color: #fca5a5;
+            padding: 12px 16px;
+            background: #451a1a;
+            border: 1px solid #7f1d1d;
+            border-radius: 8px;
+            margin: 8px 0;
+            font-size: 0.95rem;
+        }
+
+        /* Scrollbar Styling - Dark Theme */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1a2534;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #5f6b7f;
         }
 
         /* Desktop hover menu - hidden on mobile */
@@ -372,12 +443,26 @@
                 margin-top: 0;
                 padding: 0;
                 backdrop-filter: none;
+                border: none;
             }
+        }
+
+        /* Additional dark theme touches */
+        .dropdown-divider {
+            border-top-color: #334155;
+        }
+
+        .text-muted-dark {
+            color: #94a3b8;
+        }
+
+        .border-dark-custom {
+            border-color: #334155;
         }
     </style>
 </head>
 <body>
-    <!-- Bootstrap Navbar -->
+    <!-- Bootstrap Navbar - Dark Theme -->
     <nav class="navbar navbar-expand-lg navbar-custom">
         <div class="container-fluid">
             <!-- Brand -->
@@ -385,7 +470,7 @@
                 <div class="logo">📡</div>
                 <div class="brand-text">
                     <h1>NOC Admin</h1>
-                    <span></span>
+                    <span>Network Operations Center</span>
                 </div>
             </a>
 
@@ -416,8 +501,9 @@
             Loading...
         </div>
         <div class="welcome-message" id="welcome-message">
-            <h2>Welcome to NOC Admin</h2>
+            <h2>📡 Welcome NOC Admin</h2>
             <p></p>
+           
         </div>
     </div>
 
@@ -430,6 +516,9 @@
         const API_KEY = 'AIzaSyBB1V3vJpNZ9X1GIF-YOwoa6YSt_iXMLo0';
         const SHEET_NAME = 'Menu';
         const RANGE = 'A:D'; // Main menu, Sub Menu, link item, Url
+
+        // Track currently open dropdown
+        let currentOpenDropdown = null;
 
         // Fetch data from Google Sheets
         async function fetchMenuData() {
@@ -492,35 +581,71 @@
             }));
         }
 
-        // Render desktop menu (hover dropdowns)
+        // Close all dropdowns
+        function closeAllDropdowns() {
+            document.querySelectorAll('.dropdown-menu-custom.show').forEach(dropdown => {
+                dropdown.classList.remove('show');
+            });
+            document.querySelectorAll('.nav-item-custom.active').forEach(item => {
+                item.classList.remove('active');
+            });
+            currentOpenDropdown = null;
+        }
+
+        // Handle click outside to close menus
+        function handleClickOutside(event) {
+            if (!event.target.closest('.nav-item-custom')) {
+                closeAllDropdowns();
+            }
+        }
+
+        // Toggle dropdown
+        function toggleDropdown(dropdownId, navItem) {
+            const dropdown = document.getElementById(dropdownId);
+            
+            // If clicking on the same dropdown that's open, close it
+            if (currentOpenDropdown === dropdownId) {
+                closeAllDropdowns();
+                return;
+            }
+            
+            // Close any open dropdown
+            closeAllDropdowns();
+            
+            // Open the new dropdown
+            dropdown.classList.add('show');
+            navItem.classList.add('active');
+            currentOpenDropdown = dropdownId;
+        }
+
+        // Render desktop menu (click-based dropdowns)
         function renderDesktopMenu(menuData) {
             const container = document.getElementById('desktop-menu-container');
             
             if (menuData.length === 0) {
-                container.innerHTML = '<div class="text-white">No menu items</div>';
+                container.innerHTML = '<div class="text-white-50 p-3">No menu items found</div>';
                 return;
             }
 
             const navMenu = document.createElement('div');
             navMenu.className = 'nav-menu';
 
-            menuData.forEach(mainItem => {
+            menuData.forEach((mainItem, index) => {
                 const itemDiv = document.createElement('div');
                 itemDiv.className = 'nav-item-custom';
+                const dropdownId = `dropdown-${index}`;
 
                 // Main menu link
                 const mainLink = document.createElement('a');
                 mainLink.className = 'nav-link-custom';
                 mainLink.innerHTML = `${mainItem.title} <i class="fas fa-chevron-down"></i>`;
                 mainLink.href = '#';
-                mainLink.addEventListener('click', (e) => e.preventDefault());
-
-                itemDiv.appendChild(mainLink);
-
+                
                 // Create dropdown menu
                 if (mainItem.subMenus.length > 0) {
                     const dropdown = document.createElement('div');
                     dropdown.className = 'dropdown-menu-custom';
+                    dropdown.id = dropdownId;
 
                     mainItem.subMenus.forEach(subMenu => {
                         // Submenu header
@@ -538,14 +663,28 @@
                             itemLink.addEventListener('click', (e) => {
                                 e.preventDefault();
                                 loadUrlInIframe(item.url);
+                                closeAllDropdowns(); // Close menu after selection
                             });
                             dropdown.appendChild(itemLink);
                         });
                     });
 
                     itemDiv.appendChild(dropdown);
+                    
+                    // Add click handler for main menu item
+                    mainLink.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        toggleDropdown(dropdownId, itemDiv);
+                    });
+                } else {
+                    // No submenu, just a regular link
+                    mainLink.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        // Handle if needed
+                    });
                 }
 
+                itemDiv.appendChild(mainLink);
                 navMenu.appendChild(itemDiv);
             });
 
@@ -558,7 +697,7 @@
             const container = document.getElementById('mobile-menu-container');
             
             if (menuData.length === 0) {
-                container.innerHTML = '<div class="text-white p-3">No menu items</div>';
+                container.innerHTML = '<div class="text-white-50 p-3">No menu items found</div>';
                 return;
             }
 
@@ -573,14 +712,14 @@
                 const mainToggle = document.createElement('div');
                 mainToggle.className = 'mobile-nav-link';
                 mainToggle.innerHTML = `${mainItem.title} <i class="fas fa-chevron-down"></i>`;
-                mainToggle.setAttribute('data-target', `submenu-${index}`);
+                mainToggle.setAttribute('data-target', `mobile-submenu-${index}`);
 
                 itemDiv.appendChild(mainToggle);
 
                 // Create submenu container
                 const submenu = document.createElement('ul');
                 submenu.className = 'mobile-submenu';
-                submenu.id = `submenu-${index}`;
+                submenu.id = `mobile-submenu-${index}`;
 
                 mainItem.subMenus.forEach(subMenu => {
                     // Submenu header
@@ -650,7 +789,7 @@
         function showError(message) {
             const desktopContainer = document.getElementById('desktop-menu-container');
             const mobileContainer = document.getElementById('mobile-menu-container');
-            const errorHtml = `<div class="text-white p-3 bg-danger bg-opacity-50 rounded">${message}</div>`;
+            const errorHtml = `<div class="error-message">${message}</div>`;
             desktopContainer.innerHTML = errorHtml;
             mobileContainer.innerHTML = errorHtml;
         }
@@ -691,6 +830,9 @@
             const menuData = await fetchMenuData();
             renderDesktopMenu(menuData);
             renderMobileMenu(menuData);
+            
+            // Add click outside listener
+            document.addEventListener('click', handleClickOutside);
             
             // Ensure welcome message is visible initially
             document.getElementById('welcome-message').style.display = 'block';
