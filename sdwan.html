@@ -142,30 +142,6 @@
             box-shadow: 0 5px 15px rgba(15, 91, 156, 0.3);
         }
         
-        .btn-refresh {
-            background: linear-gradient(135deg, #28a745 0%, #218838 100%);
-        }
-        
-        .btn-refresh:hover {
-            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
-        }
-        
-        .auto-refresh-badge {
-            background: #e8f4fd;
-            padding: 8px 16px;
-            border-radius: 50px;
-            font-size: 0.85rem;
-            color: #0f5b9c;
-            border: 1px solid #bee5f3;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .auto-refresh-badge i {
-            font-size: 1rem;
-        }
-        
         .table-container {
             overflow-x: auto;
             border-radius: 8px;
@@ -281,17 +257,6 @@
             margin-bottom: 20px;
             font-size: 0.95rem;
         }
-        
-        .last-updated {
-            font-size: 0.85rem;
-            color: #6c757d;
-            margin-left: 15px;
-        }
-        
-        .tab1-only-refresh {
-            border-left: 3px solid #28a745;
-            padding-left: 10px;
-        }
     </style>
 </head>
 <body>
@@ -302,22 +267,16 @@
                 <i class="bi bi-hdd-stack-fill me-2" style="color: #0f5b9c;"></i>
                 SDWAN Treasury Status 
             </h2>
-            <div class="d-flex align-items-center gap-3">
-                <div class="auto-refresh-badge" id="autoRefreshBadge">
-                    <i class="bi bi-arrow-repeat"></i>
-                    <span>Tab 1 Auto-refresh: 30s</span>
-                </div>
-                <span class="last-updated" id="lastUpdated">Last updated: Never</span>
-            </div>
+            
         </div>
         
         <!-- Custom Navigation Tabs -->
         <div class="nav-tabs-custom">
             <button class="nav-tab-custom active" data-tab="tab1">
-                <i class="bi bi-funnel-fill"></i> Working Status 
+                <i class="bi bi-funnel-fill"></i> Working Status
             </button>
             <button class="nav-tab-custom" data-tab="tab2">
-                <i class="bi bi-building"></i> Treasury Details 
+                <i class="bi bi-building"></i> Treasury Details
             </button>
         </div>
         
@@ -326,7 +285,7 @@
             <div class="card">
                 <div class="card-header">
                     <i class="bi bi-funnel me-2"></i>
-                     Working Status <span class="badge bg-light text-dark ms-2 tab1-only-refresh">Auto-refreshing every 5s</span>
+                     Working Status
                 </div>
                 <div class="card-body">
                     <div class="filter-card">
@@ -337,11 +296,11 @@
                         <div class="radio-group" id="statusRadioGroup">
                             <!-- Radio buttons will be dynamically populated -->
                         </div>
-                        <div style="margin-left: auto; display: flex; gap: 10px;">
-                            <button class="btn btn-primary btn-refresh" onclick="refreshTab1Data()">
-                                <i class="bi bi-arrow-repeat"></i> Update
+                        <div style="margin-left: auto;">
+                            <button class="btn btn-primary" onclick="filterWorkingStatus()">
+                                <i class="bi bi-search"></i> Apply
                             </button>
-                            <button style="display:none;" class="btn btn-outline-secondary" onclick="resetWorkingStatusFilter()">
+                            <button style="display:none;" class="btn btn-outline-secondary ms-2" onclick="resetWorkingStatusFilter()">
                                 <i class="bi bi-arrow-counterclockwise"></i> Reset
                             </button>
                         </div>
@@ -360,6 +319,15 @@
                     <div id="tab1TableContainer">
                         <!-- Data will be inserted here -->
                     </div>
+                    <!--
+                    <div class="info-footer">
+                        <i class="bi bi-info-circle-fill me-2"></i>
+                        Showing columns from Working Status sheet: 
+                        <strong>Treasury Name (A)</strong> | 
+                        <strong>BSNL Officer Contacts (M)</strong> | 
+                        <strong>Treasury Remarks (N)</strong> | 
+                        <strong>BBM REMARKS (O)</strong>
+                    </div> -->
                 </div>
             </div>
         </div>
@@ -369,7 +337,7 @@
             <div class="card">
                 <div class="card-header">
                     <i class="bi bi-building me-2"></i>
-                    Treasury Details <span class="badge bg-secondary ms-2">
+                    Treasury Details
                 </div>
                 <div class="card-body">
                     <div class="filter-card">
@@ -446,17 +414,6 @@
         let workingHeaders = [];
         let adminHeaders = [];
         
-        // Store Tab 2 state
-        let tab2State = {
-            selectedTreasury: null,
-            installationData: [],
-            workingData: [],
-            adminData: []
-        };
-        
-        // Auto-refresh interval for Tab 1 only
-        let refreshInterval;
-        
         // Status categories for filtering
         let statusCategories = {
             'working_fine': { label: 'Working Fine', count: 0, pattern: /working.*fine|works.*fine|fine/i },
@@ -479,108 +436,12 @@
                 $('#' + $(this).data('tab')).show();
             });
             
-            // Load all sheet data initially
+            // Load all sheet data
             loadAllSheets();
-            
-            // Set up auto-refresh for Tab 1 only (every 30 seconds)
-            startTab1AutoRefresh();
-            
-            // Add click handler for radio buttons to filter Tab 1
-            $(document).on('change', 'input[name="statusFilter"]', function() {
-                filterWorkingStatus();
-            });
         });
         
         // =============================================
-        // AUTO-REFRESH FOR TAB 1 ONLY
-        // =============================================
-        function startTab1AutoRefresh() {
-            // Clear any existing interval
-            if (refreshInterval) {
-                clearInterval(refreshInterval);
-            }
-            
-            // Set new interval for 30 seconds - only refreshes Tab 1 data
-            refreshInterval = setInterval(function() {
-                console.log("Auto-refreshing Tab 1 data only...");
-                refreshTab1Data(true);
-            }, 5000); 
-        }
-        
-        function refreshTab1Data(isAutoRefresh = false) {
-            if (!isAutoRefresh) {
-                // Manual refresh - show loading
-                $('#loadingTab1').show();
-            }
-            
-            // Store current filter before refresh
-            const currentFilter = $('input[name="statusFilter"]:checked').val();
-            
-            // Save current Tab 2 state before refreshing Tab 1 data
-            saveTab2State();
-            
-            // Only reload Working Status sheet (Tab 1 data)
-            loadWorkingSheet()
-                .then(() => {
-                    console.log("Tab 1 data refreshed successfully");
-                    
-                    $('#loadingTab1').hide();
-                    
-                    // Update Tab 1 UI with refreshed data
-                    analyzeStatusCategories();
-                    
-                    // Restore filter
-                    if (currentFilter) {
-                        $(`input[name="statusFilter"][value="${currentFilter}"]`).prop('checked', true);
-                        $('.radio-option').removeClass('active');
-                        $(`.radio-option[data-value="${currentFilter}"]`).addClass('active');
-                    }
-                    
-                    // Update Tab 1 table
-                    filterWorkingStatus();
-                    
-                    // Update last updated timestamp
-                    updateLastUpdated();
-                    
-                })
-                .catch(error => {
-                    console.error("Error refreshing Tab 1 data:", error);
-                    $('#loadingTab1').hide();
-                    showError("Failed to refresh Tab 1 data. Please check your connection.");
-                });
-        }
-        
-        function saveTab2State() {
-            // Save current Tab 2 data and selection
-            tab2State.selectedTreasury = $('#treasurySelect').val();
-            tab2State.installationData = installationData;
-            tab2State.workingData = workingData;
-            tab2State.adminData = adminData;
-        }
-        
-        function restoreTab2State() {
-            // Only restore if we're on Tab 2 and have a selected treasury
-            if ($('#tab2').is(':visible') && tab2State.selectedTreasury) {
-                // Restore the treasury selection
-                if ($('#treasurySelect').val() !== tab2State.selectedTreasury) {
-                    $('#treasurySelect').val(tab2State.selectedTreasury).trigger('change');
-                }
-                
-                // Refresh Tab 2 views with the saved data
-                displayInstallationTable(tab2State.selectedTreasury);
-                displayWorkingTableForTreasury(tab2State.selectedTreasury);
-                displayAdminTable(tab2State.selectedTreasury);
-            }
-        }
-        
-        function updateLastUpdated() {
-            const now = new Date();
-            const formattedTime = now.toLocaleTimeString() + ' ' + now.toLocaleDateString();
-            $('#lastUpdated').text(`last updated: ${formattedTime}`);
-        }
-        
-        // =============================================
-        // LOAD ALL SHEETS DATA (Initial Load)
+        // LOAD ALL SHEETS DATA
         // =============================================
         async function loadAllSheets() {
             try {
@@ -603,8 +464,6 @@
                 analyzeStatusCategories();
                 populateTreasurySelect();
                 displayAllWorkingData();
-                
-                updateLastUpdated();
                 
             } catch (error) {
                 console.error("Error loading sheets:", error);
@@ -648,6 +507,9 @@
                 });
         }
         
+        // =============================================
+        // LOAD ADMIN SHEET - FIXED: A2:H RANGE ONLY
+        // =============================================
         function loadAdminSheet() {
             // Load only columns A to H (range A2:H)
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(SHEET_ADMIN)}!A2:H?key=${API_KEY}`;
@@ -656,6 +518,7 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.values && data.values.length > 0) {
+                        // Store the headers separately
                         adminData = data.values;
                         console.log("Admin Data Loaded - Rows:", adminData.length);
                         console.log("Admin Data Sample (First 3 rows):", adminData.slice(0, 3));
@@ -699,8 +562,8 @@
             let radioHtml = '';
             
             // Add "Show All" option
-            radioHtml += `<div class="radio-option ${!$('input[name="statusFilter"]:checked').length ? 'active' : ''}" data-value="all">
-                <input type="radio" id="radioAll" name="statusFilter" value="all" ${!$('input[name="statusFilter"]:checked').length ? 'checked' : ''}>
+            radioHtml += `<div class="radio-option active" data-value="all">
+                <input type="radio" id="radioAll" name="statusFilter" value="all" checked>
                 <label for="radioAll"><i class="bi bi-table"></i> All Records (${workingData.length - 1})</label>
             </div>`;
             
@@ -757,7 +620,7 @@
         }
         
         // =============================================
-        // TAB 1: DISPLAY ALL WORKING DATA
+        // TAB 1: DISPLAY ALL WORKING DATA - FIXED: ONLY 4 COLUMNS
         // =============================================
         function displayAllWorkingData() {
             if (!workingData || workingData.length < 2) {
@@ -769,7 +632,7 @@
         }
         
         // =============================================
-        // TAB 1: FILTER WORKING STATUS
+        // TAB 1: FILTER WORKING STATUS - FIXED: EXACT 4 COLUMNS
         // =============================================
         function filterWorkingStatus() {
             const filterValue = $('input[name="statusFilter"]:checked').val();
@@ -784,7 +647,7 @@
             // Filter rows based on selected category
             let filteredRows = [];
             
-            if (filterValue === 'all' || !filterValue) {
+            if (filterValue === 'all') {
                 filteredRows = rows;
             } else {
                 filteredRows = rows.filter(row => {
@@ -805,7 +668,7 @@
             console.log(`Filter: ${filterValue}, Total rows: ${filteredRows.length}`);
             
             // Show filter statistics
-            let filterLabel = filterValue === 'all' || !filterValue ? 'All Records' : 
+            let filterLabel = filterValue === 'all' ? 'All Records' : 
                             filterValue === 'working_fine' ? 'Working Fine' :
                             filterValue === 'not_working' ? 'Not Working' : 'Other Remarks';
             
@@ -915,9 +778,6 @@
             console.log("=================================");
             console.log("VIEWING TREASURY:", selectedTreasury);
             console.log("=================================");
-            
-            // Save to Tab 2 state
-            tab2State.selectedTreasury = selectedTreasury;
             
             // Show loading
             $('#installationTableContainer').html('<div class="loading" style="display: block;"><div class="loading-spinner"></div><p>Loading installation data...</p></div>');
@@ -1034,7 +894,7 @@
         }
         
         // =============================================
-        // DISPLAY ADMIN TABLE
+        // DISPLAY ADMIN TABLE - FIXED: EXACT A2:H RANGE
         // =============================================
         function displayAdminTable(treasury) {
             console.log("Admin Contact - Loading for treasury:", treasury);
@@ -1170,14 +1030,6 @@
             `;
             $('#tab1TableContainer').html(errorHtml);
         }
-        
-        // Clean up interval when page unloads
-        window.addEventListener('beforeunload', function() {
-            if (refreshInterval) {
-                clearInterval(
-Interval);
-            }
-        });
     </script>
 </body>
 </html>
