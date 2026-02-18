@@ -3,1180 +3,382 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SDWAN Treasury Status Dashboard</title>
-    <!-- Bootstrap & DataTables CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-    <!-- Select2 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
-    
-    <!-- jQuery, Bootstrap, DataTables, Select2 -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    
+    <title>NOC Admin - Dynamic Menu from Google Sheets</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            background-color: #f0f5fa;
-            padding: 20px;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        .main-container {
-            max-width: 1600px;
-            margin: 0 auto;
-        }
-        
-        .card {
-            border-radius: 12px;
-            border: none;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            margin-bottom: 24px;
-        }
-        
-        .card-header {
-            background: linear-gradient(135deg, #0f5b9c 0%, #1a4b7a 100%);
-            color: white;
-            border-radius: 12px 12px 0 0 !important;
-            padding: 16px 24px;
-            font-weight: 600;
-        }
-        
-        .nav-tabs-custom {
+            font-family: Arial, sans-serif;
+            min-height: 100vh;
             display: flex;
-            gap: 10px;
-            background: white;
-            padding: 8px;
-            border-radius: 12px;
-            margin-bottom: 24px;
-            border: 1px solid #e9ecef;
+            flex-direction: column;
         }
-        
-        .nav-tab-custom {
-            flex: 1;
-            padding: 12px 24px;
+
+        /* Navigation Styles */
+        .navbar {
+            background-color: #333;
+            padding: 0 20px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        /* Logo and Brand Area */
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 0;
+        }
+
+        .logo {
+            width: 40px;
+            height: 40px;
+            background-color: #4CAF50;
             border-radius: 8px;
-            font-weight: 600;
-            color: #495057;
-            cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
-            transition: all 0.2s;
-            border: none;
-            background: transparent;
-        }
-        
-        .nav-tab-custom.active {
-            background: linear-gradient(135deg, #0f5b9c 0%, #1a4b7a 100%);
             color: white;
-            box-shadow: 0 4px 12px rgba(15, 91, 156, 0.3);
+            font-weight: bold;
+            font-size: 20px;
         }
-        
-        .filter-card {
-            background: white;
-            border-radius: 12px;
-            padding: 24px;
-            margin-bottom: 24px;
-            border: 1px solid #e9ecef;
+
+        .brand h1 {
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+        }
+
+        /* Menu Container */
+        .menu-container {
+            flex: 1;
             display: flex;
+            justify-content: flex-end;
+        }
+
+        .nav-menu {
+            list-style: none;
+            display: flex;
+            justify-content: flex-end;
             flex-wrap: wrap;
-            align-items: center;
-            gap: 30px;
+            position: relative;
         }
-        
-        .radio-group {
-            display: flex;
-            flex-wrap: wrap;
-            background: #f8f9fa;
-            padding: 12px;
-            border-radius: 12px;
-            border: 1px solid #dee2e6;
-            gap: 10px;
+
+        .nav-item {
+            position: relative;
         }
-        
-        .radio-option {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 20px;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: all 0.2s;
-            background: white;
-            border: 1px solid transparent;
-        }
-        
-        .radio-option.active {
-            background: #0f5b9c;
+
+        .nav-link {
+            display: block;
             color: white;
-            border-color: #0f5b9c;
-            box-shadow: 0 2px 8px rgba(15, 91, 156, 0.2);
+            text-decoration: none;
+            padding: 15px 20px;
+            transition: background-color 0.3s;
         }
-        
-        .radio-option.active label {
-            color: white;
+
+        .nav-link:hover {
+            background-color: #444;
         }
-        
-        .radio-option input[type="radio"] {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-        }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, #0f5b9c 0%, #1a4b7a 100%);
-            border: none;
-            padding: 10px 24px;
-            border-radius: 8px;
-            font-weight: 600;
-        }
-        
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(15, 91, 156, 0.3);
-        }
-        
-        .btn-refresh {
-            background: linear-gradient(135deg, #28a745 0%, #218838 100%);
-        }
-        
-        .btn-refresh:hover {
-            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
-        }
-        
-        .auto-refresh-badge {
-            background: #e8f4fd;
-            padding: 8px 16px;
-            border-radius: 50px;
-            font-size: 0.85rem;
-            color: #0f5b9c;
-            border: 1px solid #bee5f3;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .auto-refresh-badge i {
-            font-size: 1rem;
-        }
-        
-        .table-container {
-            overflow-x: auto;
-            border-radius: 8px;
-        }
-        
-        .table th {
-            background-color: #f8f9fa;
-            color: #1a4b7a;
-            font-weight: 600;
-            font-size: 0.9rem;
-            white-space: nowrap;
-            padding: 16px;
-        }
-        
-        .table td {
-            padding: 14px 16px;
-            vertical-align: middle;
-            font-size: 0.9rem;
-        }
-        
-        .status-badge-working {
-            background: #d4edda;
-            color: #155724;
-            padding: 6px 16px;
-            border-radius: 50px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            display: inline-block;
-            border: 1px solid #c3e6cb;
-        }
-        
-        .status-badge-notworking {
-            background: #f8d7da;
-            color: #721c24;
-            padding: 6px 16px;
-            border-radius: 50px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            display: inline-block;
-            border: 1px solid #f5c6cb;
-        }
-        
-        .status-badge-other {
-            background: #fff3cd;
-            color: #856404;
-            padding: 6px 16px;
-            border-radius: 50px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            display: inline-block;
-            border: 1px solid #ffeeba;
-        }
-        
-        .loading {
+
+        /* Submenu Styles */
+        .submenu {
+            list-style: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background-color: #444;
+            min-width: 200px;
             display: none;
-            text-align: center;
-            padding: 40px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 1000;
         }
-        
-        .loading-spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid rgba(15, 91, 156, 0.2);
-            border-radius: 50%;
-            border-top-color: #0f5b9c;
-            animation: spin 1s ease-in-out infinite;
-            margin: 0 auto 15px;
+
+        .nav-item:hover .submenu {
+            display: block;
         }
-        
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #6c757d;
+
+        .submenu-item {
+            width: 100%;
         }
-        
-        .section-title {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin: 32px 0 16px 0;
-            color: #1a4b7a;
-            font-weight: 700;
-            font-size: 1.1rem;
+
+        .submenu-link {
+            display: block;
+            color: white;
+            text-decoration: none;
+            padding: 10px 15px;
+            transition: background-color 0.3s;
+            white-space: nowrap;
         }
-        
-        .select2-container--bootstrap-5 .select2-selection {
-            min-height: 46px;
-            padding: 8px;
+
+        .submenu-link:hover {
+            background-color: #555;
         }
-        
-        .info-footer {
-            background: #e8f4fd;
-            border-left: 4px solid #0f5b9c;
-            padding: 16px 24px;
-            border-radius: 8px;
-            margin-top: 16px;
-            font-size: 0.9rem;
-            color: #1a4b7a;
+
+        /* Iframe Container */
+        .iframe-container {
+            flex: 1;
+            width: 100%;
+            background-color: #f5f5f5;
+            position: relative;
+            min-height: 500px;
         }
-        
-        .data-summary {
-            background: #f8f9fa;
-            padding: 16px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            border: 1px solid #e9ecef;
+
+        #content-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+            position: absolute;
+            top: 0;
+            left: 0;
         }
-        
-        .filter-stats {
-            background: #e3f2fd;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-size: 0.95rem;
+
+        /* Loading indicator */
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 18px;
+            color: #666;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            z-index: 1000;
         }
-        
-        .last-updated {
-            font-size: 0.85rem;
-            color: #6c757d;
-            margin-left: 15px;
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .navbar {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .menu-container {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .nav-menu {
+                justify-content: flex-start;
+                flex-direction: column;
+                width: 100%;
+            }
+            
+            .submenu {
+                position: static;
+                width: 100%;
+                box-shadow: none;
+            }
+
+            .submenu-link {
+                padding-left: 30px;
+            }
         }
-        
-        .tab1-only-refresh {
-            border-left: 3px solid #28a745;
-            padding-left: 10px;
+
+        /* Small screens */
+        @media (max-width: 480px) {
+            .brand h1 {
+                font-size: 1.2rem;
+            }
+
+            .logo {
+                width: 35px;
+                height: 35px;
+                font-size: 18px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="main-container">
-        <!-- Header -->
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2 style="color: #1a4b7a; font-weight: 700;">
-                <i class="bi bi-hdd-stack-fill me-2" style="color: #0f5b9c;"></i>
-                SDWAN Treasury Status 
-            </h2>
-            <div class="d-flex align-items-center gap-3">
-                <div class="auto-refresh-badge" id="autoRefreshBadge">
-                    <i class="bi bi-arrow-repeat"></i>
-                    <span>Tab 1 Auto-refresh: 30s</span>
-                </div>
-                <span class="last-updated" id="lastUpdated">Last updated: Never</span>
-            </div>
+    <nav class="navbar" id="navbar">
+        <div class="brand">
+            <div class="logo">📊</div>
+            <h1>NOC Admin</h1>
         </div>
-        
-        <!-- Custom Navigation Tabs -->
-        <div class="nav-tabs-custom">
-            <button class="nav-tab-custom active" data-tab="tab1">
-                <i class="bi bi-funnel-fill"></i> Working Status 
-            </button>
-            <button class="nav-tab-custom" data-tab="tab2">
-                <i class="bi bi-building"></i> Treasury Details 
-            </button>
+        <div class="menu-container" id="menu-container">
+            <!-- Menu will be populated by JavaScript -->
         </div>
-        
-        <!-- TAB 1: WORKING STATUS FILTER -->
-        <div id="tab1" class="tab-panel-custom" style="display: block;">
-            <div class="card">
-                <div class="card-header">
-                    <i class="bi bi-funnel me-2"></i>
-                     Working Status <span class="badge bg-light text-dark ms-2 tab1-only-refresh">Auto-refreshing every 5s</span>
-                </div>
-                <div class="card-body">
-                    <div class="filter-card">
-                        <div style="display: flex; align-items: center; gap: 16px;">
-                            <i class="bi bi-radioactive fs-5" style="color: #0f5b9c;"></i>
-                            <span style="font-weight: 700; color: #1a4b7a;">Status :</span>
-                        </div>
-                        <div class="radio-group" id="statusRadioGroup">
-                            <!-- Radio buttons will be dynamically populated -->
-                        </div>
-                        <div style="margin-left: auto; display: flex; gap: 10px;">
-                            <button class="btn btn-primary btn-refresh" onclick="refreshTab1Data()">
-                                <i class="bi bi-arrow-repeat"></i> Update
-                            </button>
-                            <button style="display:none;" class="btn btn-outline-secondary" onclick="resetWorkingStatusFilter()">
-                                <i class="bi bi-arrow-counterclockwise"></i> Reset
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- Filter Statistics -->
-                    <div id="filterStats" class="filter-stats" style="display: none;"></div>
-                    
-                    <!-- Loading Spinner -->
-                    <div id="loadingTab1" class="loading">
-                        <div class="loading-spinner"></div>
-                        <p>Loading...</p>
-                    </div>
-                    
-                    <!-- Table Container -->
-                    <div id="tab1TableContainer">
-                        <!-- Data will be inserted here -->
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- TAB 2: TREASURY DETAILS -->
-        <div id="tab2" class="tab-panel-custom" style="display: none;">
-            <div class="card">
-                <div class="card-header">
-                    <i class="bi bi-building me-2"></i>
-                    Treasury Details <span class="badge bg-secondary ms-2">
-                </div>
-                <div class="card-body">
-                    <div class="filter-card">
-                        <div style="display: flex; align-items: center; gap: 16px; flex: 1;">
-                            <i class="bi bi-geo-alt-fill fs-5" style="color: #0f5b9c;"></i>
-                            <span style="font-weight: 700; color: #1a4b7a;">Select Treasury:</span>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 16px; flex: 2;">
-                            <select id="treasurySelect" class="form-select" style="width: 100%;">
-                                <option value="">Loading treasuries...</option>
-                            </select>
-                            <button class="btn btn-primary" onclick="viewTreasuryDetails()">
-                                 View
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- Installation Status Section -->
-                    <div class="section-title">
-                        <i class="bi bi-tools"></i>
-                        Installation Status
-                    </div>
-                    <div id="installationTableContainer" class="table-container mb-4">
-                        <div class="empty-state">
-                            <i class="bi bi-arrow-up-circle"></i>
-                            <h6>Select a treasury and click "View"</h6>
-                        </div>
-                    </div>
-                    
-                    <!-- Working Status Section -->
-                    <div class="section-title">
-                        <i class="bi bi-speedometer2"></i>
-                        Working Status
-                    </div>
-                    <div id="treasuryWorkingTableContainer" class="table-container mb-4">
-                        <div class="empty-state">
-                            <i class="bi bi-arrow-up-circle"></i>
-                            <h6>Select a treasury to view working status</h6>
-                        </div>
-                    </div>
-                    
-                    <!-- Admin Contact Section -->
-                    <div class="section-title">
-                        <i class="bi bi-person-lines-fill"></i>
-                        Admin Contact Details
-                    </div>
-                    <div id="adminTableContainer" class="table-container">
-                        <div class="empty-state">
-                            <i class="bi bi-arrow-up-circle"></i>
-                            <h6>Select a treasury to view admin contacts</h6>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+    </nav>
+
+    <div class="iframe-container">
+        <iframe id="content-frame" src="about:blank" title="Content"></iframe>
+        <div class="loading" id="loading" style="display: none;">Loading...</div>
     </div>
 
     <script>
-        // =============================================
-        // CONFIGURATION
-        // =============================================
-        const API_KEY = "AIzaSyBB1V3vJpNZ9X1GIF-YOwoa6YSt_iXMLo0";
-        const SPREADSHEET_ID = "1HvCqLHC8IyllKskBXX1MtMfjQMGUyhMP7KuTuJxDhmU";
-        
-        const SHEET_INSTALLATION = "Installation Status";
-        const SHEET_WORKING = "Working Status";
-        const SHEET_ADMIN = "Admin Contact Details";
-        
-        // Global data storage
-        let installationData = [];
-        let workingData = [];
-        let adminData = [];
-        let treasuryList = [];
-        let workingHeaders = [];
-        let adminHeaders = [];
-        
-        // Store Tab 2 state
-        let tab2State = {
-            selectedTreasury: null,
-            installationData: [],
-            workingData: [],
-            adminData: []
-        };
-        
-        // Auto-refresh interval for Tab 1 only
-        let refreshInterval;
-        
-        // Status categories for filtering
-        let statusCategories = {
-            'working_fine': { label: 'Working Fine', count: 0, pattern: /working.*fine|works.*fine|fine/i },
-            'not_working': { label: 'Not Working', count: 0, pattern: /not.*work|not.*working|notworking/i },
-            'other': { label: 'Other Remarks', count: 0, pattern: /.*/i }
-        };
-        
-        // =============================================
-        // INITIALIZATION
-        // =============================================
-        $(document).ready(function() {
-            console.log("Dashboard initialized");
-            
-            // Initialize tab switching
-            $('.nav-tab-custom').click(function() {
-                $('.nav-tab-custom').removeClass('active');
-                $(this).addClass('active');
-                
-                $('.tab-panel-custom').hide();
-                $('#' + $(this).data('tab')).show();
-            });
-            
-            // Load all sheet data initially
-            loadAllSheets();
-            
-            // Set up auto-refresh for Tab 1 only (every 30 seconds)
-            startTab1AutoRefresh();
-            
-            // Add click handler for radio buttons to filter Tab 1
-            $(document).on('change', 'input[name="statusFilter"]', function() {
-                filterWorkingStatus();
-            });
-        });
-        
-        // =============================================
-        // AUTO-REFRESH FOR TAB 1 ONLY
-        // =============================================
-        function startTab1AutoRefresh() {
-            // Clear any existing interval
-            if (refreshInterval) {
-                clearInterval(refreshInterval);
-            }
-            
-            // Set new interval for 30 seconds - only refreshes Tab 1 data
-            refreshInterval = setInterval(function() {
-                console.log("Auto-refreshing Tab 1 data only...");
-                refreshTab1Data(true);
-            }, 5000); 
-        }
-        
-        function refreshTab1Data(isAutoRefresh = false) {
-            if (!isAutoRefresh) {
-                // Manual refresh - show loading
-                $('#loadingTab1').show();
-            }
-            
-            // Store current filter before refresh
-            const currentFilter = $('input[name="statusFilter"]:checked').val();
-            
-            // Save current Tab 2 state before refreshing Tab 1 data
-            saveTab2State();
-            
-            // Only reload Working Status sheet (Tab 1 data)
-            loadWorkingSheet()
-                .then(() => {
-                    console.log("Tab 1 data refreshed successfully");
-                    
-                    $('#loadingTab1').hide();
-                    
-                    // Update Tab 1 UI with refreshed data
-                    analyzeStatusCategories();
-                    
-                    // Restore filter
-                    if (currentFilter) {
-                        $(`input[name="statusFilter"][value="${currentFilter}"]`).prop('checked', true);
-                        $('.radio-option').removeClass('active');
-                        $(`.radio-option[data-value="${currentFilter}"]`).addClass('active');
-                    }
-                    
-                    // Update Tab 1 table
-                    filterWorkingStatus();
-                    
-                    // Update last updated timestamp
-                    updateLastUpdated();
-                    
-                })
-                .catch(error => {
-                    console.error("Error refreshing Tab 1 data:", error);
-                    $('#loadingTab1').hide();
-                    showError("Failed to refresh Tab 1 data. Please check your connection.");
-                });
-        }
-        
-        function saveTab2State() {
-            // Save current Tab 2 data and selection
-            tab2State.selectedTreasury = $('#treasurySelect').val();
-            tab2State.installationData = installationData;
-            tab2State.workingData = workingData;
-            tab2State.adminData = adminData;
-        }
-        
-        function restoreTab2State() {
-            // Only restore if we're on Tab 2 and have a selected treasury
-            if ($('#tab2').is(':visible') && tab2State.selectedTreasury) {
-                // Restore the treasury selection
-                if ($('#treasurySelect').val() !== tab2State.selectedTreasury) {
-                    $('#treasurySelect').val(tab2State.selectedTreasury).trigger('change');
-                }
-                
-                // Refresh Tab 2 views with the saved data
-                displayInstallationTable(tab2State.selectedTreasury);
-                displayWorkingTableForTreasury(tab2State.selectedTreasury);
-                displayAdminTable(tab2State.selectedTreasury);
-            }
-        }
-        
-        function updateLastUpdated() {
-            const now = new Date();
-            const formattedTime = now.toLocaleTimeString() + ' ' + now.toLocaleDateString();
-            $('#lastUpdated').text(`last updated: ${formattedTime}`);
-        }
-        
-        // =============================================
-        // LOAD ALL SHEETS DATA (Initial Load)
-        // =============================================
-        async function loadAllSheets() {
+        // Configuration - Replace these with your actual values
+        const SPREADSHEET_ID = '1jd1xZe9x2mrZm5KAwGT12vMNYjbrnynsmelNKeK95jc';
+        const API_KEY = 'AIzaSyBB1V3vJpNZ9X1GIF-YOwoa6YSt_iXMLo0';
+        const SHEET_NAME = 'Menu';
+        const RANGE = 'A:C'; // Main Menu, Sub Menu, URL
+
+        // Fetch data from Google Sheets
+        async function fetchMenuData() {
             try {
-                $('#loadingTab1').show();
+                const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_NAME}!${RANGE}?key=${API_KEY}`;
                 
-                await Promise.all([
-                    loadInstallationSheet(),
-                    loadWorkingSheet(),
-                    loadAdminSheet()
-                ]);
-                
-                console.log("=== DATA LOAD SUMMARY ===");
-                console.log("Installation Status:", installationData.length, "rows");
-                console.log("Working Status:", workingData.length, "rows");
-                console.log("Admin Contact:", adminData.length, "rows");
-                
-                $('#loadingTab1').hide();
-                
-                // Analyze status categories and populate radio buttons
-                analyzeStatusCategories();
-                populateTreasurySelect();
-                displayAllWorkingData();
-                
-                updateLastUpdated();
-                
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(data.error.message);
+                }
+
+                return processSheetData(data.values);
             } catch (error) {
-                console.error("Error loading sheets:", error);
-                showError("Failed to load data. Please check your API key and sheet permissions.");
-            }
-        }
-        
-        function loadInstallationSheet() {
-            const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(SHEET_INSTALLATION)}?key=${API_KEY}`;
-            
-            return fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.values && data.values.length > 0) {
-                        installationData = data.values;
-                        if (installationData.length > 1) {
-                            treasuryList = [];
-                            for (let i = 1; i < installationData.length; i++) {
-                                if (installationData[i][0] && installationData[i][0].trim()) {
-                                    treasuryList.push(installationData[i][0].trim());
-                                }
-                            }
-                            treasuryList = [...new Set(treasuryList)].sort();
-                            console.log("Treasury List Count:", treasuryList.length);
-                        }
-                    }
-                });
-        }
-        
-        function loadWorkingSheet() {
-            const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(SHEET_WORKING)}?key=${API_KEY}`;
-            
-            return fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.values && data.values.length > 0) {
-                        workingData = data.values;
-                        workingHeaders = workingData[0] || [];
-                        console.log("Working Data Headers:", workingHeaders);
-                    }
-                });
-        }
-        
-        function loadAdminSheet() {
-            // Load only columns A to H (range A2:H)
-            const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(SHEET_ADMIN)}!A2:H?key=${API_KEY}`;
-            
-            return fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.values && data.values.length > 0) {
-                        adminData = data.values;
-                        console.log("Admin Data Loaded - Rows:", adminData.length);
-                        console.log("Admin Data Sample (First 3 rows):", adminData.slice(0, 3));
-                    } else {
-                        console.log("No admin data found in A2:H range");
-                        adminData = [];
-                    }
-                })
-                .catch(error => {
-                    console.error("Error loading admin sheet:", error);
-                    adminData = [];
-                });
-        }
-        
-        // =============================================
-        // ANALYZE STATUS CATEGORIES
-        // =============================================
-        function analyzeStatusCategories() {
-            if (!workingData || workingData.length < 2) return;
-            
-            // Reset counts
-            statusCategories.working_fine.count = 0;
-            statusCategories.not_working.count = 0;
-            statusCategories.other.count = 0;
-            
-            const rows = workingData.slice(1);
-            
-            rows.forEach(row => {
-                const treasuryRemarks = (row[13] || '').toLowerCase();
-                
-                if (statusCategories.not_working.pattern.test(treasuryRemarks)) {
-                    statusCategories.not_working.count++;
-                } else if (statusCategories.working_fine.pattern.test(treasuryRemarks)) {
-                    statusCategories.working_fine.count++;
-                } else {
-                    statusCategories.other.count++;
-                }
-            });
-            
-            // Populate radio buttons
-            let radioHtml = '';
-            
-            // Add "Show All" option
-            radioHtml += `<div class="radio-option ${!$('input[name="statusFilter"]:checked').length ? 'active' : ''}" data-value="all">
-                <input type="radio" id="radioAll" name="statusFilter" value="all" ${!$('input[name="statusFilter"]:checked').length ? 'checked' : ''}>
-                <label for="radioAll"><i class="bi bi-table"></i> All Records (${workingData.length - 1})</label>
-            </div>`;
-            
-            // Add Working Fine option
-            radioHtml += `<div class="radio-option" data-value="working_fine">
-                <input type="radio" id="radioWorking" name="statusFilter" value="working_fine">
-                <label for="radioWorking"><i class="bi bi-check-circle-fill text-success"></i> ${statusCategories.working_fine.label} (${statusCategories.working_fine.count})</label>
-            </div>`;
-            
-            // Add Not Working option
-            radioHtml += `<div class="radio-option" data-value="not_working">
-                <input type="radio" id="radioNotWorking" name="statusFilter" value="not_working">
-                <label for="radioNotWorking"><i class="bi bi-exclamation-triangle-fill text-danger"></i> ${statusCategories.not_working.label} (${statusCategories.not_working.count})</label>
-            </div>`;
-            
-            // Add Other option
-            radioHtml += `<div class="radio-option" data-value="other">
-                <input type="radio" id="radioOther" name="statusFilter" value="other">
-                <label for="radioOther"><i class="bi bi-question-circle-fill text-warning"></i> ${statusCategories.other.label} (${statusCategories.other.count})</label>
-            </div>`;
-            
-            $('#statusRadioGroup').html(radioHtml);
-            
-            // Add click handler for radio options
-            $('.radio-option').click(function(e) {
-                if (e.target.type !== 'radio') {
-                    $(this).find('input[type="radio"]').prop('checked', true);
-                    $('.radio-option').removeClass('active');
-                    $(this).addClass('active');
-                }
-            });
-            
-            console.log("Status Categories:", statusCategories);
-        }
-        
-        // =============================================
-        // POPULATE TREASURY SELECT
-        // =============================================
-        function populateTreasurySelect() {
-            const select = $('#treasurySelect');
-            select.empty();
-            select.append('<option value="">Select Treasury</option>');
-            
-            treasuryList.forEach(treasury => {
-                select.append(`<option value="${escapeHtml(treasury)}">${escapeHtml(treasury)}</option>`);
-            });
-            
-            select.select2({
-                theme: 'bootstrap-5',
-                width: '100%',
-                placeholder: 'Search or select treasury...',
-                allowClear: true
-            });
-        }
-        
-        // =============================================
-        // TAB 1: DISPLAY ALL WORKING DATA
-        // =============================================
-        function displayAllWorkingData() {
-            if (!workingData || workingData.length < 2) {
-                $('#tab1TableContainer').html('<div class="empty-state">No data available</div>');
-                return;
-            }
-            
-            filterWorkingStatus();
-        }
-        
-        // =============================================
-        // TAB 1: FILTER WORKING STATUS
-        // =============================================
-        function filterWorkingStatus() {
-            const filterValue = $('input[name="statusFilter"]:checked').val();
-            
-            if (!workingData || workingData.length < 2) {
-                $('#tab1TableContainer').html('<div class="empty-state">No data available</div>');
-                return;
-            }
-            
-            const rows = workingData.slice(1);
-            
-            // Filter rows based on selected category
-            let filteredRows = [];
-            
-            if (filterValue === 'all' || !filterValue) {
-                filteredRows = rows;
-            } else {
-                filteredRows = rows.filter(row => {
-                    const treasuryRemarks = (row[13] || '').toLowerCase();
-                    
-                    if (filterValue === 'working_fine') {
-                        return statusCategories.working_fine.pattern.test(treasuryRemarks);
-                    } else if (filterValue === 'not_working') {
-                        return statusCategories.not_working.pattern.test(treasuryRemarks);
-                    } else if (filterValue === 'other') {
-                        return !statusCategories.working_fine.pattern.test(treasuryRemarks) && 
-                               !statusCategories.not_working.pattern.test(treasuryRemarks);
-                    }
-                    return false;
-                });
-            }
-            
-            console.log(`Filter: ${filterValue}, Total rows: ${filteredRows.length}`);
-            
-            // Show filter statistics
-            let filterLabel = filterValue === 'all' || !filterValue ? 'All Records' : 
-                            filterValue === 'working_fine' ? 'Working Fine' :
-                            filterValue === 'not_working' ? 'Not Working' : 'Other Remarks';
-            
-            $('#filterStats').html(`
-                <i class="bi bi-info-circle"></i> 
-                <strong>Current Filter:</strong> ${filterLabel} | 
-                <strong>Showing:</strong> ${filteredRows.length} of ${rows.length} records
-            `).show();
-            
-            // Build table HTML with EXACTLY 4 columns to match header
-            let html = `
-                <div class="data-summary">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <strong><i class="bi bi-filter-circle"></i> Filter:</strong> 
-                            ${filterLabel}
-                        </div>
-                        <div class="col-md-6 text-end">
-                            <strong><i class="bi bi-file-text"></i> Records Found:</strong> ${filteredRows.length}
-                        </div>
+                console.error('Error fetching menu data:', error);
+                document.getElementById('menu-container').innerHTML = `
+                    <div style="color: white; padding: 15px; text-align: center;">
+                        Error loading menu: ${error.message}. Please check if the sheet is publicly accessible.
                     </div>
-                </div>
-                <div class="table-responsive">
-                    <table class="table table-hover table-striped" id="workingStatusTable">
-                        <thead>
-                            <tr>
-                                <th>Name of Treasury</th>
-                                <th>CONTACT DETAILS OF BSNL OFFIERS</th>
-                                <th>Treasury Remarks</th>
-                                <th>BBM REMARKS</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-            `;
-            
-            if (filteredRows.length === 0) {
-                html += `<tr><td colspan="4" class="text-center py-5">No matching records found</td></tr>`;
-            } else {
-                filteredRows.forEach(row => {
-                    const treasury = row[0] || '—';
-                    const bsnlContact = row[12] || '—';
-                    let treasuryRemarks = row[13] || '—';
-                    const bbmRemarks = row[14] || '—';
-                    
-                    const remarksLower = treasuryRemarks.toLowerCase();
-                    if (statusCategories.not_working.pattern.test(remarksLower)) {
-                        treasuryRemarks = `<span class="status-badge-notworking"><i class="bi bi-exclamation-circle"></i> ${escapeHtml(treasuryRemarks)}</span>`;
-                    } else if (statusCategories.working_fine.pattern.test(remarksLower)) {
-                        treasuryRemarks = `<span class="status-badge-working"><i class="bi bi-check-circle"></i> ${escapeHtml(treasuryRemarks)}</span>`;
-                    } else {
-                        treasuryRemarks = `<span class="status-badge-other"><i class="bi bi-question-circle"></i> ${escapeHtml(treasuryRemarks)}</span>`;
-                    }
-                    
-                    html += `<tr>
-                        <td><strong>${escapeHtml(treasury)}</strong></td>
-                        <td>${escapeHtml(bsnlContact)}</td>
-                        <td>${treasuryRemarks}</td>
-                        <td>${escapeHtml(bbmRemarks)}</td>
-                    </tr>`;
-                });
-            }
-            
-            html += `</tbody></table></div>`;
-            $('#tab1TableContainer').html(html);
-            
-            // Initialize DataTable with EXACT column count match
-            if (filteredRows.length > 0) {
-                if ($.fn.DataTable.isDataTable('#workingStatusTable')) {
-                    $('#workingStatusTable').DataTable().destroy();
-                }
-                $('#workingStatusTable').DataTable({
-                    paging: true,
-                    pageLength: 25,
-                    lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
-                    ordering: true,
-                    destroy: true,
-                    responsive: false,
-                    scrollX: false,
-                    columnDefs: [
-                        { targets: 0, width: '250px' },
-                        { targets: 1, width: '200px' },
-                        { targets: 2, width: '200px' },
-                        { targets: 3, width: '200px' }
-                    ]
-                });
-            }
-        }
-        
-        function resetWorkingStatusFilter() {
-            $('input[name="statusFilter"][value="all"]').prop('checked', true);
-            $('.radio-option').removeClass('active');
-            $('.radio-option[data-value="all"]').addClass('active');
-            filterWorkingStatus();
-        }
-        
-        // =============================================
-        // TAB 2: VIEW TREASURY DETAILS
-        // =============================================
-        function viewTreasuryDetails() {
-            const selectedTreasury = $('#treasurySelect').val();
-            
-            if (!selectedTreasury) {
-                alert('Please select a treasury');
-                return;
-            }
-            
-            console.log("=================================");
-            console.log("VIEWING TREASURY:", selectedTreasury);
-            console.log("=================================");
-            
-            // Save to Tab 2 state
-            tab2State.selectedTreasury = selectedTreasury;
-            
-            // Show loading
-            $('#installationTableContainer').html('<div class="loading" style="display: block;"><div class="loading-spinner"></div><p>Loading installation data...</p></div>');
-            $('#treasuryWorkingTableContainer').html('<div class="loading" style="display: block;"><div class="loading-spinner"></div><p>Loading working status...</p></div>');
-            $('#adminTableContainer').html('<div class="loading" style="display: block;"><div class="loading-spinner"></div><p>Loading admin contacts...</p></div>');
-            
-            displayInstallationTable(selectedTreasury);
-            displayWorkingTableForTreasury(selectedTreasury);
-            displayAdminTable(selectedTreasury);
-        }
-        
-        // Display Installation Status Table
-        function displayInstallationTable(treasury) {
-            if (!installationData || installationData.length < 2) {
-                $('#installationTableContainer').html('<div class="empty-state">No installation data</div>');
-                return;
-            }
-            
-            const headers = installationData[0];
-            const rows = installationData.slice(1).filter(row => row[0] && row[0].toString().trim() === treasury.trim());
-            
-            let html = `<div class="table-responsive"><table class="table table-hover table-bordered">`;
-            html += '<thead><tr>';
-            for (let i = 0; i < Math.min(12, headers.length); i++) {
-                html += `<th>${escapeHtml(headers[i] || `Col ${i+1}`)}</th>`;
-            }
-            html += '</tr></thead><tbody>';
-            
-            if (rows.length === 0) {
-                html += `<tr><td colspan="12" class="text-center py-4">No installation record for this treasury</td></tr>`;
-            } else {
-                rows.forEach(row => {
-                    html += '<tr>';
-                    for (let i = 0; i < 12; i++) {
-                        html += `<td>${escapeHtml(row[i] || '—')}</td>`;
-                    }
-                    html += '</tr>';
-                });
-            }
-            
-            html += '</tbody></table></div>';
-            $('#installationTableContainer').html(html);
-        }
-        
-        // Display Working Table For Treasury
-        function displayWorkingTableForTreasury(treasury) {
-            if (!workingData || workingData.length < 2) {
-                $('#treasuryWorkingTableContainer').html('<div class="empty-state">No working data available</div>');
-                return;
-            }
-            
-            // Extract base treasury name
-            let searchTreasury = treasury;
-            if (treasury.includes('-')) {
-                searchTreasury = treasury.substring(treasury.indexOf('-') + 1).trim();
-            }
-            
-            const searchTreasuryLower = searchTreasury.toLowerCase();
-            
-            const rows = workingData.slice(1).filter(row => {
-                if (!row[0]) return false;
-                const workingTreasury = row[0].toString().trim();
-                const workingTreasuryLower = workingTreasury.toLowerCase();
-                
-                return workingTreasury === treasury || 
-                       workingTreasury.includes(searchTreasury) || 
-                       searchTreasury.includes(workingTreasury) ||
-                       workingTreasuryLower.includes(searchTreasuryLower);
-            });
-            
-            let html = `<div class="table-responsive"><table class="table table-hover table-striped">
-                <thead>
-                    <tr>
-                        <th>Name of Treasury</th>
-                        <th>CONTACT DETAILS OF BSNL OFFIERS</th>
-                        <th>Treasury Remarks</th>
-                        <th>BBM REMARKS</th>
-                        <th>Issue Remarks</th>
-                    </tr>
-                </thead>
-                <tbody>`;
-            
-            if (rows.length === 0) {
-                html += `<tr><td colspan="5" class="text-center py-4">No working status found for this treasury</td></tr>`;
-            } else {
-                rows.forEach(row => {
-                    const treasuryName = row[0] || '—';
-                    const bsnlContact = row[12] || '—';
-                    let treasuryRemarks = row[13] || '—';
-                    const bbmRemarks = row[14] || '—';
-                    const issueRemarks = row[15] || '—';
-                    
-                    const remarksLower = treasuryRemarks.toLowerCase();
-                    if (statusCategories.not_working.pattern.test(remarksLower)) {
-                        treasuryRemarks = `<span class="status-badge-notworking"><i class="bi bi-exclamation-circle"></i> ${escapeHtml(treasuryRemarks)}</span>`;
-                    } else if (statusCategories.working_fine.pattern.test(remarksLower)) {
-                        treasuryRemarks = `<span class="status-badge-working"><i class="bi bi-check-circle"></i> ${escapeHtml(treasuryRemarks)}</span>`;
-                    } else {
-                        treasuryRemarks = `<span class="status-badge-other"><i class="bi bi-question-circle"></i> ${escapeHtml(treasuryRemarks)}</span>`;
-                    }
-                    
-                    html += `<tr>
-                        <td><strong>${escapeHtml(treasuryName)}</strong></td>
-                        <td>${escapeHtml(bsnlContact)}</td>
-                        <td>${treasuryRemarks}</td>
-                        <td>${escapeHtml(bbmRemarks)}</td>
-                        <td>${escapeHtml(issueRemarks)}</td>
-                    </tr>`;
-                });
-            }
-            
-            html += '</tbody></table></div>';
-            $('#treasuryWorkingTableContainer').html(html);
-        }
-        
-        // =============================================
-        // DISPLAY ADMIN TABLE
-        // =============================================
-        function displayAdminTable(treasury) {
-            console.log("Admin Contact - Loading for treasury:", treasury);
-            
-            if (!adminData || adminData.length === 0) {
-                console.log("No admin data available");
-                $('#adminTableContainer').html('<div class="empty-state">No admin contact data available</div>');
-                return;
-            }
-            
-            // Define exact column headers as per requirements (A2:H)
-            const adminColumns = [
-                'Treasury/Location',
-                'Network Admin Name',
-                'Network Admin Contact',
-                'Treasury Admin Name',
-                'Treasury Admin Contact',
-                'Office Mail ID',
-                'Office Contact',
-                'Office Mobile'
-            ];
-            
-            // Extract base treasury name for matching
-            let searchTreasury = treasury;
-            if (treasury.includes('-')) {
-                searchTreasury = treasury.substring(treasury.indexOf('-') + 1).trim();
-            }
-            
-            // Remove "Treasury" word for better matching
-            let searchTreasuryClean = searchTreasury.replace(/treasury/i, '').trim();
-            
-            console.log("Admin Contact - Searching for base name:", searchTreasury);
-            console.log("Admin Contact - Clean name:", searchTreasuryClean);
-            
-            // Filter admin data for matching treasury (Column A is index 0)
-            const rows = adminData.filter(row => {
-                if (!row || !row[0]) return false;
-                
-                const adminTreasury = row[0].toString().trim();
-                const adminTreasuryLower = adminTreasury.toLowerCase();
-                const searchTreasuryLower = searchTreasury.toLowerCase();
-                const searchTreasuryCleanLower = searchTreasuryClean.toLowerCase();
-                
-                // Multiple matching strategies
-                const exactMatch = adminTreasury === treasury;
-                const baseMatch = adminTreasury.includes(searchTreasury) || searchTreasury.includes(adminTreasury);
-                const cleanMatch = adminTreasuryLower.includes(searchTreasuryCleanLower) || 
-                                 searchTreasuryCleanLower.includes(adminTreasuryLower);
-                const partialMatch = adminTreasuryLower.includes(searchTreasuryLower) || 
-                                   searchTreasuryLower.includes(adminTreasuryLower);
-                
-                return exactMatch || baseMatch || cleanMatch || partialMatch;
-            });
-            
-            console.log(`Admin Contact - Found ${rows.length} records for treasury:`, treasury);
-            
-            let html = `<div class="table-responsive"><table class="table table-hover table-bordered">`;
-            
-            // Headers with exact column names
-            html += '<thead><tr>';
-            adminColumns.forEach(header => {
-                html += `<th>${escapeHtml(header)}</th>`;
-            });
-            html += '</tr></thead><tbody>';
-            
-            if (rows.length === 0) {
-                html += `
-                    <tr>
-                        <td colspan="8" class="text-center py-4">
-                            <i class="bi bi-person-x fs-1 text-muted"></i>
-                            <p class="mt-2">No admin contact details found for this treasury</p>
-                            <small class="text-muted">Treasury: ${escapeHtml(treasury)}</small>
-                        </td>
-                    </tr>
                 `;
-            } else {
-                rows.forEach(row => {
-                    html += '<tr>';
-                    // Display columns A through H (indices 0-7)
-                    for (let i = 0; i < 8; i++) {
-                        let cellValue = row[i] || '—';
-                        
-                        // Format email and phone links
-                        if (i === 5 && cellValue !== '—' && cellValue.includes('@')) { // Office Mail ID
-                            cellValue = `<a href="mailto:${escapeHtml(cellValue)}">${escapeHtml(cellValue)}</a>`;
-                        } else if ((i === 2 || i === 4 || i === 6 || i === 7) && cellValue !== '—') { // Contact numbers
-                            const cleanNumber = cellValue.replace(/[^0-9+]/g, '');
-                            if (cleanNumber) {
-                                cellValue = `<a href="tel:${escapeHtml(cleanNumber)}">${escapeHtml(cellValue)}</a>`;
-                            }
-                        } else {
-                            cellValue = escapeHtml(cellValue);
-                        }
-                        
-                        html += `<td>${cellValue}</td>`;
-                    }
-                    html += '</tr>';
+                return [];
+            }
+        }
+
+        // Process the sheet data into a structured menu format
+        function processSheetData(rows) {
+            if (!rows || rows.length < 2) return [];
+
+            // First row is headers, so we start from index 1
+            const menuData = [];
+            const menuMap = new Map();
+
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i];
+                if (row.length < 3) continue;
+
+                const [mainMenu, subMenu, url] = row;
+
+                if (!mainMenu || !subMenu || !url) continue;
+
+                if (!menuMap.has(mainMenu)) {
+                    const menuItem = {
+                        title: mainMenu,
+                        subItems: []
+                    };
+                    menuData.push(menuItem);
+                    menuMap.set(mainMenu, menuItem);
+                }
+
+                menuMap.get(mainMenu).subItems.push({
+                    title: subMenu,
+                    url: url
                 });
             }
-            
-            html += '</tbody></table></div>';
-            
-            // Add record count
-            html += `<div class="small text-muted mt-2">
-                <i class="bi bi-info-circle"></i> Admin contact records found: ${rows.length}
-            </div>`;
-            
-            $('#adminTableContainer').html(html);
+
+            return menuData;
         }
-        
-        // =============================================
-        // UTILITY FUNCTIONS
-        // =============================================
-        function escapeHtml(text) {
-            if (!text) return '—';
-            if (typeof text !== 'string') text = String(text);
-            const map = {
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                '"': '&quot;',
-                "'": '&#039;'
-            };
-            return text.replace(/[&<>"']/g, m => map[m]);
-        }
-        
-        function showError(message) {
-            const errorHtml = `
-                <div class="alert alert-danger">
-                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                    ${message}
-                </div>
-            `;
-            $('#tab1TableContainer').html(errorHtml);
-        }
-        
-        // Clean up interval when page unloads
-        window.addEventListener('beforeunload', function() {
-            if (refreshInterval) {
-                clearInterval(
-Interval);
+
+        // Render the navigation menu
+        function renderMenu(menuData) {
+            const menuContainer = document.getElementById('menu-container');
+            
+            if (menuData.length === 0) {
+                menuContainer.innerHTML = '<div style="color: white; padding: 15px; text-align: center;">No menu items found</div>';
+                return;
             }
+
+            const ul = document.createElement('ul');
+            ul.className = 'nav-menu';
+
+            menuData.forEach(item => {
+                const li = document.createElement('li');
+                li.className = 'nav-item';
+
+                const a = document.createElement('a');
+                a.href = '#';
+                a.className = 'nav-link';
+                a.textContent = item.title;
+                
+                // Prevent default click behavior for main menu items
+                a.addEventListener('click', (e) => {
+                    e.preventDefault();
+                });
+
+                li.appendChild(a);
+
+                if (item.subItems.length > 0) {
+                    const subUl = document.createElement('ul');
+                    subUl.className = 'submenu';
+
+                    item.subItems.forEach(subItem => {
+                        const subLi = document.createElement('li');
+                        subLi.className = 'submenu-item';
+
+                        const subA = document.createElement('a');
+                        subA.href = '#';
+                        subA.className = 'submenu-link';
+                        subA.textContent = subItem.title;
+                        
+                        // Handle submenu item clicks
+                        subA.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            loadUrlInIframe(subItem.url);
+                        });
+
+                        subLi.appendChild(subA);
+                        subUl.appendChild(subLi);
+                    });
+
+                    li.appendChild(subUl);
+                }
+
+                ul.appendChild(li);
+            });
+
+            menuContainer.innerHTML = '';
+            menuContainer.appendChild(ul);
+        }
+
+        // Load URL in iframe
+        function loadUrlInIframe(url) {
+            const iframe = document.getElementById('content-frame');
+            const loading = document.getElementById('loading');
+            
+            // Show loading indicator
+            loading.style.display = 'block';
+            
+            // Handle URL - ensure it has protocol
+            let fullUrl = url;
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                fullUrl = 'https://' + url;
+            }
+
+            // Set iframe source
+            iframe.onload = function() {
+                loading.style.display = 'none';
+            };
+            
+            iframe.onerror = function() {
+                loading.style.display = 'none';
+                alert('Error loading the page. Please check the URL.');
+            };
+
+            iframe.src = fullUrl;
+        }
+
+        // Initialize the application
+        async function init() {
+            const menuData = await fetchMenuData();
+            renderMenu(menuData);
+        }
+
+        // Start the application
+        init();
+
+        // Handle iframe loading states
+        document.getElementById('content-frame').addEventListener('load', function() {
+            document.getElementById('loading').style.display = 'none';
         });
     </script>
 </body>
