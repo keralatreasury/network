@@ -45,6 +45,8 @@
             --scrollbar-track: #e2e8f0;
             --scrollbar-thumb: #94a3b8;
             --scrollbar-thumb-hover: #64748b;
+            --logo-color: #3b82f6;
+            --navbar-toggler-icon: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%2843, 51, 64, 1%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
         }
 
         /* Dark Theme Variables */
@@ -67,6 +69,8 @@
             --scrollbar-track: #1a2534;
             --scrollbar-thumb: #475569;
             --scrollbar-thumb-hover: #5f6b7f;
+            --logo-color: #8b5cf6;
+            --navbar-toggler-icon: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28226, 232, 240, 1%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
         }
 
         body {
@@ -92,15 +96,19 @@
         .logo {
             width: 40px;
             height: 40px;
-            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            background: linear-gradient(135deg, var(--logo-color) 0%, #8b5cf6 100%);
             border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-weight: bold;
-            font-size: 20px;
+            font-size: 24px;
             box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+
+        .logo i {
+            color: white;
+            font-size: 24px;
         }
 
         .brand-text {
@@ -334,6 +342,21 @@
             color: var(--text-primary);
         }
 
+        /* Navbar Toggler - Fixed for dark mode */
+        .navbar-toggler {
+            border: 2px solid var(--border-color);
+            background-color: transparent;
+        }
+
+        .navbar-toggler-icon {
+            background-image: var(--navbar-toggler-icon) !important;
+        }
+
+        .navbar-toggler:focus {
+            box-shadow: none;
+            border-color: var(--logo-color);
+        }
+
         /* Mobile Menu Styles */
         .navbar-collapse {
             background: var(--bg-secondary);
@@ -349,7 +372,7 @@
         }
 
         .mobile-nav-link {
-            color: var(--text-secondary);
+            color: var(--text-primary) !important;
             padding: 14px 16px;
             border-radius: 8px;
             font-weight: 500;
@@ -361,6 +384,7 @@
             background: var(--bg-tertiary);
             border: 1px solid var(--border-color);
             margin-bottom: 2px;
+            width: 100%;
         }
 
         .mobile-nav-link:hover {
@@ -386,7 +410,7 @@
 
         .mobile-submenu-header {
             background: var(--bg-tertiary);
-            color: var(--text-primary);
+            color: var(--text-primary) !important;
             padding: 10px 16px 10px 32px;
             font-weight: 600;
             font-size: 0.9rem;
@@ -411,7 +435,7 @@
             align-items: center;
             gap: 10px;
             padding: 12px 16px 12px 48px;
-            color: var(--text-secondary);
+            color: var(--text-secondary) !important;
             text-decoration: none;
             font-size: 0.9rem;
             border-radius: 6px;
@@ -428,7 +452,7 @@
 
         .mobile-submenu-link:hover {
             background: var(--dropdown-hover);
-            color: var(--text-primary);
+            color: var(--text-primary) !important;
         }
 
         .mobile-submenu-link:hover .bi {
@@ -576,9 +600,11 @@
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-custom">
         <div class="container-fluid">
-            <!-- Brand -->
+            <!-- Brand with bi-compass -->
             <a class="navbar-brand" href="#">
-                <div class="logo">🌐</div>
+                <div class="logo">
+                    <i class="bi bi-compass"></i>
+                </div>
                 <div class="brand-text">
                     <h1>NOC Admin</h1>
                     <span>Network Operations Center</span>
@@ -621,7 +647,7 @@
             Loading...
         </div>
         <div class="welcome-message" id="welcome-message">
-            <h2>🌐 Welcome NOC Admin</h2>
+            <h2><i class="bi bi-compass"></i> NOC Admin</h2>
             <p>Select a menu item to get started</p>
             <p class="text-muted mt-3" style="font-size: 0.9rem;">Network Operations Center</p>
         </div>
@@ -707,26 +733,60 @@
                 
                 if (mainMenu && subMenu && linkItem) {
                     const key = `${mainMenu}|${subMenu}|${linkItem}`;
+                    
+                    // Store icons for each level
                     iconData.set(key, {
                         mainIcon: mainIcon || '<i class="bi bi-folder2"></i>',
                         subIcon: subIcon || '<i class="bi bi-folder2"></i>',
-                        linkIcon: linkIcon || '<i class="bi bi-link"></i>'
+                        linkIcon: linkIcon || '<i class="bi bi-link-45deg"></i>'
                     });
+                    
+                    // Also store for main menu level (without submenu and link item)
+                    const mainKey = `${mainMenu}||`;
+                    if (!iconData.has(mainKey)) {
+                        iconData.set(mainKey, {
+                            mainIcon: mainIcon || '<i class="bi bi-grid"></i>'
+                        });
+                    }
+                    
+                    // Store for submenu level (with main menu and submenu only)
+                    const subKey = `${mainMenu}|${subMenu}|`;
+                    if (!iconData.has(subKey)) {
+                        iconData.set(subKey, {
+                            subIcon: subIcon || '<i class="bi bi-folder"></i>'
+                        });
+                    }
                 }
             }
         }
 
         // Get icon for menu item
-        function getIcon(mainMenu, subMenu, linkItem, level) {
+        function getIcon(mainMenu, subMenu = '', linkItem = '', level) {
             const key = `${mainMenu}|${subMenu}|${linkItem}`;
             const icons = iconData.get(key);
             
             if (icons) {
                 switch(level) {
-                    case 'main': return icons.mainIcon;
-                    case 'sub': return icons.subIcon;
-                    case 'link': return icons.linkIcon;
-                    default: return '<i class="bi bi-folder2"></i>';
+                    case 'main': return icons.mainIcon || '<i class="bi bi-grid"></i>';
+                    case 'sub': return icons.subIcon || '<i class="bi bi-folder"></i>';
+                    case 'link': return icons.linkIcon || '<i class="bi bi-link-45deg"></i>';
+                }
+            }
+            
+            // Try to find icon for this specific level
+            if (level === 'main') {
+                const mainKey = `${mainMenu}||`;
+                const mainIcons = iconData.get(mainKey);
+                if (mainIcons && mainIcons.mainIcon) {
+                    return mainIcons.mainIcon;
+                }
+            }
+            
+            if (level === 'sub') {
+                const subKey = `${mainMenu}|${subMenu}|`;
+                const subIcons = iconData.get(subKey);
+                if (subIcons && subIcons.subIcon) {
+                    return subIcons.subIcon;
                 }
             }
             
@@ -934,16 +994,18 @@
                     e.preventDefault();
                     const targetId = this.getAttribute('data-target');
                     const targetSubmenu = document.getElementById(targetId);
-                    const icon = this.querySelector('i');
+                    const icon = this.querySelector('i:last-child');
                     
                     targetSubmenu.classList.toggle('show');
-                    icon.classList.toggle('bi-chevron-down');
-                    icon.classList.toggle('bi-chevron-up');
+                    if (icon) {
+                        icon.classList.toggle('bi-chevron-down');
+                        icon.classList.toggle('bi-chevron-up');
+                    }
                     
                     document.querySelectorAll('.mobile-submenu').forEach(menu => {
                         if (menu.id !== targetId && menu.classList.contains('show')) {
                             menu.classList.remove('show');
-                            const otherIcon = document.querySelector(`[data-target="${menu.id}"] i`);
+                            const otherIcon = document.querySelector(`[data-target="${menu.id}"] i:last-child`);
                             if (otherIcon) {
                                 otherIcon.classList.remove('bi-chevron-up');
                                 otherIcon.classList.add('bi-chevron-down');
