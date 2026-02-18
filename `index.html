@@ -3,1033 +3,1114 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SDWAN Treasury Status Dashboard</title>
-    <!-- Bootstrap & DataTables CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-    <!-- Select2 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
-    
-    <!-- jQuery, Bootstrap, DataTables, Select2 -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    
+    <title>NOC Admin - Network Operations Center</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- Font Awesome for additional icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            transition: background-color 0.3s ease, border-color 0.3s ease, color 0.2s ease;
+        }
+
         body {
-            background-color: #f0f5fa;
-            padding: 20px;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        .main-container {
-            max-width: 1600px;
-            margin: 0 auto;
-        }
-        
-        .card {
-            border-radius: 12px;
-            border: none;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            margin-bottom: 24px;
-        }
-        
-        .card-header {
-            background: linear-gradient(135deg, #0f5b9c 0%, #1a4b7a 100%);
-            color: white;
-            border-radius: 12px 12px 0 0 !important;
-            padding: 16px 24px;
-            font-weight: 600;
-        }
-        
-        .nav-tabs-custom {
+            height: 100vh;
             display: flex;
-            gap: 10px;
-            background: white;
-            padding: 8px;
-            border-radius: 12px;
-            margin-bottom: 24px;
-            border: 1px solid #e9ecef;
+            flex-direction: column;
+            overflow: hidden;
         }
-        
-        .nav-tab-custom {
-            flex: 1;
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-weight: 600;
-            color: #495057;
-            cursor: pointer;
+
+        /* Light Theme Variables */
+        body.light-theme {
+            --bg-primary: #f0f2f5;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f8f9fa;
+            --navbar-start: #e8eef4;
+            --navbar-end: #d0ddeb;
+            --text-primary: #1a2634;
+            --text-secondary: #2c3e50;
+            --text-muted: #5a6a7a;
+            --border-color: #cbd5e1;
+            --dropdown-bg: #ffffff;
+            --dropdown-hover: #f1f5f9;
+            --header-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --header-text: #ffffff;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --link-icon: #64748b;
+            --scrollbar-track: #e2e8f0;
+            --scrollbar-thumb: #94a3b8;
+            --scrollbar-thumb-hover: #64748b;
+            --logo-color: #3b82f6;
+            --navbar-toggler-icon: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%2843, 51, 64, 1%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+        }
+
+        /* Dark Theme Variables */
+        body.dark-theme {
+            --bg-primary: #0a0c10;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #0f172a;
+            --navbar-start: #0f172a;
+            --navbar-end: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #e2e8f0;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --dropdown-bg: #1e293b;
+            --dropdown-hover: #2d3a4f;
+            --header-bg: linear-gradient(135deg, #1e293b 0%, #2d3a4f 100%);
+            --header-text: #f1f5f9;
+            --shadow-color: rgba(0, 0, 0, 0.5);
+            --link-icon: #94a3b8;
+            --scrollbar-track: #1a2534;
+            --scrollbar-thumb: #475569;
+            --scrollbar-thumb-hover: #5f6b7f;
+            --logo-color: #8b5cf6;
+            --navbar-toggler-icon: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28226, 232, 240, 1%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+        }
+
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        /* Custom Navbar Styles */
+        .navbar-custom {
+            background: linear-gradient(135deg, var(--navbar-start) 0%, var(--navbar-end) 100%);
+            padding: 0.5rem 1rem;
+            box-shadow: 0 4px 20px var(--shadow-color);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0;
+        }
+
+        .logo {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--logo-color) 0%, #8b5cf6 100%);
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
-            transition: all 0.2s;
-            border: none;
-            background: transparent;
-        }
-        
-        .nav-tab-custom.active {
-            background: linear-gradient(135deg, #0f5b9c 0%, #1a4b7a 100%);
             color: white;
-            box-shadow: 0 4px 12px rgba(15, 91, 156, 0.3);
+            font-size: 24px;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
         }
-        
-        .filter-card {
-            background: white;
-            border-radius: 12px;
-            padding: 24px;
-            margin-bottom: 24px;
-            border: 1px solid #e9ecef;
+
+        .logo i {
+            color: white;
+            font-size: 24px;
+        }
+
+        .brand-text {
+            line-height: 1.2;
+        }
+
+        .brand-text h1 {
+            color: var(--text-primary);
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .brand-text span {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            display: block;
+        }
+
+        /* Theme Toggle Switch */
+        .theme-switch-wrapper {
             display: flex;
-            flex-wrap: wrap;
             align-items: center;
-            gap: 30px;
+            margin-right: 15px;
         }
-        
-        .radio-group {
+
+        .theme-switch {
+            display: inline-block;
+            height: 34px;
+            position: relative;
+            width: 60px;
+        }
+
+        .theme-switch input {
+            display: none;
+        }
+
+        .slider {
+            background-color: #2d3a4f;
+            bottom: 0;
+            cursor: pointer;
+            left: 0;
+            position: absolute;
+            right: 0;
+            top: 0;
+            transition: .4s;
+            border-radius: 34px;
+            border: 2px solid var(--border-color);
+        }
+
+        .slider:before {
+            background-color: #fff;
+            bottom: 4px;
+            content: "";
+            height: 22px;
+            left: 4px;
+            position: absolute;
+            transition: .4s;
+            width: 22px;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #3b82f6;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        .slider i {
+            color: white;
+            font-size: 14px;
+            position: absolute;
+            top: 8px;
+            transition: opacity 0.3s ease;
+        }
+
+        .slider .bi-sun {
+            left: 8px;
+            opacity: 0.7;
+        }
+
+        .slider .bi-moon {
+            right: 8px;
+            opacity: 0.7;
+        }
+
+        input:checked + .slider .bi-sun {
+            opacity: 0.4;
+        }
+
+        input:checked + .slider .bi-moon {
+            opacity: 1;
+        }
+
+        /* Navigation Menu */
+        .nav-menu {
             display: flex;
-            flex-wrap: wrap;
-            background: #f8f9fa;
-            padding: 12px;
-            border-radius: 12px;
-            border: 1px solid #dee2e6;
-            gap: 10px;
+            align-items: center;
+            gap: 5px;
         }
-        
-        .radio-option {
+
+        .nav-item-custom {
+            position: relative;
+        }
+
+        .nav-link-custom {
+            color: var(--text-secondary);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            cursor: pointer;
             display: flex;
             align-items: center;
             gap: 8px;
-            padding: 8px 20px;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: all 0.2s;
-            background: white;
-            border: 1px solid transparent;
+            text-decoration: none;
         }
-        
-        .radio-option.active {
-            background: #0f5b9c;
-            color: white;
-            border-color: #0f5b9c;
-            box-shadow: 0 2px 8px rgba(15, 91, 156, 0.2);
+
+        .nav-link-custom:hover {
+            background: var(--dropdown-hover);
+            color: var(--text-primary);
         }
-        
-        .radio-option.active label {
-            color: white;
+
+        .nav-link-custom i, 
+        .nav-link-custom .bi {
+            font-size: 1rem;
+            color: var(--link-icon);
         }
-        
-        .radio-option input[type="radio"] {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
+
+        .nav-item-custom.active .nav-link-custom {
+            background: var(--dropdown-hover);
+            color: var(--text-primary);
         }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, #0f5b9c 0%, #1a4b7a 100%);
-            border: none;
-            padding: 10px 24px;
-            border-radius: 8px;
-            font-weight: 600;
+
+        .nav-item-custom.active .nav-link-custom i,
+        .nav-item-custom.active .nav-link-custom .bi {
+            color: var(--text-primary);
         }
-        
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(15, 91, 156, 0.3);
+
+        .chevron-icon {
+            font-size: 0.8rem !important;
+            margin-left: 5px;
+            transition: transform 0.3s ease;
         }
-        
-        .table-container {
-            overflow-x: auto;
-            border-radius: 8px;
+
+        .nav-item-custom.active .chevron-icon {
+            transform: rotate(180deg);
         }
-        
-        .table th {
-            background-color: #f8f9fa;
-            color: #1a4b7a;
-            font-weight: 600;
-            font-size: 0.9rem;
-            white-space: nowrap;
-            padding: 16px;
-        }
-        
-        .table td {
-            padding: 14px 16px;
-            vertical-align: middle;
-            font-size: 0.9rem;
-        }
-        
-        .status-badge-working {
-            background: #d4edda;
-            color: #155724;
-            padding: 6px 16px;
-            border-radius: 50px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            display: inline-block;
-            border: 1px solid #c3e6cb;
-        }
-        
-        .status-badge-notworking {
-            background: #f8d7da;
-            color: #721c24;
-            padding: 6px 16px;
-            border-radius: 50px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            display: inline-block;
-            border: 1px solid #f5c6cb;
-        }
-        
-        .status-badge-other {
-            background: #fff3cd;
-            color: #856404;
-            padding: 6px 16px;
-            border-radius: 50px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            display: inline-block;
-            border: 1px solid #ffeeba;
-        }
-        
-        .loading {
+
+        /* Dropdown Menu */
+        .dropdown-menu-custom {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: var(--dropdown-bg);
+            min-width: 320px;
+            border-radius: 12px;
+            box-shadow: 0 20px 30px -10px var(--shadow-color);
+            padding: 0;
+            margin-top: 8px;
+            z-index: 1000;
             display: none;
-            text-align: center;
-            padding: 40px;
+            border: 1px solid var(--border-color);
         }
-        
-        .loading-spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid rgba(15, 91, 156, 0.2);
-            border-radius: 50%;
-            border-top-color: #0f5b9c;
-            animation: spin 1s ease-in-out infinite;
-            margin: 0 auto 15px;
+
+        .dropdown-menu-custom.show {
+            display: block;
+            animation: slideDown 0.2s ease;
         }
-        
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #6c757d;
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
-        
-        .section-title {
+
+        .dropdown-header-custom {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            padding: 12px 16px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            border-radius: 12px 12px 0 0;
+            border-bottom: 1px solid var(--border-color);
             display: flex;
             align-items: center;
-            gap: 12px;
-            margin: 32px 0 16px 0;
-            color: #1a4b7a;
-            font-weight: 700;
-            font-size: 1.1rem;
+            gap: 8px;
         }
-        
-        .select2-container--bootstrap-5 .select2-selection {
-            min-height: 46px;
-            padding: 8px;
+
+        .dropdown-header-custom .bi {
+            color: var(--link-icon);
+            font-size: 1rem;
         }
-        
-        .info-footer {
-            background: #e8f4fd;
-            border-left: 4px solid #0f5b9c;
-            padding: 16px 24px;
-            border-radius: 8px;
-            margin-top: 16px;
-            font-size: 0.9rem;
-            color: #1a4b7a;
-        }
-        
-        .data-summary {
-            background: #f8f9fa;
-            padding: 16px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            border: 1px solid #e9ecef;
-        }
-        
-        .filter-stats {
-            background: #e3f2fd;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
+
+        .dropdown-item-custom {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            color: var(--text-secondary);
+            text-decoration: none;
             font-size: 0.95rem;
+            border-bottom: 1px solid var(--border-color);
+            transition: all 0.2s ease;
+        }
+
+        .dropdown-item-custom:last-child {
+            border-bottom: none;
+            border-radius: 0 0 12px 12px;
+        }
+
+        .dropdown-item-custom .bi {
+            color: var(--link-icon);
+            font-size: 1rem;
+            width: 20px;
+        }
+
+        .dropdown-item-custom:hover {
+            background: var(--dropdown-hover);
+            color: var(--text-primary);
+        }
+
+        .dropdown-item-custom:hover .bi {
+            color: var(--text-primary);
+        }
+
+        /* Navbar Toggler - Fixed for dark mode */
+        .navbar-toggler {
+            border: 2px solid var(--border-color);
+            background-color: transparent;
+        }
+
+        .navbar-toggler-icon {
+            background-image: var(--navbar-toggler-icon) !important;
+        }
+
+        .navbar-toggler:focus {
+            box-shadow: none;
+            border-color: var(--logo-color);
+        }
+
+        /* Mobile Menu Styles */
+        .navbar-collapse {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            margin-top: 1rem;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .mobile-nav-item {
+            width: 100%;
+            margin-bottom: 2px;
+        }
+
+        .mobile-nav-link {
+            color: var(--text-primary) !important;
+            padding: 14px 16px;
+            border-radius: 8px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            justify-content: space-between;
+            cursor: pointer;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            margin-bottom: 2px;
+            width: 100%;
+        }
+
+        .mobile-nav-link:hover {
+            background: var(--dropdown-hover);
+        }
+
+        .mobile-nav-link .bi,
+        .mobile-nav-link i {
+            color: var(--link-icon);
+            font-size: 1rem;
+        }
+
+        .mobile-submenu {
+            list-style: none;
+            padding-left: 0;
+            margin: 2px 0 4px 0;
+            display: none;
+        }
+
+        .mobile-submenu.show {
+            display: block;
+        }
+
+        .mobile-submenu-header {
+            background: var(--bg-tertiary);
+            color: var(--text-primary) !important;
+            padding: 10px 16px 10px 32px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            border-radius: 6px;
+            margin: 2px 0;
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .mobile-submenu-header .bi {
+            color: var(--link-icon);
+        }
+
+        .mobile-submenu-item {
+            width: 100%;
+        }
+
+        .mobile-submenu-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px 12px 48px;
+            color: var(--text-secondary) !important;
+            text-decoration: none;
+            font-size: 0.9rem;
+            border-radius: 6px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            margin: 2px 0;
+        }
+
+        .mobile-submenu-link .bi {
+            color: var(--link-icon);
+            font-size: 0.9rem;
+            width: 18px;
+        }
+
+        .mobile-submenu-link:hover {
+            background: var(--dropdown-hover);
+            color: var(--text-primary) !important;
+        }
+
+        .mobile-submenu-link:hover .bi {
+            color: var(--text-primary);
+        }
+
+        /* Iframe Container */
+        .iframe-container {
+            flex: 1;
+            width: 100%;
+            background: var(--bg-primary);
+            position: relative;
+            overflow: hidden;
+            border-top: 1px solid var(--border-color);
+        }
+
+        #content-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: #ffffff;
+        }
+
+        /* Loading indicator */
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 16px;
+            color: var(--text-primary);
+            background: var(--bg-secondary);
+            padding: 15px 30px;
+            border-radius: 50px;
+            box-shadow: 0 10px 25px -5px var(--shadow-color);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            gap: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid var(--border-color);
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Welcome Message */
+        .welcome-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: var(--text-muted);
+            background: var(--bg-secondary);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 25px 40px -15px var(--shadow-color);
+            pointer-events: none;
+            width: 90%;
+            max-width: 450px;
+            border: 1px solid var(--border-color);
+        }
+
+        .welcome-message h2 {
+            font-size: 2.2rem;
+            color: var(--text-primary);
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .welcome-message p {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+        }
+
+        /* Error Message */
+        .error-message {
+            color: #fca5a5;
+            padding: 12px 16px;
+            background: #451a1a;
+            border: 1px solid #7f1d1d;
+            border-radius: 8px;
+            margin: 8px 0;
+            font-size: 0.95rem;
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--scrollbar-track);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--scrollbar-thumb);
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--scrollbar-thumb-hover);
+        }
+
+        /* Responsive */
+        @media (max-width: 991.98px) {
+            .desktop-menu {
+                display: none !important;
+            }
+            
+            .navbar-collapse {
+                max-height: 60vh;
+                overflow-y: auto;
+            }
+        }
+
+        @media (min-width: 992px) {
+            .mobile-only {
+                display: none !important;
+            }
+            
+            .navbar-collapse {
+                background: transparent;
+                margin-top: 0;
+                padding: 0;
+                backdrop-filter: none;
+                border: none;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="main-container">
-        <!-- Header -->
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2 style="color: #1a4b7a; font-weight: 700;">
-                <i class="bi bi-hdd-stack-fill me-2" style="color: #0f5b9c;"></i>
-                SDWAN Treasury Status 
-            </h2>
-            
-        </div>
-        
-        <!-- Custom Navigation Tabs -->
-        <div class="nav-tabs-custom">
-            <button class="nav-tab-custom active" data-tab="tab1">
-                <i class="bi bi-funnel-fill"></i> Working Status
-            </button>
-            <button class="nav-tab-custom" data-tab="tab2">
-                <i class="bi bi-building"></i> Treasury Details
-            </button>
-        </div>
-        
-        <!-- TAB 1: WORKING STATUS FILTER -->
-        <div id="tab1" class="tab-panel-custom" style="display: block;">
-            <div class="card">
-                <div class="card-header">
-                    <i class="bi bi-funnel me-2"></i>
-                     Working Status
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-custom">
+        <div class="container-fluid">
+            <!-- Brand with bi-compass -->
+            <a class="navbar-brand" href="#">
+                <div class="logo">
+                    <i class="bi bi-compass"></i>
                 </div>
-                <div class="card-body">
-                    <div class="filter-card">
-                        <div style="display: flex; align-items: center; gap: 16px;">
-                            <i class="bi bi-radioactive fs-5" style="color: #0f5b9c;"></i>
-                            <span style="font-weight: 700; color: #1a4b7a;">Status :</span>
-                        </div>
-                        <div class="radio-group" id="statusRadioGroup">
-                            <!-- Radio buttons will be dynamically populated -->
-                        </div>
-                        <div style="margin-left: auto;">
-                            <button class="btn btn-primary" onclick="filterWorkingStatus()">
-                                <i class="bi bi-search"></i> Apply
-                            </button>
-                            <button style="display:none;" class="btn btn-outline-secondary ms-2" onclick="resetWorkingStatusFilter()">
-                                <i class="bi bi-arrow-counterclockwise"></i> Reset
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- Filter Statistics -->
-                    <div id="filterStats" class="filter-stats" style="display: none;"></div>
-                    
-                    <!-- Loading Spinner -->
-                    <div id="loadingTab1" class="loading">
-                        <div class="loading-spinner"></div>
-                        <p>Loading...</p>
-                    </div>
-                    
-                    <!-- Table Container -->
-                    <div id="tab1TableContainer">
-                        <!-- Data will be inserted here -->
-                    </div>
-                    <!--
-                    <div class="info-footer">
-                        <i class="bi bi-info-circle-fill me-2"></i>
-                        Showing columns from Working Status sheet: 
-                        <strong>Treasury Name (A)</strong> | 
-                        <strong>BSNL Officer Contacts (M)</strong> | 
-                        <strong>Treasury Remarks (N)</strong> | 
-                        <strong>BBM REMARKS (O)</strong>
-                    </div> -->
+                <div class="brand-text">
+                    <h1>NOC Admin</h1>
+                    <span>Network Operations Center</span>
                 </div>
+            </a>
+
+            <div class="d-flex align-items-center">
+                <!-- Theme Toggle Switch -->
+                <div class="theme-switch-wrapper">
+                    <label class="theme-switch">
+                        <input type="checkbox" id="theme-toggle">
+                        <span class="slider">
+                            <i class="bi bi-sun"></i>
+                            <i class="bi bi-moon"></i>
+                        </span>
+                    </label>
+                </div>
+
+                <!-- Mobile Toggle Button -->
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain" aria-controls="navbarMain" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+            </div>
+
+            <!-- Collapsible Menu -->
+            <div class="collapse navbar-collapse" id="navbarMain">
+                <!-- Desktop Menu -->
+                <div class="desktop-menu ms-auto" id="desktop-menu-container"></div>
+                <!-- Mobile Menu -->
+                <div class="mobile-only w-100" id="mobile-menu-container"></div>
             </div>
         </div>
-        
-        <!-- TAB 2: TREASURY DETAILS -->
-        <div id="tab2" class="tab-panel-custom" style="display: none;">
-            <div class="card">
-                <div class="card-header">
-                    <i class="bi bi-building me-2"></i>
-                    Treasury Details
-                </div>
-                <div class="card-body">
-                    <div class="filter-card">
-                        <div style="display: flex; align-items: center; gap: 16px; flex: 1;">
-                            <i class="bi bi-geo-alt-fill fs-5" style="color: #0f5b9c;"></i>
-                            <span style="font-weight: 700; color: #1a4b7a;">Select Treasury:</span>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 16px; flex: 2;">
-                            <select id="treasurySelect" class="form-select" style="width: 100%;">
-                                <option value="">Loading treasuries...</option>
-                            </select>
-                            <button class="btn btn-primary" onclick="viewTreasuryDetails()">
-                                 View
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- Installation Status Section -->
-                    <div class="section-title">
-                        <i class="bi bi-tools"></i>
-                        Installation Status
-                    </div>
-                    <div id="installationTableContainer" class="table-container mb-4">
-                        <div class="empty-state">
-                            <i class="bi bi-arrow-up-circle"></i>
-                            <h6>Select a treasury and click "View"</h6>
-                        </div>
-                    </div>
-                    
-                    <!-- Working Status Section -->
-                    <div class="section-title">
-                        <i class="bi bi-speedometer2"></i>
-                        Working Status
-                    </div>
-                    <div id="treasuryWorkingTableContainer" class="table-container mb-4">
-                        <div class="empty-state">
-                            <i class="bi bi-arrow-up-circle"></i>
-                            <h6>Select a treasury to view working status</h6>
-                        </div>
-                    </div>
-                    
-                    <!-- Admin Contact Section -->
-                    <div class="section-title">
-                        <i class="bi bi-person-lines-fill"></i>
-                        Admin Contact Details
-                    </div>
-                    <div id="adminTableContainer" class="table-container">
-                        <div class="empty-state">
-                            <i class="bi bi-arrow-up-circle"></i>
-                            <h6>Select a treasury to view admin contacts</h6>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    </nav>
+
+    <!-- Iframe Container -->
+    <div class="iframe-container">
+        <iframe id="content-frame" src="about:blank" title="Content"></iframe>
+        <div class="loading" id="loading">
+            <div class="loading-spinner"></div>
+            Loading...
+        </div>
+        <div class="welcome-message" id="welcome-message">
+            <h2><i class="bi bi-compass"></i> NOC Admin</h2>
+            <p>Select a menu item to get started</p>
+            <p class="text-muted mt-3" style="font-size: 0.9rem;">Network Operations Center</p>
         </div>
     </div>
 
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
     <script>
-        // =============================================
-        // CONFIGURATION
-        // =============================================
-        const API_KEY = "AIzaSyBB1V3vJpNZ9X1GIF-YOwoa6YSt_iXMLo0";
-        const SPREADSHEET_ID = "1HvCqLHC8IyllKskBXX1MtMfjQMGUyhMP7KuTuJxDhmU";
-        
-        const SHEET_INSTALLATION = "Installation Status";
-        const SHEET_WORKING = "Working Status";
-        const SHEET_ADMIN = "Admin Contact Details";
-        
-        // Global data storage
-        let installationData = [];
-        let workingData = [];
-        let adminData = [];
-        let treasuryList = [];
-        let workingHeaders = [];
-        let adminHeaders = [];
-        
-        // Status categories for filtering
-        let statusCategories = {
-            'working_fine': { label: 'Working Fine', count: 0, pattern: /working.*fine|works.*fine|fine/i },
-            'not_working': { label: 'Not Working', count: 0, pattern: /not.*work|not.*working|notworking/i },
-            'other': { label: 'Other Remarks', count: 0, pattern: /.*/i }
-        };
-        
-        // =============================================
-        // INITIALIZATION
-        // =============================================
-        $(document).ready(function() {
-            console.log("Dashboard initialized");
+        // Configuration
+        const SPREADSHEET_ID = '1jd1xZe9x2mrZm5KAwGT12vMNYjbrnynsmelNKeK95jc';
+        const API_KEY = 'AIzaSyBB1V3vJpNZ9X1GIF-YOwoa6YSt_iXMLo0';
+        const MENU_SHEET = 'Menu';
+        const ICON_SHEET = 'icons';
+        const MENU_RANGE = 'A:D';
+        const ICON_RANGE = 'A:F';
+
+        // Data storage
+        let menuData = [];
+        let iconData = new Map(); // Key: "mainMenu|subMenu|linkItem" -> icon
+
+        // Theme management
+        function initTheme() {
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const savedTheme = localStorage.getItem('theme');
             
-            // Initialize tab switching
-            $('.nav-tab-custom').click(function() {
-                $('.nav-tab-custom').removeClass('active');
-                $(this).addClass('active');
-                
-                $('.tab-panel-custom').hide();
-                $('#' + $(this).data('tab')).show();
-            });
+            if (savedTheme) {
+                document.body.className = savedTheme;
+                document.getElementById('theme-toggle').checked = savedTheme === 'dark-theme';
+            } else {
+                document.body.className = prefersDark ? 'dark-theme' : 'light-theme';
+                document.getElementById('theme-toggle').checked = prefersDark;
+            }
+        }
+
+        function toggleTheme() {
+            const isDark = document.body.classList.contains('dark-theme');
+            const newTheme = isDark ? 'light-theme' : 'dark-theme';
             
-            // Load all sheet data
-            loadAllSheets();
-        });
-        
-        // =============================================
-        // LOAD ALL SHEETS DATA
-        // =============================================
-        async function loadAllSheets() {
+            document.body.className = newTheme;
+            localStorage.setItem('theme', newTheme);
+        }
+
+        // Fetch data from Google Sheets
+        async function fetchSheetData() {
             try {
-                $('#loadingTab1').show();
-                
-                await Promise.all([
-                    loadInstallationSheet(),
-                    loadWorkingSheet(),
-                    loadAdminSheet()
-                ]);
-                
-                console.log("=== DATA LOAD SUMMARY ===");
-                console.log("Installation Status:", installationData.length, "rows");
-                console.log("Working Status:", workingData.length, "rows");
-                console.log("Admin Contact:", adminData.length, "rows");
-                
-                $('#loadingTab1').hide();
-                
-                // Analyze status categories and populate radio buttons
-                analyzeStatusCategories();
-                populateTreasurySelect();
-                displayAllWorkingData();
-                
+                // Fetch menu data
+                const menuUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${MENU_SHEET}!${MENU_RANGE}?key=${API_KEY}`;
+                const menuResponse = await fetch(menuUrl);
+                const menuData_raw = await menuResponse.json();
+
+                if (menuData_raw.error) {
+                    throw new Error(menuData_raw.error.message);
+                }
+
+                // Fetch icon data
+                const iconUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${ICON_SHEET}!${ICON_RANGE}?key=${API_KEY}`;
+                const iconResponse = await fetch(iconUrl);
+                const iconData_raw = await iconResponse.json();
+
+                if (!iconData_raw.error) {
+                    processIconData(iconData_raw.values);
+                }
+
+                return processMenuData(menuData_raw.values);
             } catch (error) {
-                console.error("Error loading sheets:", error);
-                showError("Failed to load data. Please check your API key and sheet permissions.");
+                console.error('Error fetching data:', error);
+                showError('Error loading menu: ' + error.message);
+                return [];
             }
         }
-        
-        function loadInstallationSheet() {
-            const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(SHEET_INSTALLATION)}?key=${API_KEY}`;
-            
-            return fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.values && data.values.length > 0) {
-                        installationData = data.values;
-                        if (installationData.length > 1) {
-                            treasuryList = [];
-                            for (let i = 1; i < installationData.length; i++) {
-                                if (installationData[i][0] && installationData[i][0].trim()) {
-                                    treasuryList.push(installationData[i][0].trim());
-                                }
-                            }
-                            treasuryList = [...new Set(treasuryList)].sort();
-                            console.log("Treasury List Count:", treasuryList.length);
-                        }
-                    }
-                });
-        }
-        
-        function loadWorkingSheet() {
-            const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(SHEET_WORKING)}?key=${API_KEY}`;
-            
-            return fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.values && data.values.length > 0) {
-                        workingData = data.values;
-                        workingHeaders = workingData[0] || [];
-                        console.log("Working Data Headers:", workingHeaders);
-                    }
-                });
-        }
-        
-        // =============================================
-        // LOAD ADMIN SHEET - FIXED: A2:H RANGE ONLY
-        // =============================================
-        function loadAdminSheet() {
-            // Load only columns A to H (range A2:H)
-            const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(SHEET_ADMIN)}!A2:H?key=${API_KEY}`;
-            
-            return fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.values && data.values.length > 0) {
-                        // Store the headers separately
-                        adminData = data.values;
-                        console.log("Admin Data Loaded - Rows:", adminData.length);
-                        console.log("Admin Data Sample (First 3 rows):", adminData.slice(0, 3));
-                    } else {
-                        console.log("No admin data found in A2:H range");
-                        adminData = [];
-                    }
-                })
-                .catch(error => {
-                    console.error("Error loading admin sheet:", error);
-                    adminData = [];
-                });
-        }
-        
-        // =============================================
-        // ANALYZE STATUS CATEGORIES
-        // =============================================
-        function analyzeStatusCategories() {
-            if (!workingData || workingData.length < 2) return;
-            
-            // Reset counts
-            statusCategories.working_fine.count = 0;
-            statusCategories.not_working.count = 0;
-            statusCategories.other.count = 0;
-            
-            const rows = workingData.slice(1);
-            
-            rows.forEach(row => {
-                const treasuryRemarks = (row[13] || '').toLowerCase();
+
+        // Process icon data
+        function processIconData(rows) {
+            if (!rows || rows.length < 2) return;
+
+            // Skip header row
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i];
+                if (row.length < 6) continue;
+
+                const [mainMenu, mainIcon, subMenu, subIcon, linkItem, linkIcon] = row;
                 
-                if (statusCategories.not_working.pattern.test(treasuryRemarks)) {
-                    statusCategories.not_working.count++;
-                } else if (statusCategories.working_fine.pattern.test(treasuryRemarks)) {
-                    statusCategories.working_fine.count++;
-                } else {
-                    statusCategories.other.count++;
+                if (mainMenu && subMenu && linkItem) {
+                    const key = `${mainMenu}|${subMenu}|${linkItem}`;
+                    
+                    // Store icons for each level
+                    iconData.set(key, {
+                        mainIcon: mainIcon || '<i class="bi bi-folder2"></i>',
+                        subIcon: subIcon || '<i class="bi bi-folder2"></i>',
+                        linkIcon: linkIcon || '<i class="bi bi-link-45deg"></i>'
+                    });
+                    
+                    // Also store for main menu level (without submenu and link item)
+                    const mainKey = `${mainMenu}||`;
+                    if (!iconData.has(mainKey)) {
+                        iconData.set(mainKey, {
+                            mainIcon: mainIcon || '<i class="bi bi-grid"></i>'
+                        });
+                    }
+                    
+                    // Store for submenu level (with main menu and submenu only)
+                    const subKey = `${mainMenu}|${subMenu}|`;
+                    if (!iconData.has(subKey)) {
+                        iconData.set(subKey, {
+                            subIcon: subIcon || '<i class="bi bi-folder"></i>'
+                        });
+                    }
                 }
-            });
+            }
+        }
+
+        // Get icon for menu item
+        function getIcon(mainMenu, subMenu = '', linkItem = '', level) {
+            const key = `${mainMenu}|${subMenu}|${linkItem}`;
+            const icons = iconData.get(key);
             
-            // Populate radio buttons
-            let radioHtml = '';
-            
-            // Add "Show All" option
-            radioHtml += `<div class="radio-option active" data-value="all">
-                <input type="radio" id="radioAll" name="statusFilter" value="all" checked>
-                <label for="radioAll"><i class="bi bi-table"></i> All Records (${workingData.length - 1})</label>
-            </div>`;
-            
-            // Add Working Fine option
-            radioHtml += `<div class="radio-option" data-value="working_fine">
-                <input type="radio" id="radioWorking" name="statusFilter" value="working_fine">
-                <label for="radioWorking"><i class="bi bi-check-circle-fill text-success"></i> ${statusCategories.working_fine.label} (${statusCategories.working_fine.count})</label>
-            </div>`;
-            
-            // Add Not Working option
-            radioHtml += `<div class="radio-option" data-value="not_working">
-                <input type="radio" id="radioNotWorking" name="statusFilter" value="not_working">
-                <label for="radioNotWorking"><i class="bi bi-exclamation-triangle-fill text-danger"></i> ${statusCategories.not_working.label} (${statusCategories.not_working.count})</label>
-            </div>`;
-            
-            // Add Other option
-            radioHtml += `<div class="radio-option" data-value="other">
-                <input type="radio" id="radioOther" name="statusFilter" value="other">
-                <label for="radioOther"><i class="bi bi-question-circle-fill text-warning"></i> ${statusCategories.other.label} (${statusCategories.other.count})</label>
-            </div>`;
-            
-            $('#statusRadioGroup').html(radioHtml);
-            
-            // Add click handler for radio options
-            $('.radio-option').click(function(e) {
-                if (e.target.type !== 'radio') {
-                    $(this).find('input[type="radio"]').prop('checked', true);
-                    $('.radio-option').removeClass('active');
-                    $(this).addClass('active');
+            if (icons) {
+                switch(level) {
+                    case 'main': return icons.mainIcon || '<i class="bi bi-grid"></i>';
+                    case 'sub': return icons.subIcon || '<i class="bi bi-folder"></i>';
+                    case 'link': return icons.linkIcon || '<i class="bi bi-link-45deg"></i>';
                 }
-            });
-            
-            console.log("Status Categories:", statusCategories);
-        }
-        
-        // =============================================
-        // POPULATE TREASURY SELECT
-        // =============================================
-        function populateTreasurySelect() {
-            const select = $('#treasurySelect');
-            select.empty();
-            select.append('<option value="">Select Treasury</option>');
-            
-            treasuryList.forEach(treasury => {
-                select.append(`<option value="${escapeHtml(treasury)}">${escapeHtml(treasury)}</option>`);
-            });
-            
-            select.select2({
-                theme: 'bootstrap-5',
-                width: '100%',
-                placeholder: 'Search or select treasury...',
-                allowClear: true
-            });
-        }
-        
-        // =============================================
-        // TAB 1: DISPLAY ALL WORKING DATA - FIXED: ONLY 4 COLUMNS
-        // =============================================
-        function displayAllWorkingData() {
-            if (!workingData || workingData.length < 2) {
-                $('#tab1TableContainer').html('<div class="empty-state">No data available</div>');
-                return;
             }
             
-            filterWorkingStatus();
-        }
-        
-        // =============================================
-        // TAB 1: FILTER WORKING STATUS - FIXED: EXACT 4 COLUMNS
-        // =============================================
-        function filterWorkingStatus() {
-            const filterValue = $('input[name="statusFilter"]:checked').val();
-            
-            if (!workingData || workingData.length < 2) {
-                $('#tab1TableContainer').html('<div class="empty-state">No data available</div>');
-                return;
-            }
-            
-            const rows = workingData.slice(1);
-            
-            // Filter rows based on selected category
-            let filteredRows = [];
-            
-            if (filterValue === 'all') {
-                filteredRows = rows;
-            } else {
-                filteredRows = rows.filter(row => {
-                    const treasuryRemarks = (row[13] || '').toLowerCase();
-                    
-                    if (filterValue === 'working_fine') {
-                        return statusCategories.working_fine.pattern.test(treasuryRemarks);
-                    } else if (filterValue === 'not_working') {
-                        return statusCategories.not_working.pattern.test(treasuryRemarks);
-                    } else if (filterValue === 'other') {
-                        return !statusCategories.working_fine.pattern.test(treasuryRemarks) && 
-                               !statusCategories.not_working.pattern.test(treasuryRemarks);
-                    }
-                    return false;
-                });
-            }
-            
-            console.log(`Filter: ${filterValue}, Total rows: ${filteredRows.length}`);
-            
-            // Show filter statistics
-            let filterLabel = filterValue === 'all' ? 'All Records' : 
-                            filterValue === 'working_fine' ? 'Working Fine' :
-                            filterValue === 'not_working' ? 'Not Working' : 'Other Remarks';
-            
-            $('#filterStats').html(`
-                <i class="bi bi-info-circle"></i> 
-                <strong>Current Filter:</strong> ${filterLabel} | 
-                <strong>Showing:</strong> ${filteredRows.length} of ${rows.length} records
-            `).show();
-            
-            // Build table HTML with EXACTLY 4 columns to match header
-            let html = `
-                <div class="data-summary">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <strong><i class="bi bi-filter-circle"></i> Filter:</strong> 
-                            ${filterLabel}
-                        </div>
-                        <div class="col-md-6 text-end">
-                            <strong><i class="bi bi-file-text"></i> Records Found:</strong> ${filteredRows.length}
-                        </div>
-                    </div>
-                </div>
-                <div class="table-responsive">
-                    <table class="table table-hover table-striped" id="workingStatusTable">
-                        <thead>
-                            <tr>
-                                <th>Name of Treasury</th>
-                                <th>CONTACT DETAILS OF BSNL OFFIERS</th>
-                                <th>Treasury Remarks</th>
-                                <th>BBM REMARKS</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-            `;
-            
-            if (filteredRows.length === 0) {
-                html += `<tr><td colspan="4" class="text-center py-5">No matching records found</td></tr>`;
-            } else {
-                filteredRows.forEach(row => {
-                    const treasury = row[0] || '—';
-                    const bsnlContact = row[12] || '—';
-                    let treasuryRemarks = row[13] || '—';
-                    const bbmRemarks = row[14] || '—';
-                    
-                    const remarksLower = treasuryRemarks.toLowerCase();
-                    if (statusCategories.not_working.pattern.test(remarksLower)) {
-                        treasuryRemarks = `<span class="status-badge-notworking"><i class="bi bi-exclamation-circle"></i> ${escapeHtml(treasuryRemarks)}</span>`;
-                    } else if (statusCategories.working_fine.pattern.test(remarksLower)) {
-                        treasuryRemarks = `<span class="status-badge-working"><i class="bi bi-check-circle"></i> ${escapeHtml(treasuryRemarks)}</span>`;
-                    } else {
-                        treasuryRemarks = `<span class="status-badge-other"><i class="bi bi-question-circle"></i> ${escapeHtml(treasuryRemarks)}</span>`;
-                    }
-                    
-                    html += `<tr>
-                        <td><strong>${escapeHtml(treasury)}</strong></td>
-                        <td>${escapeHtml(bsnlContact)}</td>
-                        <td>${treasuryRemarks}</td>
-                        <td>${escapeHtml(bbmRemarks)}</td>
-                    </tr>`;
-                });
-            }
-            
-            html += `</tbody></table></div>`;
-            $('#tab1TableContainer').html(html);
-            
-            // Initialize DataTable with EXACT column count match
-            if (filteredRows.length > 0) {
-                if ($.fn.DataTable.isDataTable('#workingStatusTable')) {
-                    $('#workingStatusTable').DataTable().destroy();
+            // Try to find icon for this specific level
+            if (level === 'main') {
+                const mainKey = `${mainMenu}||`;
+                const mainIcons = iconData.get(mainKey);
+                if (mainIcons && mainIcons.mainIcon) {
+                    return mainIcons.mainIcon;
                 }
-                $('#workingStatusTable').DataTable({
-                    paging: true,
-                    pageLength: 25,
-                    lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
-                    ordering: true,
-                    destroy: true,
-                    responsive: false,
-                    scrollX: false,
-                    columnDefs: [
-                        { targets: 0, width: '250px' },
-                        { targets: 1, width: '200px' },
-                        { targets: 2, width: '200px' },
-                        { targets: 3, width: '200px' }
-                    ]
+            }
+            
+            if (level === 'sub') {
+                const subKey = `${mainMenu}|${subMenu}|`;
+                const subIcons = iconData.get(subKey);
+                if (subIcons && subIcons.subIcon) {
+                    return subIcons.subIcon;
+                }
+            }
+            
+            // Default icons based on level
+            switch(level) {
+                case 'main': return '<i class="bi bi-grid"></i>';
+                case 'sub': return '<i class="bi bi-folder"></i>';
+                case 'link': return '<i class="bi bi-link-45deg"></i>';
+                default: return '<i class="bi bi-folder2"></i>';
+            }
+        }
+
+        // Process menu data
+        function processMenuData(rows) {
+            if (!rows || rows.length < 2) return [];
+
+            const menuMap = new Map();
+
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i];
+                if (row.length < 4) continue;
+
+                const [mainMenu, subMenu, linkItem, url] = row;
+
+                if (!mainMenu || !subMenu || !linkItem || !url) continue;
+
+                if (!menuMap.has(mainMenu)) {
+                    menuMap.set(mainMenu, new Map());
+                }
+
+                const subMenuMap = menuMap.get(mainMenu);
+                
+                if (!subMenuMap.has(subMenu)) {
+                    subMenuMap.set(subMenu, []);
+                }
+
+                subMenuMap.get(subMenu).push({
+                    title: linkItem,
+                    url: url,
+                    icon: getIcon(mainMenu, subMenu, linkItem, 'link')
                 });
             }
+
+            return Array.from(menuMap.entries()).map(([mainMenu, subMenuMap]) => ({
+                title: mainMenu,
+                icon: getIcon(mainMenu, '', '', 'main'),
+                subMenus: Array.from(subMenuMap.entries()).map(([subMenu, items]) => ({
+                    title: subMenu,
+                    icon: getIcon(mainMenu, subMenu, '', 'sub'),
+                    items: items
+                }))
+            }));
         }
-        
-        function resetWorkingStatusFilter() {
-            $('input[name="statusFilter"][value="all"]').prop('checked', true);
-            $('.radio-option').removeClass('active');
-            $('.radio-option[data-value="all"]').addClass('active');
-            filterWorkingStatus();
-        }
-        
-        // =============================================
-        // TAB 2: VIEW TREASURY DETAILS
-        // =============================================
-        function viewTreasuryDetails() {
-            const selectedTreasury = $('#treasurySelect').val();
+
+        // Render desktop menu
+        function renderDesktopMenu(menuData) {
+            const container = document.getElementById('desktop-menu-container');
             
-            if (!selectedTreasury) {
-                alert('Please select a treasury');
+            if (menuData.length === 0) {
+                container.innerHTML = '<div class="text-muted p-3">No menu items found</div>';
                 return;
             }
-            
-            console.log("=================================");
-            console.log("VIEWING TREASURY:", selectedTreasury);
-            console.log("=================================");
-            
-            // Show loading
-            $('#installationTableContainer').html('<div class="loading" style="display: block;"><div class="loading-spinner"></div><p>Loading installation data...</p></div>');
-            $('#treasuryWorkingTableContainer').html('<div class="loading" style="display: block;"><div class="loading-spinner"></div><p>Loading working status...</p></div>');
-            $('#adminTableContainer').html('<div class="loading" style="display: block;"><div class="loading-spinner"></div><p>Loading admin contacts...</p></div>');
-            
-            displayInstallationTable(selectedTreasury);
-            displayWorkingTableForTreasury(selectedTreasury);
-            displayAdminTable(selectedTreasury);
-        }
-        
-        // Display Installation Status Table
-        function displayInstallationTable(treasury) {
-            if (!installationData || installationData.length < 2) {
-                $('#installationTableContainer').html('<div class="empty-state">No installation data</div>');
-                return;
-            }
-            
-            const headers = installationData[0];
-            const rows = installationData.slice(1).filter(row => row[0] && row[0].toString().trim() === treasury.trim());
-            
-            let html = `<div class="table-responsive"><table class="table table-hover table-bordered">`;
-            html += '<thead><tr>';
-            for (let i = 0; i < Math.min(12, headers.length); i++) {
-                html += `<th>${escapeHtml(headers[i] || `Col ${i+1}`)}</th>`;
-            }
-            html += '</tr></thead><tbody>';
-            
-            if (rows.length === 0) {
-                html += `<tr><td colspan="12" class="text-center py-4">No installation record for this treasury</td></tr>`;
-            } else {
-                rows.forEach(row => {
-                    html += '<tr>';
-                    for (let i = 0; i < 12; i++) {
-                        html += `<td>${escapeHtml(row[i] || '—')}</td>`;
-                    }
-                    html += '</tr>';
-                });
-            }
-            
-            html += '</tbody></table></div>';
-            $('#installationTableContainer').html(html);
-        }
-        
-        // Display Working Table For Treasury
-        function displayWorkingTableForTreasury(treasury) {
-            if (!workingData || workingData.length < 2) {
-                $('#treasuryWorkingTableContainer').html('<div class="empty-state">No working data available</div>');
-                return;
-            }
-            
-            // Extract base treasury name
-            let searchTreasury = treasury;
-            if (treasury.includes('-')) {
-                searchTreasury = treasury.substring(treasury.indexOf('-') + 1).trim();
-            }
-            
-            const searchTreasuryLower = searchTreasury.toLowerCase();
-            
-            const rows = workingData.slice(1).filter(row => {
-                if (!row[0]) return false;
-                const workingTreasury = row[0].toString().trim();
-                const workingTreasuryLower = workingTreasury.toLowerCase();
+
+            const navMenu = document.createElement('div');
+            navMenu.className = 'nav-menu';
+
+            menuData.forEach((mainItem, index) => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'nav-item-custom';
+                const dropdownId = `dropdown-${index}`;
+
+                const mainLink = document.createElement('a');
+                mainLink.className = 'nav-link-custom';
+                mainLink.href = '#';
                 
-                return workingTreasury === treasury || 
-                       workingTreasury.includes(searchTreasury) || 
-                       searchTreasury.includes(workingTreasury) ||
-                       workingTreasuryLower.includes(searchTreasuryLower);
-            });
-            
-            let html = `<div class="table-responsive"><table class="table table-hover table-striped">
-                <thead>
-                    <tr>
-                        <th>Name of Treasury</th>
-                        <th>CONTACT DETAILS OF BSNL OFFIERS</th>
-                        <th>Treasury Remarks</th>
-                        <th>BBM REMARKS</th>
-                        <th>Issue Remarks</th>
-                    </tr>
-                </thead>
-                <tbody>`;
-            
-            if (rows.length === 0) {
-                html += `<tr><td colspan="5" class="text-center py-4">No working status found for this treasury</td></tr>`;
-            } else {
-                rows.forEach(row => {
-                    const treasuryName = row[0] || '—';
-                    const bsnlContact = row[12] || '—';
-                    let treasuryRemarks = row[13] || '—';
-                    const bbmRemarks = row[14] || '—';
-                    const issueRemarks = row[15] || '—';
-                    
-                    const remarksLower = treasuryRemarks.toLowerCase();
-                    if (statusCategories.not_working.pattern.test(remarksLower)) {
-                        treasuryRemarks = `<span class="status-badge-notworking"><i class="bi bi-exclamation-circle"></i> ${escapeHtml(treasuryRemarks)}</span>`;
-                    } else if (statusCategories.working_fine.pattern.test(remarksLower)) {
-                        treasuryRemarks = `<span class="status-badge-working"><i class="bi bi-check-circle"></i> ${escapeHtml(treasuryRemarks)}</span>`;
-                    } else {
-                        treasuryRemarks = `<span class="status-badge-other"><i class="bi bi-question-circle"></i> ${escapeHtml(treasuryRemarks)}</span>`;
-                    }
-                    
-                    html += `<tr>
-                        <td><strong>${escapeHtml(treasuryName)}</strong></td>
-                        <td>${escapeHtml(bsnlContact)}</td>
-                        <td>${treasuryRemarks}</td>
-                        <td>${escapeHtml(bbmRemarks)}</td>
-                        <td>${escapeHtml(issueRemarks)}</td>
-                    </tr>`;
-                });
-            }
-            
-            html += '</tbody></table></div>';
-            $('#treasuryWorkingTableContainer').html(html);
-        }
-        
-        // =============================================
-        // DISPLAY ADMIN TABLE - FIXED: EXACT A2:H RANGE
-        // =============================================
-        function displayAdminTable(treasury) {
-            console.log("Admin Contact - Loading for treasury:", treasury);
-            
-            if (!adminData || adminData.length === 0) {
-                console.log("No admin data available");
-                $('#adminTableContainer').html('<div class="empty-state">No admin contact data available</div>');
-                return;
-            }
-            
-            // Define exact column headers as per requirements (A2:H)
-            const adminColumns = [
-                'Treasury/Location',
-                'Network Admin Name',
-                'Network Admin Contact',
-                'Treasury Admin Name',
-                'Treasury Admin Contact',
-                'Office Mail ID',
-                'Office Contact',
-                'Office Mobile'
-            ];
-            
-            // Extract base treasury name for matching
-            let searchTreasury = treasury;
-            if (treasury.includes('-')) {
-                searchTreasury = treasury.substring(treasury.indexOf('-') + 1).trim();
-            }
-            
-            // Remove "Treasury" word for better matching
-            let searchTreasuryClean = searchTreasury.replace(/treasury/i, '').trim();
-            
-            console.log("Admin Contact - Searching for base name:", searchTreasury);
-            console.log("Admin Contact - Clean name:", searchTreasuryClean);
-            
-            // Filter admin data for matching treasury (Column A is index 0)
-            const rows = adminData.filter(row => {
-                if (!row || !row[0]) return false;
+                // Add icon and title
+                const iconSpan = document.createElement('span');
+                iconSpan.innerHTML = mainItem.icon;
+                mainLink.appendChild(iconSpan);
+                mainLink.appendChild(document.createTextNode(mainItem.title));
                 
-                const adminTreasury = row[0].toString().trim();
-                const adminTreasuryLower = adminTreasury.toLowerCase();
-                const searchTreasuryLower = searchTreasury.toLowerCase();
-                const searchTreasuryCleanLower = searchTreasuryClean.toLowerCase();
-                
-                // Multiple matching strategies
-                const exactMatch = adminTreasury === treasury;
-                const baseMatch = adminTreasury.includes(searchTreasury) || searchTreasury.includes(adminTreasury);
-                const cleanMatch = adminTreasuryLower.includes(searchTreasuryCleanLower) || 
-                                 searchTreasuryCleanLower.includes(adminTreasuryLower);
-                const partialMatch = adminTreasuryLower.includes(searchTreasuryLower) || 
-                                   searchTreasuryLower.includes(adminTreasuryLower);
-                
-                return exactMatch || baseMatch || cleanMatch || partialMatch;
-            });
-            
-            console.log(`Admin Contact - Found ${rows.length} records for treasury:`, treasury);
-            
-            let html = `<div class="table-responsive"><table class="table table-hover table-bordered">`;
-            
-            // Headers with exact column names
-            html += '<thead><tr>';
-            adminColumns.forEach(header => {
-                html += `<th>${escapeHtml(header)}</th>`;
-            });
-            html += '</tr></thead><tbody>';
-            
-            if (rows.length === 0) {
-                html += `
-                    <tr>
-                        <td colspan="8" class="text-center py-4">
-                            <i class="bi bi-person-x fs-1 text-muted"></i>
-                            <p class="mt-2">No admin contact details found for this treasury</p>
-                            <small class="text-muted">Treasury: ${escapeHtml(treasury)}</small>
-                        </td>
-                    </tr>
-                `;
-            } else {
-                rows.forEach(row => {
-                    html += '<tr>';
-                    // Display columns A through H (indices 0-7)
-                    for (let i = 0; i < 8; i++) {
-                        let cellValue = row[i] || '—';
+                // Add chevron
+                const chevron = document.createElement('i');
+                chevron.className = 'bi bi-chevron-down chevron-icon';
+                mainLink.appendChild(chevron);
+
+                if (mainItem.subMenus.length > 0) {
+                    const dropdown = document.createElement('div');
+                    dropdown.className = 'dropdown-menu-custom';
+                    dropdown.id = dropdownId;
+
+                    mainItem.subMenus.forEach(subMenu => {
+                        const header = document.createElement('div');
+                        header.className = 'dropdown-header-custom';
                         
-                        // Format email and phone links
-                        if (i === 5 && cellValue !== '—' && cellValue.includes('@')) { // Office Mail ID
-                            cellValue = `<a href="mailto:${escapeHtml(cellValue)}">${escapeHtml(cellValue)}</a>`;
-                        } else if ((i === 2 || i === 4 || i === 6 || i === 7) && cellValue !== '—') { // Contact numbers
-                            const cleanNumber = cellValue.replace(/[^0-9+]/g, '');
-                            if (cleanNumber) {
-                                cellValue = `<a href="tel:${escapeHtml(cleanNumber)}">${escapeHtml(cellValue)}</a>`;
-                            }
-                        } else {
-                            cellValue = escapeHtml(cellValue);
-                        }
+                        const headerIcon = document.createElement('span');
+                        headerIcon.innerHTML = subMenu.icon;
+                        header.appendChild(headerIcon);
+                        header.appendChild(document.createTextNode(subMenu.title));
+                        dropdown.appendChild(header);
+
+                        subMenu.items.forEach(item => {
+                            const itemLink = document.createElement('a');
+                            itemLink.className = 'dropdown-item-custom';
+                            itemLink.href = '#';
+                            
+                            const itemIcon = document.createElement('span');
+                            itemIcon.innerHTML = item.icon;
+                            itemLink.appendChild(itemIcon);
+                            itemLink.appendChild(document.createTextNode(item.title));
+                            
+                            itemLink.addEventListener('click', (e) => {
+                                e.preventDefault();
+                                loadUrlInIframe(item.url);
+                                closeAllDropdowns();
+                            });
+                            
+                            dropdown.appendChild(itemLink);
+                        });
+                    });
+
+                    itemDiv.appendChild(dropdown);
+                    
+                    mainLink.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        toggleDropdown(dropdownId, itemDiv);
+                    });
+                }
+
+                itemDiv.appendChild(mainLink);
+                navMenu.appendChild(itemDiv);
+            });
+
+            container.innerHTML = '';
+            container.appendChild(navMenu);
+        }
+
+        // Render mobile menu
+        function renderMobileMenu(menuData) {
+            const container = document.getElementById('mobile-menu-container');
+            
+            if (menuData.length === 0) {
+                container.innerHTML = '<div class="text-muted p-3">No menu items found</div>';
+                return;
+            }
+
+            const menuDiv = document.createElement('div');
+            menuDiv.className = 'py-2';
+
+            menuData.forEach((mainItem, index) => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'mobile-nav-item';
+
+                const mainToggle = document.createElement('div');
+                mainToggle.className = 'mobile-nav-link';
+                mainToggle.setAttribute('data-target', `mobile-submenu-${index}`);
+                
+                const leftSpan = document.createElement('span');
+                leftSpan.innerHTML = mainItem.icon + ' ' + mainItem.title;
+                mainToggle.appendChild(leftSpan);
+                
+                const chevron = document.createElement('i');
+                chevron.className = 'bi bi-chevron-down';
+                mainToggle.appendChild(chevron);
+
+                itemDiv.appendChild(mainToggle);
+
+                const submenu = document.createElement('ul');
+                submenu.className = 'mobile-submenu';
+                submenu.id = `mobile-submenu-${index}`;
+
+                mainItem.subMenus.forEach(subMenu => {
+                    const headerLi = document.createElement('li');
+                    headerLi.className = 'mobile-submenu-header';
+                    headerLi.innerHTML = subMenu.icon + ' ' + subMenu.title;
+                    submenu.appendChild(headerLi);
+
+                    subMenu.items.forEach(item => {
+                        const itemLi = document.createElement('li');
+                        itemLi.className = 'mobile-submenu-item';
+
+                        const itemLink = document.createElement('a');
+                        itemLink.className = 'mobile-submenu-link';
+                        itemLink.href = '#';
+                        itemLink.innerHTML = item.icon + ' ' + item.title;
                         
-                        html += `<td>${cellValue}</td>`;
-                    }
-                    html += '</tr>';
+                        itemLink.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            loadUrlInIframe(item.url);
+                            const navbarCollapse = document.getElementById('navbarMain');
+                            if (navbarCollapse.classList.contains('show')) {
+                                navbarCollapse.classList.remove('show');
+                            }
+                        });
+
+                        itemLi.appendChild(itemLink);
+                        submenu.appendChild(itemLi);
+                    });
                 });
+
+                itemDiv.appendChild(submenu);
+                menuDiv.appendChild(itemDiv);
+
+                mainToggle.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('data-target');
+                    const targetSubmenu = document.getElementById(targetId);
+                    const icon = this.querySelector('i:last-child');
+                    
+                    targetSubmenu.classList.toggle('show');
+                    if (icon) {
+                        icon.classList.toggle('bi-chevron-down');
+                        icon.classList.toggle('bi-chevron-up');
+                    }
+                    
+                    document.querySelectorAll('.mobile-submenu').forEach(menu => {
+                        if (menu.id !== targetId && menu.classList.contains('show')) {
+                            menu.classList.remove('show');
+                            const otherIcon = document.querySelector(`[data-target="${menu.id}"] i:last-child`);
+                            if (otherIcon) {
+                                otherIcon.classList.remove('bi-chevron-up');
+                                otherIcon.classList.add('bi-chevron-down');
+                            }
+                        }
+                    });
+                });
+            });
+
+            container.innerHTML = '';
+            container.appendChild(menuDiv);
+        }
+
+        // Dropdown management
+        let currentOpenDropdown = null;
+
+        function closeAllDropdowns() {
+            document.querySelectorAll('.dropdown-menu-custom.show').forEach(dropdown => {
+                dropdown.classList.remove('show');
+            });
+            document.querySelectorAll('.nav-item-custom.active').forEach(item => {
+                item.classList.remove('active');
+            });
+            currentOpenDropdown = null;
+        }
+
+        function handleClickOutside(event) {
+            if (!event.target.closest('.nav-item-custom')) {
+                closeAllDropdowns();
+            }
+        }
+
+        function toggleDropdown(dropdownId, navItem) {
+            const dropdown = document.getElementById(dropdownId);
+            
+            if (currentOpenDropdown === dropdownId) {
+                closeAllDropdowns();
+                return;
             }
             
-            html += '</tbody></table></div>';
+            closeAllDropdowns();
             
-            // Add record count
-            html += `<div class="small text-muted mt-2">
-                <i class="bi bi-info-circle"></i> Admin contact records found: ${rows.length}
-            </div>`;
-            
-            $('#adminTableContainer').html(html);
+            dropdown.classList.add('show');
+            navItem.classList.add('active');
+            currentOpenDropdown = dropdownId;
         }
-        
-        // =============================================
-        // UTILITY FUNCTIONS
-        // =============================================
-        function escapeHtml(text) {
-            if (!text) return '—';
-            if (typeof text !== 'string') text = String(text);
-            const map = {
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                '"': '&quot;',
-                "'": '&#039;'
+
+        // Load URL in iframe
+        function loadUrlInIframe(url) {
+            const iframe = document.getElementById('content-frame');
+            const loading = document.getElementById('loading');
+            const welcomeMessage = document.getElementById('welcome-message');
+            
+            welcomeMessage.style.display = 'none';
+            loading.style.display = 'flex';
+            
+            let fullUrl = url;
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                fullUrl = 'https://' + url;
+            }
+
+            iframe.onload = function() {
+                loading.style.display = 'none';
             };
-            return text.replace(/[&<>"']/g, m => map[m]);
+            
+            iframe.onerror = function() {
+                loading.style.display = 'none';
+                alert('Error loading the page. Please check the URL: ' + fullUrl);
+            };
+
+            iframe.src = fullUrl;
         }
-        
+
+        // Show error message
         function showError(message) {
-            const errorHtml = `
-                <div class="alert alert-danger">
-                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                    ${message}
-                </div>
-            `;
-            $('#tab1TableContainer').html(errorHtml);
+            const desktopContainer = document.getElementById('desktop-menu-container');
+            const mobileContainer = document.getElementById('mobile-menu-container');
+            const errorHtml = `<div class="error-message">${message}</div>`;
+            desktopContainer.innerHTML = errorHtml;
+            mobileContainer.innerHTML = errorHtml;
         }
+
+        // Initialize
+        async function init() {
+            initTheme();
+            
+            document.getElementById('theme-toggle').addEventListener('change', toggleTheme);
+            
+            menuData = await fetchSheetData();
+            renderDesktopMenu(menuData);
+            renderMobileMenu(menuData);
+            
+            document.addEventListener('click', handleClickOutside);
+            
+            document.getElementById('welcome-message').style.display = 'block';
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        // Start
+        init();
+
+        // Iframe load handler
+        document.getElementById('content-frame').addEventListener('load', function() {
+            document.getElementById('loading').style.display = 'none';
+        });
     </script>
 </body>
 </html>
