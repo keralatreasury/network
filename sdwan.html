@@ -98,6 +98,8 @@
             border-radius: 12px;
             border: 1px solid #dee2e6;
             gap: 10px;
+            max-width: 100%;
+            overflow-x: auto;
         }
         
         .radio-option {
@@ -110,6 +112,7 @@
             transition: all 0.2s;
             background: white;
             border: 1px solid transparent;
+            white-space: nowrap;
         }
         
         .radio-option.active {
@@ -184,7 +187,7 @@
             border: 1px solid #f5c6cb;
         }
         
-        .status-badge-other {
+        .status-badge-linkdown {
             background: #fff3cd;
             color: #856404;
             padding: 6px 16px;
@@ -193,6 +196,28 @@
             font-weight: 600;
             display: inline-block;
             border: 1px solid #ffeeba;
+        }
+        
+        .status-badge-other {
+            background: #e2e3e5;
+            color: #383d41;
+            padding: 6px 16px;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-block;
+            border: 1px solid #d6d8db;
+        }
+        
+        .status-badge-blank {
+            background: #cce5ff;
+            color: #004085;
+            padding: 6px 16px;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-block;
+            border: 1px solid #b8daff;
         }
         
         .loading {
@@ -300,7 +325,7 @@
                             <button class="btn btn-primary" onclick="filterWorkingStatus()">
                                 <i class="bi bi-search"></i> Apply
                             </button>
-                            <button style="display:none;" class="btn btn-outline-secondary ms-2" onclick="resetWorkingStatusFilter()">
+                            <button class="btn btn-outline-secondary ms-2" onclick="resetWorkingStatusFilter()">
                                 <i class="bi bi-arrow-counterclockwise"></i> Reset
                             </button>
                         </div>
@@ -319,15 +344,6 @@
                     <div id="tab1TableContainer">
                         <!-- Data will be inserted here -->
                     </div>
-                    <!--
-                    <div class="info-footer">
-                        <i class="bi bi-info-circle-fill me-2"></i>
-                        Showing columns from Working Status sheet: 
-                        <strong>Treasury Name (A)</strong> | 
-                        <strong>BSNL Officer Contacts (M)</strong> | 
-                        <strong>Treasury Remarks (N)</strong> | 
-                        <strong>BBM REMARKS (O)</strong>
-                    </div> -->
                 </div>
             </div>
         </div>
@@ -414,12 +430,8 @@
         let workingHeaders = [];
         let adminHeaders = [];
         
-        // Status categories for filtering
-        let statusCategories = {
-            'working_fine': { label: 'Working Fine', count: 0, pattern: /working.*fine|works.*fine|fine/i },
-            'not_working': { label: 'Not Working', count: 0, pattern: /not.*work|not.*working|notworking/i },
-            'other': { label: 'Other Remarks', count: 0, pattern: /.*/i }
-        };
+        // Dynamic status categories
+        let statusCategories = {};
         
         // =============================================
         // INITIALIZATION
@@ -460,8 +472,8 @@
                 
                 $('#loadingTab1').hide();
                 
-                // Analyze status categories and populate radio buttons
-                analyzeStatusCategories();
+                // Analyze status categories dynamically and populate radio buttons
+                analyzeStatusCategoriesDynamic();
                 populateTreasurySelect();
                 displayAllWorkingData();
                 
@@ -507,21 +519,15 @@
                 });
         }
         
-        // =============================================
-        // LOAD ADMIN SHEET - FIXED: A2:H RANGE ONLY
-        // =============================================
         function loadAdminSheet() {
-            // Load only columns A to H (range A2:H)
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(SHEET_ADMIN)}!A2:H?key=${API_KEY}`;
             
             return fetch(url)
                 .then(response => response.json())
                 .then(data => {
                     if (data.values && data.values.length > 0) {
-                        // Store the headers separately
                         adminData = data.values;
                         console.log("Admin Data Loaded - Rows:", adminData.length);
-                        console.log("Admin Data Sample (First 3 rows):", adminData.slice(0, 3));
                     } else {
                         console.log("No admin data found in A2:H range");
                         adminData = [];
@@ -534,56 +540,141 @@
         }
         
         // =============================================
-        // ANALYZE STATUS CATEGORIES
+        // DYNAMIC STATUS CATEGORY ANALYSIS
         // =============================================
-        function analyzeStatusCategories() {
+        function analyzeStatusCategoriesDynamic() {
             if (!workingData || workingData.length < 2) return;
             
-            // Reset counts
-            statusCategories.working_fine.count = 0;
-            statusCategories.not_working.count = 0;
-            statusCategories.other.count = 0;
+            // Initialize categories
+            statusCategories = {
+                'all': { label: 'All Records', count: workingData.length - 1, pattern: /.*/i, icon: 'bi-table', color: 'primary' }
+            };
             
             const rows = workingData.slice(1);
+            const remarkCounts = {};
             
+            // First, collect all unique remarks and count them
             rows.forEach(row => {
-                const treasuryRemarks = (row[13] || '').toLowerCase();
+                const treasuryRemarks = (row[13] || '').trim();
                 
-                if (statusCategories.not_working.pattern.test(treasuryRemarks)) {
-                    statusCategories.not_working.count++;
-                } else if (statusCategories.working_fine.pattern.test(treasuryRemarks)) {
-                    statusCategories.working_fine.count++;
+                // Categorize based on content
+                let category = '';
+                const remarksLower = treasuryRemarks.toLowerCase();
+                
+                if (treasuryRemarks === '' || treasuryRemarks === '—') {
+                    category = 'blank';
+                } else if (remarksLower.includes('link down')) {
+                    category = 'link_down';
+                } else if (remarksLower.includes('working fine') || remarksLower.includes('works fine')) {
+                    category = 'working_fine';
+                } else if (remarksLower.includes('not working') || remarksLower.includes('notwork')) {
+                    category = 'not_working';
                 } else {
-                    statusCategories.other.count++;
+                    // Extract main keyword for dynamic categorization
+                    const words = remarksLower.split(/[-–—,;]/).map(w => w.trim());
+                    const mainPhrase = words[0] || remarksLower;
+                    
+                    // Clean up the phrase for category naming
+                    let cleanPhrase = mainPhrase.replace(/tested on\s+\d{1,2}[-/]\d{1,2}[-/]\d{2,4}\s*[-–—]?\s*/i, '').trim();
+                    cleanPhrase = cleanPhrase.substring(0, 30); // Limit length
+                    
+                    if (cleanPhrase && !cleanPhrase.match(/^(working|not|link|blank|other)/i)) {
+                        category = `custom_${cleanPhrase}`;
+                    } else {
+                        category = 'other';
+                    }
+                }
+                
+                // Count occurrences
+                if (!remarkCounts[category]) {
+                    remarkCounts[category] = 0;
+                }
+                remarkCounts[category]++;
+            });
+            
+            // Define category labels and patterns
+            const categoryConfig = {
+                'working_fine': { label: 'Working Fine', pattern: /working.*fine|works.*fine|fine/i, icon: 'bi-check-circle-fill', color: 'success' },
+                'not_working': { label: 'Not Working', pattern: /not.*work|not.*working|notworking/i, icon: 'bi-exclamation-triangle-fill', color: 'danger' },
+                'link_down': { label: 'Link Down Issues', pattern: /link.*down|down link/i, icon: 'bi-wifi-off', color: 'warning' },
+                'blank': { label: 'No Remarks (Blank)', pattern: /^$|^—$/, icon: 'bi-dash-circle', color: 'info' },
+                'other': { label: 'Other Remarks', pattern: /.*/i, icon: 'bi-question-circle-fill', color: 'secondary' }
+            };
+            
+            // Add dynamic custom categories
+            Object.keys(remarkCounts).forEach(category => {
+                if (category.startsWith('custom_')) {
+                    const customLabel = category.replace('custom_', '');
+                    const properLabel = customLabel.split(' ').map(word => 
+                        word.charAt(0).toUpperCase() + word.slice(1)
+                    ).join(' ');
+                    
+                    categoryConfig[category] = {
+                        label: properLabel,
+                        pattern: new RegExp(customLabel, 'i'),
+                        icon: 'bi-tag-fill',
+                        color: 'primary'
+                    };
                 }
             });
             
+            // Build status categories with counts
+            Object.keys(categoryConfig).forEach(key => {
+                if (remarkCounts[key] || key === 'other' || key === 'all') {
+                    statusCategories[key] = {
+                        label: categoryConfig[key].label,
+                        count: remarkCounts[key] || 0,
+                        pattern: categoryConfig[key].pattern,
+                        icon: categoryConfig[key].icon,
+                        color: categoryConfig[key].color
+                    };
+                }
+            });
+            
+            // Ensure other category includes all unclassified
+            if (statusCategories['other']) {
+                const classifiedTotal = Object.keys(statusCategories)
+                    .filter(k => !['all', 'other'].includes(k))
+                    .reduce((sum, k) => sum + (statusCategories[k]?.count || 0), 0);
+                
+                statusCategories['other'].count = (workingData.length - 1) - classifiedTotal;
+            }
+            
             // Populate radio buttons
+            populateRadioButtons();
+            
+            console.log("Dynamic Status Categories:", statusCategories);
+        }
+        
+        // =============================================
+        // POPULATE RADIO BUTTONS DYNAMICALLY
+        // =============================================
+        function populateRadioButtons() {
             let radioHtml = '';
             
-            // Add "Show All" option
-            radioHtml += `<div class="radio-option active" data-value="all">
-                <input type="radio" id="radioAll" name="statusFilter" value="all" checked>
-                <label for="radioAll"><i class="bi bi-table"></i> All Records (${workingData.length - 1})</label>
-            </div>`;
+            // Sort categories: all first, then by count descending
+            const sortedCategories = Object.keys(statusCategories).sort((a, b) => {
+                if (a === 'all') return -1;
+                if (b === 'all') return 1;
+                return (statusCategories[b]?.count || 0) - (statusCategories[a]?.count || 0);
+            });
             
-            // Add Working Fine option
-            radioHtml += `<div class="radio-option" data-value="working_fine">
-                <input type="radio" id="radioWorking" name="statusFilter" value="working_fine">
-                <label for="radioWorking"><i class="bi bi-check-circle-fill text-success"></i> ${statusCategories.working_fine.label} (${statusCategories.working_fine.count})</label>
-            </div>`;
-            
-            // Add Not Working option
-            radioHtml += `<div class="radio-option" data-value="not_working">
-                <input type="radio" id="radioNotWorking" name="statusFilter" value="not_working">
-                <label for="radioNotWorking"><i class="bi bi-exclamation-triangle-fill text-danger"></i> ${statusCategories.not_working.label} (${statusCategories.not_working.count})</label>
-            </div>`;
-            
-            // Add Other option
-            radioHtml += `<div class="radio-option" data-value="other">
-                <input type="radio" id="radioOther" name="statusFilter" value="other">
-                <label for="radioOther"><i class="bi bi-question-circle-fill text-warning"></i> ${statusCategories.other.label} (${statusCategories.other.count})</label>
-            </div>`;
+            sortedCategories.forEach((key, index) => {
+                const category = statusCategories[key];
+                if (!category) return;
+                
+                const isActive = index === 0 ? 'active' : '';
+                const checked = index === 0 ? 'checked' : '';
+                const iconColor = category.color || 'primary';
+                
+                radioHtml += `<div class="radio-option ${isActive}" data-value="${key}">
+                    <input type="radio" id="radio${key}" name="statusFilter" value="${key}" ${checked}>
+                    <label for="radio${key}">
+                        <i class="bi ${category.icon} text-${iconColor}"></i> 
+                        ${category.label} (${category.count})
+                    </label>
+                </div>`;
+            });
             
             $('#statusRadioGroup').html(radioHtml);
             
@@ -595,8 +686,6 @@
                     $(this).addClass('active');
                 }
             });
-            
-            console.log("Status Categories:", statusCategories);
         }
         
         // =============================================
@@ -620,7 +709,7 @@
         }
         
         // =============================================
-        // TAB 1: DISPLAY ALL WORKING DATA - FIXED: ONLY 4 COLUMNS
+        // TAB 1: DISPLAY ALL WORKING DATA
         // =============================================
         function displayAllWorkingData() {
             if (!workingData || workingData.length < 2) {
@@ -632,7 +721,7 @@
         }
         
         // =============================================
-        // TAB 1: FILTER WORKING STATUS - FIXED: EXACT 4 COLUMNS
+        // TAB 1: FILTER WORKING STATUS - DYNAMIC
         // =============================================
         function filterWorkingStatus() {
             const filterValue = $('input[name="statusFilter"]:checked').val();
@@ -650,27 +739,24 @@
             if (filterValue === 'all') {
                 filteredRows = rows;
             } else {
+                const category = statusCategories[filterValue];
+                if (!category) return;
+                
                 filteredRows = rows.filter(row => {
-                    const treasuryRemarks = (row[13] || '').toLowerCase();
+                    const treasuryRemarks = (row[13] || '').trim();
                     
-                    if (filterValue === 'working_fine') {
-                        return statusCategories.working_fine.pattern.test(treasuryRemarks);
-                    } else if (filterValue === 'not_working') {
-                        return statusCategories.not_working.pattern.test(treasuryRemarks);
-                    } else if (filterValue === 'other') {
-                        return !statusCategories.working_fine.pattern.test(treasuryRemarks) && 
-                               !statusCategories.not_working.pattern.test(treasuryRemarks);
+                    if (filterValue === 'blank') {
+                        return treasuryRemarks === '' || treasuryRemarks === '—';
+                    } else {
+                        return category.pattern.test(treasuryRemarks.toLowerCase());
                     }
-                    return false;
                 });
             }
             
             console.log(`Filter: ${filterValue}, Total rows: ${filteredRows.length}`);
             
             // Show filter statistics
-            let filterLabel = filterValue === 'all' ? 'All Records' : 
-                            filterValue === 'working_fine' ? 'Working Fine' :
-                            filterValue === 'not_working' ? 'Not Working' : 'Other Remarks';
+            let filterLabel = statusCategories[filterValue]?.label || filterValue;
             
             $('#filterStats').html(`
                 <i class="bi bi-info-circle"></i> 
@@ -678,7 +764,7 @@
                 <strong>Showing:</strong> ${filteredRows.length} of ${rows.length} records
             `).show();
             
-            // Build table HTML with EXACTLY 4 columns to match header
+            // Build table HTML
             let html = `
                 <div class="data-summary">
                     <div class="row">
@@ -714,13 +800,26 @@
                     const bbmRemarks = row[14] || '—';
                     
                     const remarksLower = treasuryRemarks.toLowerCase();
-                    if (statusCategories.not_working.pattern.test(remarksLower)) {
-                        treasuryRemarks = `<span class="status-badge-notworking"><i class="bi bi-exclamation-circle"></i> ${escapeHtml(treasuryRemarks)}</span>`;
-                    } else if (statusCategories.working_fine.pattern.test(remarksLower)) {
-                        treasuryRemarks = `<span class="status-badge-working"><i class="bi bi-check-circle"></i> ${escapeHtml(treasuryRemarks)}</span>`;
-                    } else {
-                        treasuryRemarks = `<span class="status-badge-other"><i class="bi bi-question-circle"></i> ${escapeHtml(treasuryRemarks)}</span>`;
+                    
+                    // Apply appropriate badge class based on content
+                    let badgeClass = 'status-badge-other';
+                    let icon = 'bi-question-circle';
+                    
+                    if (treasuryRemarks === '' || treasuryRemarks === '—') {
+                        badgeClass = 'status-badge-blank';
+                        icon = 'bi-dash-circle';
+                    } else if (remarksLower.includes('link down')) {
+                        badgeClass = 'status-badge-linkdown';
+                        icon = 'bi-wifi-off';
+                    } else if (remarksLower.includes('working fine') || remarksLower.includes('works fine')) {
+                        badgeClass = 'status-badge-working';
+                        icon = 'bi-check-circle';
+                    } else if (remarksLower.includes('not working') || remarksLower.includes('notwork')) {
+                        badgeClass = 'status-badge-notworking';
+                        icon = 'bi-exclamation-circle';
                     }
+                    
+                    treasuryRemarks = `<span class="${badgeClass}"><i class="bi ${icon}"></i> ${escapeHtml(treasuryRemarks)}</span>`;
                     
                     html += `<tr>
                         <td><strong>${escapeHtml(treasury)}</strong></td>
@@ -734,7 +833,7 @@
             html += `</tbody></table></div>`;
             $('#tab1TableContainer').html(html);
             
-            // Initialize DataTable with EXACT column count match
+            // Initialize DataTable
             if (filteredRows.length > 0) {
                 if ($.fn.DataTable.isDataTable('#workingStatusTable')) {
                     $('#workingStatusTable').DataTable().destroy();
@@ -871,13 +970,26 @@
                     const issueRemarks = row[15] || '—';
                     
                     const remarksLower = treasuryRemarks.toLowerCase();
-                    if (statusCategories.not_working.pattern.test(remarksLower)) {
-                        treasuryRemarks = `<span class="status-badge-notworking"><i class="bi bi-exclamation-circle"></i> ${escapeHtml(treasuryRemarks)}</span>`;
-                    } else if (statusCategories.working_fine.pattern.test(remarksLower)) {
-                        treasuryRemarks = `<span class="status-badge-working"><i class="bi bi-check-circle"></i> ${escapeHtml(treasuryRemarks)}</span>`;
-                    } else {
-                        treasuryRemarks = `<span class="status-badge-other"><i class="bi bi-question-circle"></i> ${escapeHtml(treasuryRemarks)}</span>`;
+                    
+                    // Apply appropriate badge class
+                    let badgeClass = 'status-badge-other';
+                    let icon = 'bi-question-circle';
+                    
+                    if (treasuryRemarks === '' || treasuryRemarks === '—') {
+                        badgeClass = 'status-badge-blank';
+                        icon = 'bi-dash-circle';
+                    } else if (remarksLower.includes('link down')) {
+                        badgeClass = 'status-badge-linkdown';
+                        icon = 'bi-wifi-off';
+                    } else if (remarksLower.includes('working fine') || remarksLower.includes('works fine')) {
+                        badgeClass = 'status-badge-working';
+                        icon = 'bi-check-circle';
+                    } else if (remarksLower.includes('not working') || remarksLower.includes('notwork')) {
+                        badgeClass = 'status-badge-notworking';
+                        icon = 'bi-exclamation-circle';
                     }
+                    
+                    treasuryRemarks = `<span class="${badgeClass}"><i class="bi ${icon}"></i> ${escapeHtml(treasuryRemarks)}</span>`;
                     
                     html += `<tr>
                         <td><strong>${escapeHtml(treasuryName)}</strong></td>
@@ -893,9 +1005,7 @@
             $('#treasuryWorkingTableContainer').html(html);
         }
         
-        // =============================================
-        // DISPLAY ADMIN TABLE - FIXED: EXACT A2:H RANGE
-        // =============================================
+        // Display Admin Table
         function displayAdminTable(treasury) {
             console.log("Admin Contact - Loading for treasury:", treasury);
             
