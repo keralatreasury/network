@@ -198,6 +198,38 @@
         .toggle-btn.active i {
             color: white;
         }
+
+        /* Backup filter dropdown */
+        .backup-filter-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        .backup-filter-label {
+            font-weight: 600;
+            color: #334155;
+        }
+        .backup-filter-select {
+            border: 1px solid #e2e8f0;
+            border-radius: 30px;
+            padding: 8px 28px 8px 18px;
+            background: white;
+            font-size: 0.9rem;
+            min-width: 220px;
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23334155' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 14px;
+        }
+        .backup-filter-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+        }
         
         .export-btns {
             display: flex;
@@ -237,6 +269,12 @@
             background: #e6f3ff;
             border-color: #4285f4;
             color: #1967d2;
+        }
+
+        .export-btn.print:hover {
+            background: #f1f4f9;
+            border-color: #64748b;
+            color: #1e293b;
         }
         
         /* Table Card */
@@ -380,47 +418,9 @@
             padding: 6px 25px 6px 12px;
         }
         
+        /* Hide default DataTables buttons but keep them functional */
         .dt-buttons {
-            margin-bottom: 15px;
-        }
-        
-        .dt-button {
-            background: white !important;
-            border: 1px solid #e2e8f0 !important;
-            border-radius: 30px !important;
-            padding: 7px 18px !important;
-            font-size: 0.85rem !important;
-            color: #334155 !important;
-            margin-right: 6px !important;
-        }
-        
-        .dt-button:hover {
-            background: #f8fafc !important;
-            border-color: #cbd5e1 !important;
-        }
-        
-        .buttons-excel:hover {
-            background: #eaf7ea !important;
-            border-color: #34a853 !important;
-            color: #0f7b3a !important;
-        }
-        
-        .buttons-pdf:hover {
-            background: #fee9e7 !important;
-            border-color: #ea4335 !important;
-            color: #b71c1c !important;
-        }
-        
-        .buttons-csv:hover {
-            background: #e6f3ff !important;
-            border-color: #4285f4 !important;
-            color: #1967d2 !important;
-        }
-        
-        .buttons-print:hover {
-            background: #f1f4f9 !important;
-            border-color: #64748b !important;
-            color: #1e293b !important;
+            display: none !important;
         }
         
         @media (max-width: 768px) {
@@ -438,7 +438,6 @@
                 <i class="fas fa-bolt"></i>
                 <div>
                     <h1>UPS Backup Status</h1>
-                   
                 </div>
             </div>
             <div class="live-badge" id="liveIndicator">
@@ -486,6 +485,17 @@
                 <span>Table Controls</span>
             </div>
             
+            <!-- Backup Condition Filter Dropdown (9th column) -->
+            <div class="backup-filter-group">
+                <span class="backup-filter-label"><i class="fas fa-filter me-1"></i>Filter by Backup Condition:</span>
+                <select id="backupConditionFilter" class="backup-filter-select">
+                    <option value="">All Conditions</option>
+                </select>
+                <button id="clearBackupFilter" class="btn btn-outline-secondary btn-sm" style="border-radius:30px; padding:6px 18px;">
+                    <i class="fas fa-times"></i> Clear
+                </button>
+            </div>
+            
             <div class="row align-items-center">
                 <div class="col-lg-8">
                     <div class="column-toggles" id="columnToggles">
@@ -493,17 +503,12 @@
                     </div>
                 </div>
                 <div class="col-lg-4">
+                    <!-- Custom export buttons -->
                     <div class="export-btns" id="exportButtons">
-                        <!-- Custom export buttons -->
-                        <button class="export-btn excel" onclick="triggerExport('excel')">
-                            <i class="fas fa-file-excel"></i> Excel
-                        </button>
-                        <button class="export-btn pdf" onclick="triggerExport('pdf')">
-                            <i class="fas fa-file-pdf"></i> PDF
-                        </button>
-                        <button class="export-btn csv" onclick="triggerExport('csv')">
-                            <i class="fas fa-file-csv"></i> CSV
-                        </button>
+                        <button class="export-btn excel" id="exportExcelBtn"><i class="fas fa-file-excel"></i> Excel</button>
+                        <button class="export-btn pdf" id="exportPdfBtn"><i class="fas fa-file-pdf"></i> PDF</button>
+                        <button class="export-btn csv" id="exportCsvBtn"><i class="fas fa-file-csv"></i> CSV</button>
+                        <button class="export-btn print" id="exportPrintBtn"><i class="fas fa-print"></i> Print</button>
                     </div>
                 </div>
             </div>
@@ -541,7 +546,7 @@
         </div>
     </div>
 
-    <!-- Scripts - Load in correct order -->
+    <!-- Scripts -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
@@ -552,8 +557,6 @@
     <!-- DataTables Buttons -->
     <script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.bootstrap5.min.js"></script>
-    
-    <!-- Export Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
@@ -586,10 +589,40 @@
             { title: 'Certificate', data: 'document', visible: true }
         ];
 
-        // ==================== MAIN FUNCTION ====================
+        // ==================== MAIN ====================
         $(document).ready(function() {
             console.log('Document ready, loading data...');
             loadSheetData();
+
+            // Export button listeners (trigger DataTables buttons)
+            $('#exportExcelBtn').on('click', function() { 
+                if (dataTable) $('.buttons-excel').first().trigger('click'); 
+            });
+            $('#exportPdfBtn').on('click', function() { 
+                if (dataTable) $('.buttons-pdf').first().trigger('click'); 
+            });
+            $('#exportCsvBtn').on('click', function() { 
+                if (dataTable) $('.buttons-csv').first().trigger('click'); 
+            });
+            $('#exportPrintBtn').on('click', function() { 
+                if (dataTable) $('.buttons-print').first().trigger('click'); 
+            });
+
+            // Backup filter change event
+            $('#backupConditionFilter').on('change', function() {
+                if (dataTable) {
+                    const searchValue = this.value;
+                    dataTable.column(8).search(searchValue).draw();
+                }
+            });
+
+            // Clear backup filter
+            $('#clearBackupFilter').on('click', function() {
+                $('#backupConditionFilter').val('');
+                if (dataTable) {
+                    dataTable.column(8).search('').draw();
+                }
+            });
         });
 
         async function loadSheetData() {
@@ -614,6 +647,7 @@
                 updateStats();
                 initializeTable();
                 createColumnToggles();
+                populateBackupFilter();
                 
                 showLoading(false);
                 
@@ -632,15 +666,11 @@
 
         function processData(rows) {
             upsData = [];
-            const headerRow = rows[0];
-            console.log('Headers:', headerRow);
             
-            // Start from row 1 (skip header)
             for (let i = 1; i < rows.length; i++) {
                 const row = rows[i];
                 if (!row || row.length < 5) continue;
                 
-                // Calculate age from columns I, J, K (index 8,9,10)
                 const years = row[8] || '0';
                 const months = row[9] || '0';
                 const days = row[10] || '0';
@@ -672,21 +702,37 @@
 
         function formatDate(date) {
             if (!date || date === '—') return '—';
-            if (typeof date === 'string') {
-                // Remove time part if exists
-                if (date.includes(' 00:00:00')) {
-                    return date.split(' ')[0];
-                }
+            if (typeof date === 'string' && date.includes(' 00:00:00')) {
+                return date.split(' ')[0];
             }
             return date;
+        }
+
+        function populateBackupFilter() {
+            const conditions = new Set();
+            upsData.forEach(item => {
+                if (item.backupCondition && item.backupCondition !== '—') {
+                    conditions.add(item.backupCondition);
+                }
+            });
+            const sorted = Array.from(conditions).sort();
+            const $select = $('#backupConditionFilter');
+            $select.find('option:not(:first)').remove();
+            sorted.forEach(cond => {
+                // Escape the value properly for option text
+                $select.append($('<option>', {
+                    value: cond,
+                    text: cond
+                }));
+            });
         }
 
         function initializeTable() {
             if (dataTable) {
                 dataTable.destroy();
+                dataTable = null;
             }
 
-            // Prepare data for DataTable
             const tableData = upsData.map(item => [
                 item.treasury,
                 item.assetId,
@@ -708,8 +754,7 @@
                     visible: col.visible,
                     render: function(data, type, row) {
                         if (type === 'display') {
-                            // Apply formatting based on column
-                            if (idx === 6) { // Contract Status
+                            if (idx === 6) { // Contract
                                 if (data === 'AMC') {
                                     return `<span class="status-badge badge-amc"><i class="fas fa-check-circle me-1"></i>${data}</span>`;
                                 } else if (data === 'NOT IN CONTRACT') {
@@ -728,6 +773,7 @@
                                 } else if (lower.includes('hour') || lower.includes('backup')) {
                                     return `<span class="status-badge badge-working"><i class="fas fa-battery-three-quarters me-1"></i>${data}</span>`;
                                 }
+                                return data;
                             }
                             else if (idx === 10) { // Document
                                 if (data && data.includes('http')) {
@@ -745,68 +791,64 @@
                 order: [[0, 'asc']],
                 dom: '<"row"<"col-sm-12 col-md-6"B><"col-sm-12 col-md-6"f>>rtip',
                 buttons: [
-                    {
-                        extend: 'excelHtml5',
-                        text: '<i class="fas fa-file-excel"></i> Excel',
-                        className: 'btn btn-sm',
-                        exportOptions: {
-                            columns: ':visible',
-                            format: {
-                                body: function(data, row, column, node) {
-                                    // Strip HTML for export
-                                    return $(data).text().trim() || data;
+                    { 
+                        extend: 'excelHtml5', 
+                        text: 'Excel', 
+                        className: 'btn btn-sm buttons-excel',
+                        exportOptions: { 
+                            columns: ':visible', 
+                            format: { 
+                                body: function(data) {
+                                    return $('<div>').html(data).text().trim() || data;
                                 }
-                            }
-                        }
+                            } 
+                        } 
                     },
-                    {
-                        extend: 'pdfHtml5',
-                        text: '<i class="fas fa-file-pdf"></i> PDF',
-                        className: 'btn btn-sm',
-                        orientation: 'landscape',
-                        pageSize: 'A4',
-                        exportOptions: {
-                            columns: ':visible',
-                            format: {
-                                body: function(data, row, column, node) {
-                                    return $(data).text().trim() || data;
+                    { 
+                        extend: 'pdfHtml5', 
+                        text: 'PDF', 
+                        className: 'btn btn-sm buttons-pdf', 
+                        orientation: 'landscape', 
+                        pageSize: 'A4', 
+                        exportOptions: { 
+                            columns: ':visible', 
+                            format: { 
+                                body: function(data) {
+                                    return $('<div>').html(data).text().trim() || data;
                                 }
-                            }
-                        }
+                            } 
+                        } 
                     },
-                    {
-                        extend: 'csvHtml5',
-                        text: '<i class="fas fa-file-csv"></i> CSV',
-                        className: 'btn btn-sm',
-                        exportOptions: {
-                            columns: ':visible',
-                            format: {
-                                body: function(data, row, column, node) {
-                                    return $(data).text().trim() || data;
+                    { 
+                        extend: 'csvHtml5', 
+                        text: 'CSV', 
+                        className: 'btn btn-sm buttons-csv', 
+                        exportOptions: { 
+                            columns: ':visible', 
+                            format: { 
+                                body: function(data) {
+                                    return $('<div>').html(data).text().trim() || data;
                                 }
-                            }
-                        }
+                            } 
+                        } 
                     },
-                    {
-                        extend: 'print',
-                        text: '<i class="fas fa-print"></i> Print',
-                        className: 'btn btn-sm',
-                        exportOptions: {
-                            columns: ':visible',
-                            format: {
-                                body: function(data, row, column, node) {
-                                    return $(data).text().trim() || data;
+                    { 
+                        extend: 'print', 
+                        text: 'Print', 
+                        className: 'btn btn-sm buttons-print', 
+                        exportOptions: { 
+                            columns: ':visible', 
+                            format: { 
+                                body: function(data) {
+                                    return $('<div>').html(data).text().trim() || data;
                                 }
-                            }
-                        }
+                            } 
+                        } 
                     }
                 ],
                 language: {
                     search: "Search:",
                     searchPlaceholder: "Filter records..."
-                },
-                drawCallback: function() {
-                    $('.dataTables_paginate > .pagination').addClass('pagination-sm');
                 }
             });
 
@@ -829,10 +871,8 @@
                     if (dataTable) {
                         const column = dataTable.column(index);
                         const visible = column.visible();
-                        
                         column.visible(!visible);
-                        
-                        if (visible) {
+                        if ($(this).hasClass('active')) {
                             $(this).removeClass('active');
                             $(this).find('i').removeClass('fa-check-circle').addClass('fa-circle');
                         } else {
@@ -841,25 +881,17 @@
                         }
                     }
                 });
-                
                 container.append(btn);
             });
         }
 
         function updateStats() {
             $('#totalUps').text(upsData.length);
-            
             const treasuries = new Set(upsData.map(item => item.treasury)).size;
             $('#totalTreasuries').text(treasuries);
-            
-            const noBackup = upsData.filter(item => 
-                item.backupCondition && item.backupCondition.toLowerCase().includes('no backup')
-            ).length;
+            const noBackup = upsData.filter(item => item.backupCondition && item.backupCondition.toLowerCase().includes('no backup')).length;
             $('#noBackup').text(noBackup);
-            
-            const withDocs = upsData.filter(item => 
-                item.document && item.document.includes('http')
-            ).length;
+            const withDocs = upsData.filter(item => item.document && item.document.includes('http')).length;
             $('#withDocs').text(withDocs);
         }
 
@@ -879,28 +911,6 @@
                 $('#tableContainer').show();
             }
         }
-
-        // Export trigger function
-        window.triggerExport = function(type) {
-            if (dataTable) {
-                switch(type) {
-                    case 'excel':
-                        dataTable.button('.buttons-excel').trigger();
-                        break;
-                    case 'pdf':
-                        dataTable.button('.buttons-pdf').trigger();
-                        break;
-                    case 'csv':
-                        dataTable.button('.buttons-csv').trigger();
-                        break;
-                }
-            } else {
-                alert('Table not initialized yet');
-            }
-        };
-
-        // Make functions globally available for onclick handlers
-        window.loadSheetData = loadSheetData;
     </script>
 </body>
 </html>
