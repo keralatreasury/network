@@ -282,6 +282,17 @@
             margin-bottom: 20px;
             font-size: 0.95rem;
         }
+        
+        .mpls-badge {
+            background: #e0f2fe;
+            color: #0369a1;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: inline-block;
+            border: 1px solid #bae6fd;
+        }
     </style>
 </head>
 <body>
@@ -383,6 +394,18 @@
                         </div>
                     </div>
                     
+                    <!-- MPLS Configuration Section (NEW) -->
+                    <div class="section-title">
+                        <i class="bi bi-diagram-3-fill"></i>
+                        MPLS Configuration
+                    </div>
+                    <div id="mplsConfigTableContainer" class="table-container mb-4">
+                        <div class="empty-state">
+                            <i class="bi bi-arrow-up-circle"></i>
+                            <h6>Select a treasury to view MPLS configuration</h6>
+                        </div>
+                    </div>
+                    
                     <!-- Working Status Section -->
                     <div class="section-title">
                         <i class="bi bi-speedometer2"></i>
@@ -421,14 +444,17 @@
         const SHEET_INSTALLATION = "Installation Status";
         const SHEET_WORKING = "Working Status";
         const SHEET_ADMIN = "Admin Contact Details";
+        const SHEET_MPLS = "MPLS Devices";  // New sheet
         
         // Global data storage
         let installationData = [];
         let workingData = [];
         let adminData = [];
+        let mplsData = [];  // New MPLS data
         let treasuryList = [];
         let workingHeaders = [];
         let adminHeaders = [];
+        let mplsHeaders = [];  // New MPLS headers
         
         // Dynamic status categories
         let statusCategories = {};
@@ -462,13 +488,15 @@
                 await Promise.all([
                     loadInstallationSheet(),
                     loadWorkingSheet(),
-                    loadAdminSheet()
+                    loadAdminSheet(),
+                    loadMplsSheet()  // Load MPLS sheet
                 ]);
                 
                 console.log("=== DATA LOAD SUMMARY ===");
                 console.log("Installation Status:", installationData.length, "rows");
                 console.log("Working Status:", workingData.length, "rows");
                 console.log("Admin Contact:", adminData.length, "rows");
+                console.log("MPLS Devices:", mplsData.length, "rows");
                 
                 $('#loadingTab1').hide();
                 
@@ -536,6 +564,29 @@
                 .catch(error => {
                     console.error("Error loading admin sheet:", error);
                     adminData = [];
+                });
+        }
+        
+        // New function to load MPLS Devices sheet
+        function loadMplsSheet() {
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(SHEET_MPLS)}?key=${API_KEY}`;
+            
+            return fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.values && data.values.length > 0) {
+                        mplsData = data.values;
+                        mplsHeaders = mplsData[0] || [];
+                        console.log("MPLS Data Loaded - Rows:", mplsData.length);
+                        console.log("MPLS Headers:", mplsHeaders);
+                    } else {
+                        console.log("No MPLS data found");
+                        mplsData = [];
+                    }
+                })
+                .catch(error => {
+                    console.error("Error loading MPLS sheet:", error);
+                    mplsData = [];
                 });
         }
         
@@ -880,10 +931,12 @@
             
             // Show loading
             $('#installationTableContainer').html('<div class="loading" style="display: block;"><div class="loading-spinner"></div><p>Loading installation data...</p></div>');
+            $('#mplsConfigTableContainer').html('<div class="loading" style="display: block;"><div class="loading-spinner"></div><p>Loading MPLS configuration...</p></div>');
             $('#treasuryWorkingTableContainer').html('<div class="loading" style="display: block;"><div class="loading-spinner"></div><p>Loading working status...</p></div>');
             $('#adminTableContainer').html('<div class="loading" style="display: block;"><div class="loading-spinner"></div><p>Loading admin contacts...</p></div>');
             
             displayInstallationTable(selectedTreasury);
+            displayMplsConfigTable(selectedTreasury);  // New MPLS table
             displayWorkingTableForTreasury(selectedTreasury);
             displayAdminTable(selectedTreasury);
         }
@@ -919,6 +972,124 @@
             
             html += '</tbody></table></div>';
             $('#installationTableContainer').html(html);
+        }
+        
+        // NEW: Display MPLS Configuration Table
+        function displayMplsConfigTable(treasury) {
+            if (!mplsData || mplsData.length < 2) {
+                $('#mplsConfigTableContainer').html('<div class="empty-state">No MPLS configuration data available</div>');
+                return;
+            }
+            
+            const headers = mplsData[0] || [];
+            
+            // Extract base treasury name for matching
+            let searchTreasury = treasury;
+            if (treasury.includes('-')) {
+                searchTreasury = treasury.substring(treasury.indexOf('-') + 1).trim();
+            }
+            
+            // Remove "Treasury" word for better matching
+            let searchTreasuryClean = searchTreasury.replace(/treasury/i, '').trim();
+            
+            console.log("MPLS Config - Searching for base name:", searchTreasury);
+            console.log("MPLS Config - Clean name:", searchTreasuryClean);
+            
+            // Filter MPLS data for matching treasury (Column A is index 0 - Name of Treasury)
+            const rows = mplsData.slice(1).filter(row => {
+                if (!row || !row[0]) return false;
+                
+                const mplsTreasury = row[0].toString().trim();
+                const mplsTreasuryLower = mplsTreasury.toLowerCase();
+                const searchTreasuryLower = searchTreasury.toLowerCase();
+                const searchTreasuryCleanLower = searchTreasuryClean.toLowerCase();
+                
+                // Multiple matching strategies
+                const exactMatch = mplsTreasury === treasury;
+                const baseMatch = mplsTreasury.includes(searchTreasury) || searchTreasury.includes(mplsTreasury);
+                const cleanMatch = mplsTreasuryLower.includes(searchTreasuryCleanLower) || 
+                                 searchTreasuryCleanLower.includes(mplsTreasuryLower);
+                const partialMatch = mplsTreasuryLower.includes(searchTreasuryLower) || 
+                                   searchTreasuryLower.includes(mplsTreasuryLower);
+                
+                return exactMatch || baseMatch || cleanMatch || partialMatch;
+            });
+            
+            console.log(`MPLS Config - Found ${rows.length} records for treasury:`, treasury);
+            
+            // Define column display names
+            const columnDisplayNames = [
+                'Name of Treasury',
+                'BSNL TXN / TIP',
+                'LCO CODE',
+                'OLT IP',
+                'OUTER VLAN',
+                'WAN IP',
+                'VLAN',
+                'GATEWAY (BSNL)',
+                'GATEWAY (TREASURY)',
+                'Clarity order status',
+                'Status of work'
+            ];
+            
+            let html = `<div class="table-responsive"><table class="table table-hover table-bordered">`;
+            
+            // Headers
+            html += '<thead><tr>';
+            columnDisplayNames.forEach(header => {
+                html += `<th>${escapeHtml(header)}</th>`;
+            });
+            html += '</tr></thead><tbody>';
+            
+            if (rows.length === 0) {
+                html += `
+                    <tr>
+                        <td colspan="${columnDisplayNames.length}" class="text-center py-4">
+                            <i class="bi bi-diagram-3 fs-1 text-muted"></i>
+                            <p class="mt-2">No MPLS configuration found for this treasury</p>
+                            <small class="text-muted">Treasury: ${escapeHtml(treasury)}</small>
+                        </td>
+                    </tr>
+                `;
+            } else {
+                rows.forEach(row => {
+                    html += '<tr>';
+                    // Display columns 0-10 (A through K)
+                    for (let i = 0; i < 11; i++) {
+                        let cellValue = row[i] || '—';
+                        
+                        // Add status badge for Status of work column (index 10)
+                        if (i === 10) {
+                            const statusLower = cellValue.toLowerCase();
+                            let badgeClass = 'mpls-badge';
+                            
+                            if (statusLower.includes('completed')) {
+                                badgeClass = 'status-badge-working mpls-badge';
+                            } else if (statusLower.includes('pending')) {
+                                badgeClass = 'status-badge-other mpls-badge';
+                            } else if (statusLower.includes('wip')) {
+                                badgeClass = 'status-badge-linkdown mpls-badge';
+                            }
+                            
+                            cellValue = `<span class="${badgeClass}">${escapeHtml(cellValue)}</span>`;
+                        } else {
+                            cellValue = escapeHtml(cellValue);
+                        }
+                        
+                        html += `<td>${cellValue}</td>`;
+                    }
+                    html += '</tr>';
+                });
+            }
+            
+            html += '</tbody></table></div>';
+            
+            // Add record count
+            html += `<div class="small text-muted mt-2">
+                <i class="bi bi-info-circle"></i> MPLS configuration records found: ${rows.length}
+            </div>`;
+            
+            $('#mplsConfigTableContainer').html(html);
         }
         
         // Display Working Table For Treasury
