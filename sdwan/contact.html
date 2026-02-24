@@ -4,15 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>All Treasuries – Admin Contacts (SD‑WAN)</title>
-    <!-- Bootstrap & DataTables -->
+    <!-- Bootstrap & DataTables & Select2 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-    <!-- jQuery & DataTables -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+    
+    <!-- jQuery & dependencies -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    
     <style>
         body {
             background-color: #f0f5fa;
@@ -38,6 +43,26 @@
             box-shadow: 0 10px 30px rgba(0,20,40,0.12);
             border: none;
         }
+        .nav-tabs-custom {
+            border-bottom: 2px solid #cbd5e0;
+            margin-bottom: 24px;
+            padding-left: 8px;
+        }
+        .nav-tabs-custom .nav-link {
+            border: none;
+            font-weight: 600;
+            color: #2c3e50;
+            padding: 12px 24px;
+            border-radius: 40px 40px 0 0;
+            background: transparent;
+            transition: all 0.2s;
+        }
+        .nav-tabs-custom .nav-link.active {
+            background: white;
+            color: #0f5b9c;
+            border-bottom: 4px solid #0f5b9c;
+            box-shadow: 0 -2px 8px rgba(0,35,70,0.05);
+        }
         .section-badge {
             background: #e3f2fd;
             color: #0f5b9c;
@@ -50,6 +75,36 @@
             gap: 10px;
             margin-bottom: 24px;
             border-left: 5px solid #0f5b9c;
+        }
+        .filter-panel {
+            background: #f8fbfe;
+            border-radius: 16px;
+            padding: 20px 24px;
+            margin-bottom: 28px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            align-items: flex-end;
+            border: 1px solid #d9e6f2;
+        }
+        .filter-panel .select2-container {
+            width: 100% !important;
+        }
+        .btn-view {
+            background: #0f5b9c;
+            border: none;
+            padding: 10px 28px;
+            font-weight: 500;
+            border-radius: 40px;
+            color: white;
+            transition: 0.15s;
+            box-shadow: 0 3px 8px rgba(15,91,156,0.3);
+        }
+        .btn-view:hover {
+            background: #093b61;
+        }
+        .btn-view i {
+            margin-right: 6px;
         }
         .table thead th {
             background-color: #1a4b7a;
@@ -102,210 +157,340 @@
             font-size: 0.95rem;
             border-left: 6px solid #0f5b9c;
         }
+        .tab-pane {
+            transition: opacity 0.2s;
+        }
+        .spinner-overlay {
+            text-align: center;
+            padding: 40px;
+        }
     </style>
 </head>
 <body>
 <div class="main-wrapper">
-    <!-- header identical to original flavour -->
+    <!-- header -->
     <div class="page-header d-flex align-items-center">
         <i class="bi bi-person-lines-fill fs-2 me-3"></i>
         <div>
-            <h2 class="fw-bold mb-0">All Treasuries – Admin Contact Details</h2>
-          
+            <h2 class="fw-bold mb-0">Treasury Admin Contacts</h2>
         </div>
     </div>
 
-    <!-- main card -->
-    <div class="card-db">
-    
+    <!-- main card with tabs -->
+    <div class="card-db p-0" style="overflow: hidden;">
+        <!-- tab navigation -->
+        <ul class="nav nav-tabs-custom nav-tabs" id="treasuryTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab"><i class="bi bi-grid-3x3-gap-fill me-2"></i>All treasuries</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="district-tab" data-bs-toggle="tab" data-bs-target="#district" type="button" role="tab"><i class="bi bi-pin-map-fill me-2"></i>District Wise View</button>
+            </li>
+        </ul>
 
-        <!-- table container -->
-        <div class="table-responsive">
-            <table id="adminFullTable" class="table table-hover table-striped" style="width:100%">
-                <thead>
-                <tr>
-                    <th>Treasury / Location</th>
-                    <th>Network Admin Name</th>
-                    <th>Network Admin Contact</th>
-                    <th>Treasury Admin Name</th>
-                    <th>Treasury Admin Contact</th>
-                    <th>Office Mail ID</th>
-                    <th>Office Contact</th>
-                    <th>Office Mobile</th>
-                </tr>
-                </thead>
-                <tbody>
-                <!-- filled via javascript -->
-                <tr><td colspan="8" class="text-center py-5"><div class="spinner-border text-primary" role="status"></div> loading admin contacts ...</td></tr>
-                </tbody>
-            </table>
+        <!-- tab panes -->
+        <div class="tab-content p-4" style="background: white;">
+            <!-- pane 1: ALL treasuries (existing table) -->
+            <div class="tab-pane fade show active" id="all" role="tabpanel">
+                <div class="table-responsive">
+                    <table id="adminFullTable" class="table table-hover table-striped" style="width:100%">
+                        <thead><tr><th>Treasury / Location</th><th>Network Admin Name</th><th>Network Admin Contact</th><th>Treasury Admin Name</th><th>Treasury Admin Contact</th><th>Office Mail ID</th><th>Office Contact</th><th>Office Mobile</th></tr></thead>
+                        <tbody><tr><td colspan="8" class="text-center py-5"><div class="spinner-border text-primary" role="status"></div> loading admin contacts ...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- pane 2: District wise view -->
+            <div class="tab-pane fade" id="district" role="tabpanel">
+                <div class="filter-panel">
+                    <div style="flex: 2; min-width: 260px;">
+                        <label class="fw-semibold mb-2 text-secondary"><i class="bi bi-building me-1"></i>Select District</label>
+                        <select id="districtSelect" class="form-select" style="width: 100%;"></select>
+                    </div>
+                    <div>
+                        <button id="viewDistrictBtn" class="btn-view"><i class="bi bi-search"></i> View</button>
+                    </div>
+                    <div class="ms-auto text-nowrap text-muted small align-self-center">
+                        <i class="bi bi-database"></i> <span id="districtRowCount">0</span> records
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table id="districtTable" class="table table-hover table-striped" style="width:100%">
+                        <thead><tr><th>Treasury name</th><th>Mail Id</th><th>Phone(Office)</th><th>Mobile</th><th>Network Admin Name</th><th>Network Admin Contact</th><th>Treasury Admin Name</th><th>Treasury Admin Contact</th></tr></thead>
+                        <tbody><tr><td colspan="8" class="text-center py-4"><span class="text-muted">Choose a district and click View</span></td></tr></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
-
-    
     </div>
+    <!-- small footer note (optional) -->
+   
 </div>
 
 <script>
-    (function() {
-        // ----------------------------------------------
-        // CONFIG – same as original dashboard
-        // ----------------------------------------------
-        const API_KEY = 'AIzaSyBB1V3vJpNZ9X1GIF-YOwoa6YSt_iXMLo0';
-        const SPREADSHEET_ID = '1HvCqLHC8IyllKskBXX1MtMfjQMGUyhMP7KuTuJxDhmU';
-        const SHEET_ADMIN = 'Admin Contact Details';
-        
-        // we directly fetch the exact range A2:H (no headers row)
-        const RANGE = 'A2:H';   // as used in original loadAdminSheet()
+(function() {
+    // ----------------------------------------------
+    // GLOBALS & CONFIG
+    // ----------------------------------------------
+    const API_KEY = 'AIzaSyBB1V3vJpNZ9X1GIF-YOwoa6YSt_iXMLo0';
+    
+    // Sheet 1 (All treasuries) – unchanged
+    const SPREADSHEET_ID_ALL = '1HvCqLHC8IyllKskBXX1MtMfjQMGUyhMP7KuTuJxDhmU';
+    const SHEET_ADMIN = 'Admin Contact Details';
+    const RANGE_ALL = 'A2:H';
 
-        let adminRows = [];      // will hold raw arrays (each length ≤8)
+    // Sheet 2 (District wise) – new spreadsheet
+    const SPREADSHEET_ID_DISTRICT = '1JxwLKphMWM9fqV43Tt0jQpQjlQC-6DaSlYQ66Fjq7rA';
+    const SHEET_DATA = 'Data';          // sheet name 'Data'
+    const RANGE_DISTRICT = 'A:I';        // A: District, B:I treasury data (B = Treasury name, C = Mail Id, D = Phone(Office), E = Mobile, F = Network Admin Name, G = Network Admin Contact, H = Treasury Admin Name, I = Treasury Admin Contact)
 
-        // ----------------------------------------------
-        // fetch data and init DataTable
-        // ----------------------------------------------
-        function loadAllAdminContacts() {
-            const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(SHEET_ADMIN)}!${RANGE}?key=${API_KEY}`;
+    // district rows storage
+    let districtRawRows = [];            // full A:I raw (including header maybe not, we fetch A2:I)
+    let districtList = [];               // unique sorted districts
 
-            fetch(url)
-                .then(res => res.json())
-                .then(data => {
-                    if (data.values && data.values.length > 0) {
-                        adminRows = data.values;
-                    } else {
-                        adminRows = []; // no data
-                    }
-                    renderTable(adminRows);
-                })
-                .catch(err => {
-                    console.error('Error loading admin sheet:', err);
-                    document.querySelector('#adminFullTable tbody').innerHTML = `
-                        <tr><td colspan="8" class="text-center py-5 text-danger">
-                            <i class="bi bi-exclamation-triangle-fill fs-3"></i><br>
-                            Failed to load data. Check API key / permissions.
-                        </td></tr>`;
-                });
+    // all admin rows (for first tab)
+    let adminRows = [];
+
+    // ----------------------------------------------
+    // 1. LOAD ALL TREASURIES (tab1) – same as original
+    // ----------------------------------------------
+    function loadAllAdminContacts() {
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID_ALL}/values/${encodeURIComponent(SHEET_ADMIN)}!${RANGE_ALL}?key=${API_KEY}`;
+        fetch(url)
+            .then(res => res.json())
+            .then(data => {
+                adminRows = data.values || [];
+                renderAllTable(adminRows);
+            })
+            .catch(err => {
+                console.error('Error loading admin sheet:', err);
+                document.querySelector('#adminFullTable tbody').innerHTML = `<tr><td colspan="8" class="text-center py-5 text-danger"><i class="bi bi-exclamation-triangle-fill"></i> Failed to load data.</td></tr>`;
+            });
+    }
+
+    function renderAllTable(rows) {
+        const tbody = document.querySelector('#adminFullTable tbody');
+        if (!rows || rows.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="8" class="text-center py-5">No records found</td></tr>`;
+            if ($.fn.DataTable.isDataTable('#adminFullTable')) $('#adminFullTable').DataTable().destroy();
+            return;
         }
 
-        // ----------------------------------------------
-        // render DataTable with all rows (no filtering)
-        // ----------------------------------------------
-        function renderTable(rows) {
-            const tbody = document.querySelector('#adminFullTable tbody');
-            if (!rows || rows.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-5">
-                    <i class="bi bi-inbox fs-1 text-muted"></i><br>
-                    <span class="fs-5">No admin contact records found</span><br>
-                    <small class="text-secondary">sheet range A2:H is empty</small>
-                </td></tr>`;
-                // destroy if any datatable instance exists
-                if ($.fn.DataTable.isDataTable('#adminFullTable')) {
-                    $('#adminFullTable').DataTable().destroy();
+        let htmlRows = '';
+        for (let r = 0; r < rows.length; r++) {
+            const row = rows[r];
+            const cols = [];
+            for (let i = 0; i < 8; i++) cols[i] = (row[i] !== undefined && row[i] !== null) ? row[i].toString().trim() : '';
+
+            const formatContact = (val, type) => {
+                if (!val) return '<span class="empty-cell">—</span>';
+                const escaped = escapeHtml(val);
+                if (type === 'email' && val.includes('@')) {
+                    return `<a href="mailto:${escapeHtml(val)}" class="contact-link">${escaped}</a>`;
+                } else if (type === 'phone') {
+                    const digits = val.replace(/[^0-9+]/g, '');
+                    if (digits) return `<a href="tel:${escapeHtml(digits)}" class="contact-link">${escaped}</a>`;
                 }
+                return escaped;
+            };
+
+            htmlRows += `<tr>
+                <td><strong>${escapeHtml(cols[0]||'—')}</strong></td>
+                <td>${escapeHtml(cols[1]||'—')}</td>
+                <td>${formatContact(cols[2], 'phone')}</td>
+                <td>${escapeHtml(cols[3]||'—')}</td>
+                <td>${formatContact(cols[4], 'phone')}</td>
+                <td>${formatContact(cols[5], 'email')}</td>
+                <td>${formatContact(cols[6], 'phone')}</td>
+                <td>${formatContact(cols[7], 'phone')}</td>
+            </tr>`;
+        }
+        tbody.innerHTML = htmlRows;
+
+        if ($.fn.DataTable.isDataTable('#adminFullTable')) $('#adminFullTable').DataTable().destroy();
+        $('#adminFullTable').DataTable({
+            paging: true, pageLength: 25, lengthMenu: [[10,25,50,100,-1], [10,25,50,100,'All']],
+            ordering: true, scrollX: true, autoWidth: false,
+            language: { search: '<i class="bi bi-search"></i> Search', searchPlaceholder: 'treasury, name, email...' },
+            columnDefs: [ { targets: 0, width: '200px' }, { targets: 1, width: '160px' }, { targets: 2, width: '140px' }, { targets: 3, width: '160px' }, { targets: 4, width: '140px' }, { targets: 5, width: '190px' }, { targets: 6, width: '120px' }, { targets: 7, width: '130px' } ]
+        });
+    }
+
+    // ----------------------------------------------
+    // 2. LOAD DISTRICT SHEET (A2:I) and populate select2
+    // ----------------------------------------------
+    function loadDistrictData() {
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID_DISTRICT}/values/${encodeURIComponent(SHEET_DATA)}!A2:I?key=${API_KEY}`;
+        fetch(url)
+            .then(res => res.json())
+            .then(data => {
+                districtRawRows = data.values || [];
+                buildDistrictDropdown();
+                // prefill row count later on view
+            })
+            .catch(err => {
+                console.error('Error loading district sheet:', err);
+                $('#districtSelect').html('<option value="">⚠️ failed to load districts</option>');
+            });
+    }
+
+    function buildDistrictDropdown() {
+        // extract column A (district), filter empty, trim, unique, sort
+        const districts = new Set();
+        districtRawRows.forEach(row => {
+            if (row.length > 0 && row[0] && row[0].toString().trim() !== '') {
+                districts.add(row[0].toString().trim());
+            }
+        });
+        districtList = Array.from(districts).sort((a,b) => a.localeCompare(b));
+        
+        const $select = $('#districtSelect');
+        $select.empty().append('<option value="">-- Choose a district --</option>');
+        districtList.forEach(d => {
+            $select.append(`<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`);
+        });
+
+        // init select2 (with search, autofocus on open)
+        $select.select2({
+            theme: 'bootstrap-5',
+            width: '100%',
+            placeholder: 'Type or select district',
+            allowClear: true
+        }).on('select2:open', function() {
+            setTimeout(() => document.querySelector('.select2-search__field')?.focus(), 100);
+        });
+    }
+
+    // ----------------------------------------------
+    // 3. VIEW button: filter rows by selected district and render district table
+    // ----------------------------------------------
+    function renderDistrictTable(selectedDistrict) {
+        const $tbody = $('#districtTable tbody');
+        const $info = $('#districtRowCount');
+
+        // DESTROY existing DataTable instance FIRST to clear old data completely
+        if ($.fn.DataTable.isDataTable('#districtTable')) {
+            $('#districtTable').DataTable().destroy();
+        }
+        
+        // Clear the tbody completely
+        $tbody.empty();
+
+        if (!selectedDistrict || !districtRawRows.length) {
+            $tbody.html('<tr><td colspan="8" class="text-center py-4"><span class="text-muted">No district selected or data missing</span></td></tr>');
+            $info.text('0');
+            return;
+        }
+
+        // filter rows where column A matches selectedDistrict (case-insensitive trim)
+        const filtered = districtRawRows.filter(row => {
+            return row[0] && row[0].toString().trim().toLowerCase() === selectedDistrict.toLowerCase();
+        });
+
+        $info.text(filtered.length);
+
+        if (filtered.length === 0) {
+            $tbody.html(`<tr><td colspan="8" class="text-center py-4"><i class="bi bi-building-slash"></i> No treasuries for district "${escapeHtml(selectedDistrict)}"</td></tr>`);
+            return;
+        }
+
+        // Build rows: B(1) Treasury, C(2) Mail, D(3) PhoneOffice, E(4) Mobile, F(5) NetAdminName, G(6) NetAdminContact, H(7) TresName, I(8) TresContact
+        let html = '';
+        filtered.forEach(row => {
+            // ensure at least 9 columns
+            const cols = [];
+            for (let i = 0; i < 9; i++) cols[i] = (row[i] !== undefined && row[i] !== null) ? row[i].toString().trim() : '';
+
+            const treasury    = escapeHtml(cols[1] || '—');
+            const mail        = formatDistrictField(cols[2], 'email');
+            const phoneOff    = formatDistrictField(cols[3], 'phone');
+            const mobile      = formatDistrictField(cols[4], 'phone');
+            const netName     = escapeHtml(cols[5] || '—');
+            const netContact  = formatDistrictField(cols[6], 'phone');
+            const tresName    = escapeHtml(cols[7] || '—');
+            const tresContact = formatDistrictField(cols[8], 'phone');
+
+            html += `<tr>
+                <td><strong>${treasury}</strong></td>
+                <td>${mail}</td>
+                <td>${phoneOff}</td>
+                <td>${mobile}</td>
+                <td>${netName}</td>
+                <td>${netContact}</td>
+                <td>${tresName}</td>
+                <td>${tresContact}</td>
+            </tr>`;
+        });
+
+        $tbody.html(html);
+
+        // Re-initialize DataTable with fresh data
+        $('#districtTable').DataTable({
+            paging: true,
+            pageLength: 25,
+            lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
+            ordering: true,
+            scrollX: true,
+            autoWidth: false,
+            language: { 
+                search: '<i class="bi bi-search"></i> Search', 
+                searchPlaceholder: 'filter...',
+                emptyTable: 'No data available for selected district'
+            },
+            destroy: true // This ensures any existing instance is properly destroyed
+        });
+    }
+
+    // helper format for district table (email/phone)
+    function formatDistrictField(val, type) {
+        if (!val) return '<span class="empty-cell">—</span>';
+        const escaped = escapeHtml(val);
+        if (type === 'email' && val.includes('@')) {
+            return `<a href="mailto:${escapeHtml(val)}" class="contact-link">${escaped}</a>`;
+        } else if (type === 'phone') {
+            const digits = val.replace(/[^0-9+]/g, '');
+            if (digits) return `<a href="tel:${escapeHtml(digits)}" class="contact-link">${escaped}</a>`;
+        }
+        return escaped;
+    }
+
+    // escape util
+    function escapeHtml(text) {
+        if (text === undefined || text === null) return '—';
+        if (typeof text !== 'string') text = String(text);
+        const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+        return text.replace(/[&<>"']/g, m => map[m]);
+    }
+
+    // ----------------------------------------------
+    // 4. Event binding & initialisation
+    // ----------------------------------------------
+    $(document).ready(function() {
+        // load first tab data
+        loadAllAdminContacts();
+
+        // load district data and init select2
+        loadDistrictData();
+
+        // view button click
+        $('#viewDistrictBtn').on('click', function() {
+            const selected = $('#districtSelect').val();  // value from select2
+            if (!selected) {
+                alert('Please select a district');
                 return;
             }
+            renderDistrictTable(selected);
+        });
 
-            // build html rows
-            let htmlRows = '';
-            for (let r = 0; r < rows.length; r++) {
-                const row = rows[r];
-                // ensure we have 8 columns (pad if needed, but sheet usually has less)
-                const cols = [];
-                for (let i = 0; i < 8; i++) {
-                    cols[i] = (row[i] !== undefined && row[i] !== null) ? row[i].toString().trim() : '';
-                }
+        // optional: on tab switch if district tab and select2 not populated? it's already loaded.
+        // also pressing enter on select2 could trigger view (UX)
+        $('#districtSelect').on('change', function(e) {
+            // optional, but we have dedicated button
+        });
 
-                // helper to format contacts as links
-                const formatContact = (val, type) => {
-                    if (!val) return '<span class="empty-cell">—</span>';
-                    const escaped = escapeHtml(val);
-                    if (type === 'email' && val.includes('@')) {
-                        return `<a href="mailto:${escapeHtml(val)}" class="contact-link">${escaped}</a>`;
-                    } else if (type === 'phone') {
-                        // strip non-digits for tel, but keep display
-                        const digits = val.replace(/[^0-9+]/g, '');
-                        if (digits) {
-                            return `<a href="tel:${escapeHtml(digits)}" class="contact-link">${escaped}</a>`;
-                        }
-                    }
-                    return escaped; // plain text
-                };
-
-                // column classification:
-                // 0 treasury (no link), 1 network admin name, 2 network admin contact (phone),
-                // 3 treasury admin name, 4 treasury admin contact (phone),
-                // 5 office mail (email), 6 office contact (phone), 7 office mobile (phone)
-                const treasury    = escapeHtml(cols[0] || '—');
-                const netName     = escapeHtml(cols[1] || '—');
-                const netPhone    = formatContact(cols[2], 'phone');
-                const treasuryName= escapeHtml(cols[3] || '—');
-                const treasuryPhone= formatContact(cols[4], 'phone');
-                const officeEmail = formatContact(cols[5], 'email');
-                const officeLand  = formatContact(cols[6], 'phone');
-                const officeMobile= formatContact(cols[7], 'phone');
-
-                htmlRows += `<tr>
-                    <td><strong>${treasury}</strong></td>
-                    <td>${netName}</td>
-                    <td>${netPhone}</td>
-                    <td>${treasuryName}</td>
-                    <td>${treasuryPhone}</td>
-                    <td>${officeEmail}</td>
-                    <td>${officeLand}</td>
-                    <td>${officeMobile}</td>
-                </tr>`;
-            }
-
-            tbody.innerHTML = htmlRows;
-
-            // (re)initialise DataTable
-            if ($.fn.DataTable.isDataTable('#adminFullTable')) {
-                $('#adminFullTable').DataTable().destroy();
-            }
-            $('#adminFullTable').DataTable({
-                paging: true,
-                pageLength: 25,
-                lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
-                ordering: true,
-                responsive: false,
-                scrollX: true,
-                autoWidth: false,
-                language: {
-                    search: '<i class="bi bi-search"></i> Search',
-                    searchPlaceholder: 'treasury, name, email...'
-                },
-                columnDefs: [
-                    { targets: 0, width: '200px' },
-                    { targets: 1, width: '160px' },
-                    { targets: 2, width: '140px' },
-                    { targets: 3, width: '160px' },
-                    { targets: 4, width: '140px' },
-                    { targets: 5, width: '190px' },
-                    { targets: 6, width: '120px' },
-                    { targets: 7, width: '130px' }
-                ]
-            });
-        }
-
-        // ----------------------------------------------
-        // escape util (copied from original)
-        // ----------------------------------------------
-        function escapeHtml(text) {
-            if (text === undefined || text === null) return '—';
-            if (typeof text !== 'string') text = String(text);
-            const map = {
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                '"': '&quot;',
-                "'": '&#039;'
-            };
-            return text.replace(/[&<>"']/g, m => map[m]);
-        }
-
-        // start loading
-        loadAllAdminContacts();
-    })();
+        // small demo: autofocus on select2 search when dropdown opens (already in init)
+    });
+})();
 </script>
-
-<!-- optional: if you want select2 style but not needed for plain table -->
 </body>
 </html>
