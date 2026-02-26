@@ -66,15 +66,27 @@ async function handleLogin() {
     const loginBtn = document.getElementById('loginBtn');
     const loginSpinner = document.getElementById('loginSpinner');
     const loginText = document.getElementById('loginText');
+    const loginOverlay = document.getElementById('loginOverlay');
     
     if (!username || !password) {
+        // Remove focus from inputs to prevent aria-hidden error
+        document.activeElement.blur();
+        
         Swal.fire({
             icon: 'warning',
             title: 'Missing Information',
             text: 'Please enter both username and password',
             background: document.body.classList.contains('dark-theme') ? '#1e293b' : '#ffffff',
             color: document.body.classList.contains('dark-theme') ? '#f1f5f9' : '#1a2634',
-            confirmButtonColor: '#3b82f6'
+            confirmButtonColor: '#3b82f6',
+            didOpen: () => {
+                // Ensure login overlay doesn't have aria-hidden during alert
+                if (loginOverlay) loginOverlay.removeAttribute('aria-hidden');
+            },
+            willClose: () => {
+                // Restore focus to username field after alert closes
+                document.getElementById('username').focus();
+            }
         });
         return;
     }
@@ -83,12 +95,14 @@ async function handleLogin() {
     loginSpinner.classList.remove('d-none');
     loginText.textContent = 'Verifying...';
     
+    // Remove focus from inputs
+    document.activeElement.blur();
+    
     try {
         const isValid = await validateLogin(username, password);
         
         if (isValid) {
             isAuthenticated = true;
-            const loginOverlay = document.getElementById('loginOverlay');
             loginOverlay.style.opacity = '0';
             
             setTimeout(() => {
@@ -97,32 +111,58 @@ async function handleLogin() {
                 loadMenuData();
             }, 500);
         } else {
+            // Reset button state
+            loginBtn.disabled = false;
+            loginSpinner.classList.add('d-none');
+            loginText.textContent = 'Login';
+            
+            // Clear password field for security
+            document.getElementById('password').value = '';
+            
+            // Remove aria-hidden from overlay before showing alert
+            if (loginOverlay) loginOverlay.removeAttribute('aria-hidden');
+            
             Swal.fire({
                 icon: 'error',
                 title: 'Login Failed',
                 text: 'Invalid username or password',
                 background: document.body.classList.contains('dark-theme') ? '#1e293b' : '#ffffff',
                 color: document.body.classList.contains('dark-theme') ? '#f1f5f9' : '#1a2634',
-                confirmButtonColor: '#3b82f6'
+                confirmButtonColor: '#3b82f6',
+                didOpen: () => {
+                    // Ensure overlay doesn't have aria-hidden during alert
+                    if (loginOverlay) loginOverlay.removeAttribute('aria-hidden');
+                },
+                willClose: () => {
+                    // Restore focus to username field after alert closes
+                    document.getElementById('username').focus();
+                }
             });
-            
-            loginBtn.disabled = false;
-            loginSpinner.classList.add('d-none');
-            loginText.textContent = 'Login';
         }
     } catch (error) {
+        console.error('Login error:', error);
+        
+        loginBtn.disabled = false;
+        loginSpinner.classList.add('d-none');
+        loginText.textContent = 'Login';
+        
+        // Remove aria-hidden from overlay before showing alert
+        if (loginOverlay) loginOverlay.removeAttribute('aria-hidden');
+        
         Swal.fire({
             icon: 'error',
             title: 'Error',
             text: 'Unable to verify credentials. Please try again.',
             background: document.body.classList.contains('dark-theme') ? '#1e293b' : '#ffffff',
             color: document.body.classList.contains('dark-theme') ? '#f1f5f9' : '#1a2634',
-            confirmButtonColor: '#3b82f6'
+            confirmButtonColor: '#3b82f6',
+            didOpen: () => {
+                if (loginOverlay) loginOverlay.removeAttribute('aria-hidden');
+            },
+            willClose: () => {
+                document.getElementById('username').focus();
+            }
         });
-        
-        loginBtn.disabled = false;
-        loginSpinner.classList.add('d-none');
-        loginText.textContent = 'Login';
     }
 }
 
@@ -361,6 +401,11 @@ document.addEventListener('DOMContentLoaded', function() {
     
     const welcomeMsg = document.getElementById('welcome-message');
     if (welcomeMsg) welcomeMsg.style.display = 'none';
+    
+    // Focus on username field initially
+    setTimeout(() => {
+        if (username) username.focus();
+    }, 100);
 });
 
 // Iframe load event
