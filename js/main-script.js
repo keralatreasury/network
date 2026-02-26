@@ -34,6 +34,29 @@ function toggleTheme() {
     localStorage.setItem('theme', newTheme);
 }
 
+// Show error message in login footer
+function showLoginError(message) {
+    const errorDiv = document.getElementById('loginError');
+    const errorText = document.getElementById('errorMessageText');
+    if (errorDiv && errorText) {
+        errorText.textContent = message;
+        errorDiv.style.display = 'flex';
+        
+        // Auto hide after 5 seconds
+        setTimeout(() => {
+            errorDiv.style.display = 'none';
+        }, 5000);
+    }
+}
+
+// Hide error message
+function hideLoginError() {
+    const errorDiv = document.getElementById('loginError');
+    if (errorDiv) {
+        errorDiv.style.display = 'none';
+    }
+}
+
 // Login validation
 async function validateLogin(username, password) {
     try {
@@ -68,29 +91,15 @@ async function handleLogin() {
     const loginText = document.getElementById('loginText');
     const loginOverlay = document.getElementById('loginOverlay');
     
+    // Hide any previous error
+    hideLoginError();
+    
     if (!username || !password) {
-        // Remove focus from inputs to prevent aria-hidden error
-        document.activeElement.blur();
-        
-        Swal.fire({
-            icon: 'warning',
-            title: 'Missing Information',
-            text: 'Please enter both username and password',
-            background: document.body.classList.contains('dark-theme') ? '#1e293b' : '#ffffff',
-            color: document.body.classList.contains('dark-theme') ? '#f1f5f9' : '#1a2634',
-            confirmButtonColor: '#3b82f6',
-            didOpen: () => {
-                // Ensure login overlay doesn't have aria-hidden during alert
-                if (loginOverlay) loginOverlay.removeAttribute('aria-hidden');
-            },
-            willClose: () => {
-                // Restore focus to username field after alert closes
-                document.getElementById('username').focus();
-            }
-        });
+        showLoginError('Please enter both username and password');
         return;
     }
     
+    // Show loading state
     loginBtn.disabled = true;
     loginSpinner.classList.remove('d-none');
     loginText.textContent = 'Verifying...';
@@ -119,50 +128,25 @@ async function handleLogin() {
             // Clear password field for security
             document.getElementById('password').value = '';
             
-            // Remove aria-hidden from overlay before showing alert
-            if (loginOverlay) loginOverlay.removeAttribute('aria-hidden');
+            // Show error message
+            showLoginError('Invalid username or password');
             
-            Swal.fire({
-                icon: 'error',
-                title: 'Login Failed',
-                text: 'Invalid username or password',
-                background: document.body.classList.contains('dark-theme') ? '#1e293b' : '#ffffff',
-                color: document.body.classList.contains('dark-theme') ? '#f1f5f9' : '#1a2634',
-                confirmButtonColor: '#3b82f6',
-                didOpen: () => {
-                    // Ensure overlay doesn't have aria-hidden during alert
-                    if (loginOverlay) loginOverlay.removeAttribute('aria-hidden');
-                },
-                willClose: () => {
-                    // Restore focus to username field after alert closes
-                    document.getElementById('username').focus();
-                }
-            });
+            // Focus on username field
+            document.getElementById('username').focus();
         }
     } catch (error) {
         console.error('Login error:', error);
         
+        // Reset button state
         loginBtn.disabled = false;
         loginSpinner.classList.add('d-none');
         loginText.textContent = 'Login';
         
-        // Remove aria-hidden from overlay before showing alert
-        if (loginOverlay) loginOverlay.removeAttribute('aria-hidden');
+        // Show error message
+        showLoginError('Unable to verify credentials. Please try again.');
         
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'Unable to verify credentials. Please try again.',
-            background: document.body.classList.contains('dark-theme') ? '#1e293b' : '#ffffff',
-            color: document.body.classList.contains('dark-theme') ? '#f1f5f9' : '#1a2634',
-            confirmButtonColor: '#3b82f6',
-            didOpen: () => {
-                if (loginOverlay) loginOverlay.removeAttribute('aria-hidden');
-            },
-            willClose: () => {
-                document.getElementById('username').focus();
-            }
-        });
+        // Focus on username field
+        document.getElementById('username').focus();
     }
 }
 
@@ -383,8 +367,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (username) {
         username.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && password) {
-                password.focus();
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (password) password.focus();
             }
         });
     }
@@ -392,9 +377,18 @@ document.addEventListener('DOMContentLoaded', function() {
     if (password) {
         password.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
+                e.preventDefault();
                 handleLogin();
             }
         });
+    }
+    
+    // Clear error when user starts typing
+    if (username) {
+        username.addEventListener('input', hideLoginError);
+    }
+    if (password) {
+        password.addEventListener('input', hideLoginError);
     }
     
     initDesktopSidebarToggle();
