@@ -462,7 +462,53 @@ input:checked + .slider .bi-moon { opacity: 1; }
     opacity: 0.7;
     cursor: not-allowed;
 }
+/* Add these styles to your existing CSS file */
 
+/* Login Error Message */
+.login-error {
+    background-color: rgba(220, 38, 38, 0.1);
+    border: 1px solid #dc2626;
+    color: #dc2626;
+    padding: 10px 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    animation: shake 0.5s ease-in-out;
+}
+
+.login-error i {
+    font-size: 18px;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+/* Dark theme error message */
+body.dark-theme .login-error {
+    background-color: rgba(220, 38, 38, 0.2);
+    border-color: #ef4444;
+    color: #ef4444;
+}
+
+/* Success message style (optional) */
+.login-success {
+    background-color: rgba(34, 197, 94, 0.1);
+    border: 1px solid #22c55e;
+    color: #22c55e;
+    padding: 10px 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+}
 /* ---- scrollbar ---- */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: var(--scrollbar-track); }
