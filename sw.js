@@ -1,6 +1,6 @@
 const CACHE_NAME = 'noc-admin-v1';
 const urlsToCache = [
-    '/',
+    '/network/',
     '/index.html',
     '/manifest.json',
     '/css/main-style.css',
