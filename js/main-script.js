@@ -323,9 +323,9 @@ function loadUrlInIframe(url) {
     if (loading) loading.style.display = 'flex';
     
     let fullUrl = url;
-    //if (!url.startsWith('http://') && !url.startsWith('https://')) {
-     //   fullUrl = 'https://' + url;
- //   }
+   // if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    //    fullUrl = 'https://' + url;
+   // }
     
     iframe.onload = function() { 
         if (loading) loading.style.display = 'none'; 
