@@ -1,60 +1,115 @@
+// Service Worker for NOC Admin PWA
 const CACHE_NAME = 'noc-admin-v1';
+const BASE_PATH = '/network';
+
+// Files to cache - all with correct paths for GitHub Pages subdirectory
 const urlsToCache = [
-    '/network/',
-    '/index.html',
-    '/manifest.json',
-    '/css/main-style.css',
-    '/js/main-script.js',
-    '/images/favicon.svg',
-    '/images/favicon-192x192.png',
-    '/images/favicon-512x512.png',
+    `${BASE_PATH}/`,
+    `${BASE_PATH}/index.html`,
+    `${BASE_PATH}/manifest.json`,
+    `${BASE_PATH}/css/main-style.css`,
+    `${BASE_PATH}/js/main-script.js`,
+    `${BASE_PATH}/images/favicon.svg`,
+    `${BASE_PATH}/images/favicon-192x192.png`,
+    `${BASE_PATH}/images/favicon-512x512.png`,
+    `${BASE_PATH}/images/apple-touch-icon.png`,
     'https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css',
     'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css',
     'https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js'
 ];
 
+// Install event - cache all static assets
 self.addEventListener('install', event => {
+    console.log('Service Worker: Installing...');
+    
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then(cache => {
-                console.log('Opened cache');
+                console.log('Service Worker: Caching files');
                 return cache.addAll(urlsToCache);
             })
-    );
-});
-
-self.addEventListener('fetch', event => {
-    event.respondWith(
-        caches.match(event.request)
-            .then(response => {
-                // Cache hit - return response
-                if (response) {
-                    return response;
-                }
-                return fetch(event.request).then(
-                    response => {
-                        // Check if we received a valid response
-                        if(!response || response.status !== 200 || response.type !== 'basic') {
-                            return response;
-                        }
-                        return response;
-                    }
-                );
+            .then(() => {
+                console.log('Service Worker: Installation complete');
+                return self.skipWaiting();
+            })
+            .catch(error => {
+                console.error('Service Worker: Cache failed', error);
             })
     );
 });
 
+// Activate event - clean up old caches
 self.addEventListener('activate', event => {
-    const cacheWhitelist = [CACHE_NAME];
+    console.log('Service Worker: Activating...');
+    
     event.waitUntil(
         caches.keys().then(cacheNames => {
             return Promise.all(
                 cacheNames.map(cacheName => {
-                    if (cacheWhitelist.indexOf(cacheName) === -1) {
+                    if (cacheName !== CACHE_NAME) {
+                        console.log('Service Worker: Deleting old cache', cacheName);
                         return caches.delete(cacheName);
                     }
                 })
             );
+        }).then(() => {
+            console.log('Service Worker: Activation complete');
+            return self.clients.claim();
         })
     );
+});
+
+// Fetch event - serve from cache first, then network
+self.addEventListener('fetch', event => {
+    // Skip cross-origin requests like Google Sheets API
+    if (event.request.url.includes('sheets.googleapis.com') || 
+        event.request.url.includes('googleapis.com') ||
+        event.request.url.includes('firestore.googleapis.com')) {
+        return;
+    }
+    
+    event.respondWith(
+        caches.match(event.request)
+            .then(cachedResponse => {
+                // Return cached response if found
+                if (cachedResponse) {
+                    return cachedResponse;
+                }
+                
+                // Otherwise fetch from network
+                return fetch(event.request)
+                    .then(networkResponse => {
+                        // Check if we received a valid response
+                        if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
+                            return networkResponse;
+                        }
+                        
+                        // Clone the response (can only be consumed once)
+                        const responseToCache = networkResponse.clone();
+                        
+                        // Cache the new response for future
+                        caches.open(CACHE_NAME)
+                            .then(cache => {
+                                cache.put(event.request, responseToCache);
+                            });
+                        
+                        return networkResponse;
+                    })
+                    .catch(error => {
+                        console.log('Service Worker: Fetch failed', error);
+                        
+                        // Return offline page for HTML requests if needed
+                        if (event.request.headers.get('accept').includes('text/html')) {
+                            return caches.match(`${BASE_PATH}/index.html`);
+                        }
+                    });
+            })
+    );
+});
+
+// Handle offline fallback
+self.addEventListener('message', event => {
+    if (event.data && event.data.type === 'SKIP_WAITING') {
+        self.skipWaiting();
+    }
 });
