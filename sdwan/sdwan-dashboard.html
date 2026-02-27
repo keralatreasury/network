@@ -4,143 +4,181 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SD-WAN NOC · Live Dashboard</title>
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <!-- LOCAL RESOURCES - Using existing from main project -->
+    <link rel="stylesheet" href="../css/bootstrap.min.css">
+    <link rel="stylesheet" href="../css/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="../css/font-awesome.min.css">
+    
+    <!-- Chart.js (new) -->
+    <script src="../js/chart.min.js"></script>
+    
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
+        
         body {
-            background: #0b1a2f;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #f0f5fa;  /* Light theme background */
+            font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
             padding: 20px;
-            color: #e6f0ff;
+            color: #1e293b;
         }
+        
         .dashboard {
             max-width: 1600px;
             margin: 0 auto;
         }
+        
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 30px;
             padding: 0 10px;
+            flex-wrap: wrap;
+            gap: 15px;
         }
+        
         .header h1 {
             font-size: 2.2rem;
-            font-weight: 500;
-            background: linear-gradient(135deg, #a8d0ff, #4d9eff);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            font-weight: 600;
+            color: #0f5b9c;  /* Primary color from index */
             display: flex;
             align-items: center;
             gap: 15px;
+            margin: 0;
         }
+        
+        .header h1 i {
+            background: linear-gradient(135deg, #0f5b9c, #1a4b7a);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 2.5rem;
+        }
+        
         .status-badge {
-            background: #1e3a5f;
-            padding: 8px 20px;
+            background: white;
+            padding: 8px 24px;
             border-radius: 40px;
             display: flex;
             align-items: center;
-            gap: 10px;
-            border: 1px solid #3d7bb3;
+            gap: 12px;
+            border: 1px solid #e2e8f0;
             font-size: 0.95rem;
+            color: #1e293b;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
+        
         .status-badge i {
-            color: #4fc3ff;
+            color: #0f5b9c;
         }
+        
         .refresh-btn {
-            background: #1e3a5f;
-            border: 1px solid #3d7bb3;
-            color: white;
-            padding: 10px 24px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            color: #1e293b;
+            padding: 10px 28px;
             border-radius: 40px;
             cursor: pointer;
             font-size: 0.95rem;
+            font-weight: 500;
             display: flex;
             align-items: center;
             gap: 10px;
-            transition: 0.2s;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
+        
         .refresh-btn:hover {
-            background: #264d7c;
-            border-color: #5b9eff;
+            background: #f8fafc;
+            border-color: #0f5b9c;
+            color: #0f5b9c;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(15, 91, 156, 0.15);
         }
+        
         .grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
-            gap: 22px;
-            margin-bottom: 22px;
+            gap: 24px;
+            margin-bottom: 24px;
         }
+        
         .card {
-            background: #132b44;
-            border-radius: 28px;
-            padding: 22px;
-            border: 1px solid #2d4b70;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
-            backdrop-filter: blur(2px);
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
+            border: 1px solid #e9ecef;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            transition: transform 0.2s, box-shadow 0.2s;
         }
+        
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(15, 91, 156, 0.12);
+        }
+        
         .card-header {
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 16px;
             margin-bottom: 20px;
-            border-bottom: 1px solid #2d4b70;
-            padding-bottom: 14px;
+            border-bottom: 1px solid #eef2f6;
+            padding-bottom: 16px;
         }
+        
         .card-header i {
             font-size: 1.8rem;
-            color: #7bb9ff;
-            background: #1e3f62;
+            color: #0f5b9c;
+            background: #e8f0fe;
             padding: 12px;
-            border-radius: 18px;
+            border-radius: 16px;
+            width: 54px;
+            height: 54px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
+        
         .card-header h3 {
-            font-size: 1.3rem;
-            font-weight: 500;
-            color: #d6e9ff;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1a4b7a;
+            margin: 0;
         }
+        
         .card-header p {
             font-size: 0.85rem;
-            color: #96b8db;
-            margin-top: 3px;
+            color: #64748b;
+            margin: 4px 0 0 0;
         }
+        
         .chart-wrapper {
             height: 240px;
             position: relative;
-            margin: 10px 0 15px 0;
+            margin: 15px 0 20px 0;
         }
+        
         .stats-mini {
             display: flex;
             justify-content: space-around;
-            background: #0e2237;
-            padding: 12px;
+            background: #f8fafc;
+            padding: 14px;
             border-radius: 40px;
-            border: 1px solid #2d4b70;
-            color: #c2dcff;
+            border: 1px solid #e9ecef;
+            color: #1e293b;
             font-weight: 500;
             margin-top: 15px;
+            font-size: 0.9rem;
         }
+        
         .full-width {
             grid-column: 1 / -1;
         }
-        .split-panel {
-            display: flex;
-            gap: 22px;
-            flex-wrap: wrap;
-        }
-        .split-panel > div {
-            flex: 1 1 300px;
-            background: #102c41;
-            border-radius: 24px;
-            padding: 18px;
-            border: 1px solid #315f88;
-        }
+        
         .legend {
             display: flex;
             flex-wrap: wrap;
@@ -148,41 +186,112 @@
             margin-top: 15px;
             justify-content: center;
         }
+        
         .legend-item {
             display: flex;
             align-items: center;
             gap: 8px;
             font-size: 0.9rem;
         }
+        
         .dot {
             width: 14px;
             height: 14px;
             border-radius: 4px;
         }
+        
         .loading {
             grid-column: 1/-1;
             text-align: center;
             padding: 60px;
-            background: #132b44;
-            border-radius: 50px;
-            font-size: 1.3rem;
-            color: #9bc0ff;
+            background: white;
+            border-radius: 20px;
+            font-size: 1.2rem;
+            color: #64748b;
+            border: 1px solid #e9ecef;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
         }
+        
         .error {
             grid-column: 1/-1;
             text-align: center;
-            padding: 40px;
-            background: #2f1e2e;
-            border-radius: 40px;
-            color: #ffa7a7;
-            border: 1px solid #a55;
+            padding: 50px;
+            background: #fef2f2;
+            border-radius: 20px;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
         }
+        
+        .error button {
+            background: #0f5b9c;
+            border: none;
+            color: white;
+            padding: 12px 32px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: 500;
+            margin-top: 20px;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+        
+        .error button:hover {
+            background: #1a4b7a;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(15, 91, 156, 0.3);
+        }
+        
         .footer {
             margin-top: 30px;
-            padding: 16px;
+            padding: 20px;
             text-align: right;
-            color: #6d93c0;
-            border-top: 1px solid #1e3f62;
+            color: #64748b;
+            border-top: 1px solid #e9ecef;
+            font-size: 0.9rem;
+        }
+        
+        .district-tag {
+            background: #e8f0fe;
+            color: #0f5b9c;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-weight: 500;
+            border: 1px solid #b8d4fe;
+            transition: all 0.2s;
+        }
+        
+        .district-tag:hover {
+            background: #0f5b9c;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(15, 91, 156, 0.2);
+        }
+        
+        /* Chart.js custom colors for light theme */
+        canvas {
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.05));
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .header h1 {
+                font-size: 1.8rem;
+                justify-content: center;
+            }
+            
+            .status-badge, .refresh-btn {
+                justify-content: center;
+            }
+            
+            .grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -190,27 +299,29 @@
     <div class="dashboard">
         <div class="header">
             <h1>
-                <i class="fas fa-globe"></i> 
+                <i class="bi bi-hdd-stack-fill"></i> 
                 SD-WAN NOC 
             </h1>
             <div class="status-badge">
-                <i class="fas fa-cloud"></i>
+                <i class="bi bi-cloud-check"></i>
                 <span id="lastUpdate">fetching live...</span>
             </div>
             <button class="refresh-btn" onclick="loadLiveData()">
-                <i class="fas fa-sync-alt"></i> refresh now
+                <i class="bi bi-arrow-repeat"></i> refresh now
             </button>
         </div>
 
         <div id="dashboardGrid" class="grid">
             <div class="loading">
-                <i class="fas fa-circle-notch fa-spin fa-2x" style="margin-right: 15px;"></i>
-                Loading live data ...
+                <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-3">Loading live data ...</p>
             </div>
         </div>
 
         <div class="footer">
-          
+            <i class="bi bi-database"></i> Data source: Working Status · Last 7 days trend
         </div>
     </div>
 
@@ -226,7 +337,12 @@
         // Main function to load data and build dashboard
         async function loadLiveData() {
             const grid = document.getElementById('dashboardGrid');
-            grid.innerHTML = `<div class="loading"><i class="fas fa-circle-notch fa-spin fa-2x" style="margin-right: 15px;"></i>fetching spreadsheet...</div>`;
+            grid.innerHTML = `<div class="loading">
+                <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-3">fetching spreadsheet...</p>
+            </div>`;
 
             try {
                 // Build Sheets API URL
@@ -246,7 +362,7 @@
 
                 // Update timestamp
                 document.getElementById('lastUpdate').innerHTML = 
-                    `<i class="far fa-check-circle" style="color:#6effa6;"></i> updated ${new Date().toLocaleTimeString()}`;
+                    `<i class="bi bi-check-circle-fill" style="color:#10b981;"></i> updated ${new Date().toLocaleTimeString()}`;
 
                 // Process the data (first row = headers)
                 const rows = data.values;
@@ -264,11 +380,11 @@
                 console.error('API Error:', error);
                 grid.innerHTML = `
                     <div class="error">
-                        <i class="fas fa-exclamation-triangle fa-2x" style="margin-bottom: 15px;"></i>
-                        <h3>Failed to load live data</h3>
-                        <p style="margin-top: 10px; color: #ffcaca;">${error.message}</p>
-                        <button onclick="loadLiveData()" style="margin-top: 20px; background: #1e3f62; border: none; color: white; padding: 12px 30px; border-radius: 40px; cursor: pointer;">
-                            <i class="fas fa-redo-alt"></i> retry
+                        <i class="bi bi-exclamation-triangle-fill" style="font-size: 3rem;"></i>
+                        <h3 class="mt-3">Failed to load live data</h3>
+                        <p style="margin-top: 10px;">${error.message}</p>
+                        <button onclick="loadLiveData()">
+                            <i class="bi bi-arrow-repeat me-2"></i> retry
                         </button>
                     </div>
                 `;
@@ -276,7 +392,7 @@
         }
 
         function buildCharts(rows, headers) {
-            // Find column indexes
+            // Find column indexes (case-insensitive matching)
             const statusIdx = headers.findIndex(h => h?.toLowerCase().includes('status of work'));
             const commissionedIdx = headers.findIndex(h => h?.toLowerCase().includes('commissioned'));
             const typeIdx = headers.findIndex(h => h?.toLowerCase().includes('bsnl txn') || h?.toLowerCase().includes('tip'));
@@ -354,7 +470,7 @@
                 card.className = 'card';
                 card.innerHTML = `
                     <div class="card-header">
-                        <i class="fas ${icon}"></i>
+                        <i class="bi ${icon}"></i>
                         <div>
                             <h3>${title}</h3>
                             <p>${description}</p>
@@ -377,7 +493,12 @@
                         responsive: true,
                         maintainAspectRatio: false,
                         plugins: {
-                            legend: { labels: { color: '#c2dcff', font: { size: 11 } } }
+                            legend: { 
+                                labels: { 
+                                    color: '#1e293b',
+                                    font: { size: 11, weight: '500' }
+                                } 
+                            }
                         },
                         ...chartConfig.options
                     }
@@ -391,7 +512,7 @@
 
             // Card 1: Status of Work (Pie)
             addCard(
-                'fa-clipboard-check',
+                'bi-clipboard-check-fill',
                 'Work Status Overview',
                 'Completion status of all treasuries',
                 'pie',
@@ -400,17 +521,17 @@
                         labels: ['Completed', 'Work in Progress', 'Other/Blank'],
                         datasets: [{
                             data: [statusCounts.Completed, statusCounts.WIP, statusCounts.Other],
-                            backgroundColor: ['#2ecc71', '#f39c12', '#7f8c8d'],
+                            backgroundColor: ['#10b981', '#f59e0b', '#94a3b8'],
                             borderWidth: 0
                         }]
                     }
                 },
-                () => `✅ ${statusCounts.Completed} completed · 🔧 ${statusCounts.WIP} in progress`
+                () => `✅ ${statusCounts.Completed} completed · 🔧 ${statusCounts.WIP} in progress · 📋 ${statusCounts.Other} other`
             );
 
-            // Card 2: Commissioned Status (Pie)
+            // Card 2: Commissioned Status (Doughnut)
             addCard(
-                'fa-check-circle',
+                'bi-check-circle-fill',
                 'Commissioned Status',
                 'Officially commissioned (Yes/No)',
                 'doughnut',
@@ -419,16 +540,16 @@
                         labels: ['Commissioned (YES)', 'Not Commissioned', 'Not Specified'],
                         datasets: [{
                             data: [commissionedCounts.YES, commissionedCounts.NO, commissionedCounts.Blank],
-                            backgroundColor: ['#27ae60', '#e74c3c', '#95a5a6'],
+                            backgroundColor: ['#10b981', '#ef4444', '#94a3b8'],
                         }]
                     }
                 },
-                () => `✔️ ${commissionedCounts.YES} commissioned · ❌ ${commissionedCounts.NO} not commissioned`
+                () => `✔️ ${commissionedCounts.YES} commissioned · ❌ ${commissionedCounts.NO} not commissioned · ❓ ${commissionedCounts.Blank} not specified`
             );
 
             // Card 3: Connection Type (Pie)
             addCard(
-                'fa-network-wired',
+                'bi-diagram-3-fill',
                 'Connection Type',
                 'BSNL TXN / TIP distribution',
                 'pie',
@@ -437,16 +558,16 @@
                         labels: ['FTTH', 'TXMN', 'Other'],
                         datasets: [{
                             data: [typeCounts.FTTH, typeCounts.TXMN, typeCounts.Other],
-                            backgroundColor: ['#3498db', '#9b59b6', '#bdc3c7'],
+                            backgroundColor: ['#0f5b9c', '#8b5cf6', '#94a3b8'],
                         }]
                     }
                 },
-                () => `📡 FTTH: ${typeCounts.FTTH}  ·  🛰️ TXMN: ${typeCounts.TXMN}`
+                () => `📡 FTTH: ${typeCounts.FTTH}  ·  🛰️ TXMN: ${typeCounts.TXMN} · 📊 Other: ${typeCounts.Other}`
             );
 
             // Card 4: Working Status from Remarks (Bar)
             addCard(
-                'fa-heartbeat',
+                'bi-heart-pulse-fill',
                 'Operational Status',
                 'Based on treasury remarks',
                 'bar',
@@ -455,72 +576,125 @@
                         labels: ['Working', 'Not Working', 'Unknown'],
                         datasets: [{
                             data: [working, notWorking, unknown],
-                            backgroundColor: ['#2ecc71', '#e67e22', '#7f8c8d'],
+                            backgroundColor: ['#10b981', '#ef4444', '#94a3b8'],
                         }]
                     },
-                    options: { scales: { y: { beginAtZero: true, grid: { color: '#2d4b70' } } } }
+                    options: { 
+                        scales: { 
+                            y: { 
+                                beginAtZero: true, 
+                                grid: { color: '#e9ecef' },
+                                ticks: { color: '#64748b' }
+                            },
+                            x: {
+                                ticks: { color: '#1e293b' }
+                            }
+                        } 
+                    }
                 },
-                () => `🟢 ${working} working  ·  🔴 ${notWorking} not working`
+                () => `🟢 ${working} working  ·  🔴 ${notWorking} not working  ·  ⚪ ${unknown} unknown`
             );
 
             // Card 5: Recent Completions (Line chart - last 7 dates)
             if (sortedDates.length > 0) {
                 addCard(
-                    'fa-calendar-alt',
+                    'bi-calendar-week-fill',
                     'Last 7 days completions',
                     'Daily completed count',
                     'line',
                     {
                         data: {
-                            labels: sortedDates.map(d => d.slice(5)), // MM-DD
+                            labels: sortedDates.map(d => {
+                                const parts = d.split('-');
+                                return `${parts[2]}-${parts[1]}`; // DD-MM format
+                            }),
                             datasets: [{
                                 data: lastWeekData,
-                                borderColor: '#4d9eff',
-                                backgroundColor: 'rgba(77, 158, 255, 0.2)',
+                                borderColor: '#0f5b9c',
+                                backgroundColor: 'rgba(15, 91, 156, 0.1)',
                                 tension: 0.3,
-                                fill: true
+                                fill: true,
+                                pointBackgroundColor: '#0f5b9c',
+                                pointBorderColor: 'white',
+                                pointBorderWidth: 2,
+                                pointRadius: 4,
+                                pointHoverRadius: 6
                             }]
                         },
                         options: {
-                            scales: { y: { beginAtZero: true, grid: { color: '#2d4b70' } } }
+                            scales: { 
+                                y: { 
+                                    beginAtZero: true, 
+                                    grid: { color: '#e9ecef' },
+                                    ticks: { color: '#64748b' }
+                                },
+                                x: {
+                                    ticks: { color: '#1e293b' }
+                                }
+                            }
                         }
                     },
-                    () => `📅 total last 7d: ${lastWeekData.reduce((a,b) => a+b, 0)}`
+                    () => `📅 Total last 7 days: ${lastWeekData.reduce((a,b) => a+b, 0)}`
                 );
             }
 
             // Card 6: Top Issue Keywords (Horizontal bar)
             if (topIssues.length > 0) {
                 addCard(
-                    'fa-exclamation-triangle',
+                    'bi-exclamation-triangle-fill',
                     'Frequent Issue Indicators',
                     'From Issue Remarks column',
                     'bar',
                     {
                         data: {
-                            labels: topIssues.map(i => i[0].substring(0, 20) + '...'),
+                            labels: topIssues.map(i => i[0].substring(0, 20) + (i[0].length > 20 ? '...' : '')),
                             datasets: [{
                                 data: topIssues.map(i => i[1]),
-                                backgroundColor: '#e67e22',
+                                backgroundColor: '#f59e0b',
+                                borderRadius: 6
                             }]
                         },
                         options: {
                             indexAxis: 'y',
-                            scales: { x: { grid: { color: '#2d4b70' } } }
+                            scales: { 
+                                x: { 
+                                    grid: { color: '#e9ecef' },
+                                    ticks: { color: '#64748b' }
+                                },
+                                y: {
+                                    ticks: { color: '#1e293b' }
+                                }
+                            },
+                            plugins: {
+                                legend: { display: false }
+                            }
                         }
                     },
-                    () => `⚠️ most mentioned: ${topIssues[0]?.[0].substring(0,15)}... (${topIssues[0]?.[1]})`
+                    () => `⚠️ Most mentioned: ${topIssues[0]?.[0].substring(0,20)}... (${topIssues[0]?.[1]})`
                 );
             }
 
-            // Full width card: Summary table by district (simplified)
+            // Full width card: Summary table by district
             const districts = {};
             rows.forEach(row => {
                 const name = row[0] || '';
-                if (name.includes('DISTRICT') || name.includes('TREASURY')) {
-                    const districtMatch = name.match(/([A-Za-z]+)\s+(DISTRICT|TREASURY)/i);
-                    const key = districtMatch ? districtMatch[1] : 'Other';
-                    districts[key] = (districts[key] || 0) + 1;
+                if (name) {
+                    // Try to extract district from treasury name
+                    const words = name.split(' ');
+                    let district = 'Other';
+                    for (let word of words) {
+                        if (word.includes('DISTRICT') || word.includes('TREASURY')) {
+                            const index = words.indexOf(word);
+                            if (index > 0) {
+                                district = words[index-1];
+                                break;
+                            }
+                        }
+                    }
+                    if (district === 'Other' && words[0] && !words[0].includes('TREASURY')) {
+                        district = words[0];
+                    }
+                    districts[district] = (districts[district] || 0) + 1;
                 }
             });
 
@@ -528,16 +702,23 @@
             districtCard.className = 'card full-width';
             districtCard.innerHTML = `
                 <div class="card-header">
-                    <i class="fas fa-map-marked-alt"></i>
+                    <i class="bi bi-map-fill"></i>
                     <div>
-                        <h3>Treasury Distribution by Region</h3>
-                        <p>count per district (first word)</p>
+                        <h3>Treasury Distribution by District</h3>
+                        <p>Count per region (auto-detected)</p>
                     </div>
                 </div>
-                <div style="display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; padding: 15px;">
-                    ${Object.entries(districts).slice(0, 12).map(([d, c]) => 
-                        `<span style="background:#1e3f62; padding:8px 18px; border-radius:40px;">${d}: <strong>${c}</strong></span>`
-                    ).join('')}
+                <div style="display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; padding: 15px;">
+                    ${Object.entries(districts)
+                        .sort((a,b) => b[1] - a[1])
+                        .slice(0, 15)
+                        .map(([d, c]) => 
+                            `<span class="district-tag">${d}: <strong>${c}</strong></span>`
+                        ).join('')}
+                </div>
+                <div class="stats-mini" style="margin-top: 20px;">
+                    <span><i class="bi bi-pin-map-fill"></i> Total Districts: ${Object.keys(districts).length}</span>
+                    <span><i class="bi bi-building"></i> Total Treasuries: ${rows.length}</span>
                 </div>
             `;
             grid.appendChild(districtCard);
