@@ -1,6 +1,6 @@
 // Service Worker for NOC Admin PWA
 const CACHE_NAME = 'noc-admin-v1';
-const BASE_PATH = '/network';
+const BASE_PATH = '.';
 
 // Files to cache - all with correct paths for GitHub Pages subdirectory
 const urlsToCache = [
