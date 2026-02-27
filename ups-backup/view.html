@@ -5,29 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>UPS Asset Management Dashboard</title>
     
-    <!-- Bootstrap 5 Light Theme -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- DataTables CSS -->
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
-    <!-- Buttons CSS -->
-    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.bootstrap5.min.css">
+    <!-- LOCAL CSS - Using existing resources from parent folder -->
+    <link rel="stylesheet" href="../css/bootstrap.min.css">
+    <link rel="stylesheet" href="../css/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="../css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="../css/buttons.bootstrap5.min.css">
     
     <style>
         :root {
-            --primary: #4361ee;
-            --success: #06d6a0;
-            --warning: #ffb703;
-            --danger: #ef476f;
-            --light: #f8f9fa;
-            --dark: #212529;
+            --primary: #0f5b9c;
+            --primary-dark: #1a4b7a;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --light: #f8fafc;
+            --dark: #1e293b;
         }
         
         body {
-            background: #f0f2f5;
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            padding: 20px;
+            background: #f0f5fa;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            padding: 24px;
+            color: #1e293b;
         }
         
         .dashboard-wrapper {
@@ -41,8 +40,8 @@
             border-radius: 20px;
             padding: 20px 30px;
             margin-bottom: 25px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
-            border: 1px solid rgba(0,0,0,0.05);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e9ecef;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -57,7 +56,7 @@
         .header-title i {
             font-size: 2rem;
             color: var(--primary);
-            background: rgba(67, 97, 238, 0.1);
+            background: #e8f0fe;
             padding: 15px;
             border-radius: 16px;
         }
@@ -66,25 +65,25 @@
             margin: 0;
             font-size: 1.8rem;
             font-weight: 600;
-            color: #1a1e2b;
+            color: #1a4b7a;
         }
         
         .live-badge {
-            background: #e3f7e7;
+            background: #e8f7ed;
             color: #0b5e42;
-            padding: 8px 18px;
+            padding: 10px 20px;
             border-radius: 40px;
             font-size: 0.9rem;
             font-weight: 500;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
             border: 1px solid #a3e0b6;
         }
         
         .live-badge i {
             font-size: 0.7rem;
-            color: #00a86b;
+            color: #10b981;
         }
         
         /* Stats Cards */
@@ -99,8 +98,8 @@
             background: white;
             border-radius: 18px;
             padding: 22px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.02);
-            border: 1px solid rgba(0,0,0,0.05);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e9ecef;
             display: flex;
             align-items: center;
             gap: 18px;
@@ -109,13 +108,13 @@
         
         .stat-item:hover {
             transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(67, 97, 238, 0.1);
+            box-shadow: 0 8px 25px rgba(15, 91, 156, 0.1);
         }
         
         .stat-icon {
             width: 55px;
             height: 55px;
-            background: rgba(67, 97, 238, 0.1);
+            background: #e8f0fe;
             border-radius: 16px;
             display: flex;
             align-items: center;
@@ -128,7 +127,7 @@
             font-size: 1.8rem;
             font-weight: 700;
             margin: 0;
-            color: #1a1e2b;
+            color: #1e293b;
             line-height: 1.2;
         }
         
@@ -143,19 +142,20 @@
         .control-card {
             background: white;
             border-radius: 20px;
-            padding: 20px;
+            padding: 24px;
             margin-bottom: 25px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
-            border: 1px solid rgba(0,0,0,0.05);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e9ecef;
         }
         
         .control-title {
             display: flex;
             align-items: center;
             gap: 10px;
-            margin-bottom: 18px;
-            color: #1a1e2b;
+            margin-bottom: 20px;
+            color: #1a4b7a;
             font-weight: 600;
+            font-size: 1.1rem;
         }
         
         .control-title i {
@@ -165,18 +165,18 @@
         .column-toggles {
             display: flex;
             flex-wrap: wrap;
-            gap: 12px;
-            margin-bottom: 15px;
+            gap: 10px;
+            margin-bottom: 20px;
         }
         
         .toggle-btn {
-            background: #f1f4f9;
+            background: #f8fafc;
             border: 1px solid #e2e8f0;
             border-radius: 30px;
             padding: 8px 18px;
             font-size: 0.85rem;
             font-weight: 500;
-            color: #334155;
+            color: #475569;
             cursor: pointer;
             transition: all 0.2s;
             display: inline-flex;
@@ -204,20 +204,33 @@
             display: flex;
             align-items: center;
             gap: 15px;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
             flex-wrap: wrap;
+            padding: 16px;
+            background: #f8fafc;
+            border-radius: 40px;
+            border: 1px solid #e9ecef;
         }
+        
         .backup-filter-label {
             font-weight: 600;
-            color: #334155;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
+        
+        .backup-filter-label i {
+            color: var(--primary);
+        }
+        
         .backup-filter-select {
             border: 1px solid #e2e8f0;
             border-radius: 30px;
-            padding: 8px 28px 8px 18px;
+            padding: 8px 32px 8px 18px;
             background: white;
             font-size: 0.9rem;
-            min-width: 220px;
+            min-width: 240px;
             cursor: pointer;
             appearance: none;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23334155' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
@@ -225,16 +238,38 @@
             background-position: right 12px center;
             background-size: 14px;
         }
+        
         .backup-filter-select:focus {
             outline: none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+            box-shadow: 0 0 0 3px rgba(15, 91, 156, 0.1);
+        }
+        
+        .btn-clear {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 30px;
+            padding: 8px 20px;
+            color: #64748b;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .btn-clear:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            color: #ef4444;
+        }
+        
+        .btn-clear i {
+            margin-right: 6px;
         }
         
         .export-btns {
             display: flex;
             gap: 12px;
             justify-content: flex-end;
+            flex-wrap: wrap;
         }
         
         .export-btn {
@@ -250,25 +285,25 @@
             background: white;
             transition: all 0.2s;
             text-decoration: none;
-            color: #334155;
+            color: #475569;
         }
         
         .export-btn.excel:hover {
-            background: #eaf7ea;
-            border-color: #34a853;
-            color: #0f7b3a;
+            background: #e8f7ed;
+            border-color: #10b981;
+            color: #0b5e42;
         }
         
         .export-btn.pdf:hover {
             background: #fee9e7;
-            border-color: #ea4335;
-            color: #b71c1c;
+            border-color: #ef4444;
+            color: #b91c1c;
         }
         
         .export-btn.csv:hover {
-            background: #e6f3ff;
-            border-color: #4285f4;
-            color: #1967d2;
+            background: #e8f0fe;
+            border-color: var(--primary);
+            color: var(--primary);
         }
 
         .export-btn.print:hover {
@@ -281,9 +316,9 @@
         .table-card {
             background: white;
             border-radius: 20px;
-            padding: 20px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
-            border: 1px solid rgba(0,0,0,0.05);
+            padding: 24px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e9ecef;
         }
         
         /* Loading */
@@ -302,86 +337,102 @@
             margin: 0 auto 20px;
         }
         
-        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes spin { 
+            to { transform: rotate(360deg); } 
+        }
         
         /* Table Styling */
         #upsTable {
             margin-top: 10px !important;
+            border: 1px solid #e9ecef;
+            border-radius: 16px;
+            overflow: hidden;
         }
         
         #upsTable thead th {
-            background: #f8fafc;
-            color: #1e293b;
-            font-weight: 600;
+            background: linear-gradient(135deg, #0f5b9c 0%, #1a4b7a 100%);
+            color: white;
+            font-weight: 500;
             font-size: 0.85rem;
             padding: 16px 12px;
-            border-bottom: 2px solid #e2e8f0;
+            border-right: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        #upsTable thead th:last-child {
+            border-right: none;
         }
         
         #upsTable tbody td {
             padding: 14px 12px;
             vertical-align: middle;
             border-bottom: 1px solid #edf2f7;
+            color: #1e293b;
         }
         
         #upsTable tbody tr:hover td {
-            background: #fafcff;
+            background: #f0f7ff;
         }
         
         /* Badges */
         .status-badge {
-            padding: 5px 12px;
+            padding: 5px 14px;
             border-radius: 30px;
             font-size: 0.75rem;
             font-weight: 600;
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
         }
         
         .badge-amc {
-            background: #e3f7e7;
+            background: #e8f7ed;
             color: #0b5e42;
             border: 1px solid #a3e0b6;
         }
         
         .badge-nonamc {
             background: #fee9e7;
-            color: #b02a37;
+            color: #b91c1c;
             border: 1px solid #f1aeb5;
         }
         
         .badge-working {
-            background: #e3f7e7;
+            background: #e8f7ed;
             color: #0b5e42;
             border: 1px solid #a3e0b6;
         }
         
         .badge-notworking {
             background: #fee9e7;
-            color: #b02a37;
+            color: #b91c1c;
             border: 1px solid #f1aeb5;
         }
         
         .badge-warning {
-            background: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffe69c;
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fde68a;
         }
         
         .age-chip {
             background: #f1f4f9;
-            padding: 4px 10px;
+            padding: 4px 12px;
             border-radius: 20px;
             font-size: 0.75rem;
             font-weight: 500;
             color: #475569;
             white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
         }
         
         .doc-btn {
-            background: #eef2ff;
+            background: #e8f0fe;
             color: var(--primary);
-            border: 1px solid #cbd5e1;
-            padding: 5px 12px;
+            border: 1px solid #b8d4fe;
+            padding: 5px 14px;
             border-radius: 25px;
             font-size: 0.75rem;
             font-weight: 500;
@@ -399,17 +450,25 @@
         }
         
         /* DataTables Custom */
+        .dataTables_wrapper .dataTables_length,
+        .dataTables_wrapper .dataTables_filter {
+            margin-bottom: 20px;
+        }
+        
         .dataTables_filter input {
             border: 1px solid #e2e8f0;
             border-radius: 30px;
-            padding: 8px 16px;
+            padding: 8px 16px 8px 38px;
             margin-left: 8px;
             outline: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'%3E%3C/circle%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'%3E%3C/line%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: 12px center;
         }
         
         .dataTables_filter input:focus {
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+            box-shadow: 0 0 0 3px rgba(15, 91, 156, 0.1);
         }
         
         .dataTables_length select {
@@ -418,15 +477,47 @@
             padding: 6px 25px 6px 12px;
         }
         
+        .dataTables_info {
+            color: #64748b;
+            font-size: 0.9rem;
+            padding-top: 15px;
+        }
+        
+        .dataTables_paginate {
+            margin-top: 20px;
+        }
+        
+        .dataTables_paginate .paginate_button {
+            border-radius: 30px;
+            margin: 0 3px;
+            border: 1px solid #e2e8f0;
+            color: #1e293b !important;
+        }
+        
+        .dataTables_paginate .paginate_button.current {
+            background: var(--primary) !important;
+            border-color: var(--primary) !important;
+            color: white !important;
+        }
+        
+        .dataTables_paginate .paginate_button:hover {
+            background: #f1f5f9 !important;
+            border-color: #cbd5e1 !important;
+            color: var(--primary) !important;
+        }
+        
         /* Hide default DataTables buttons but keep them functional */
         .dt-buttons {
             display: none !important;
         }
         
         @media (max-width: 768px) {
+            body { padding: 16px; }
             .stats-row { grid-template-columns: repeat(2, 1fr); }
             .header-card { flex-direction: column; gap: 15px; }
             .export-btns { justify-content: center; }
+            .backup-filter-group { flex-direction: column; align-items: stretch; }
+            .backup-filter-select { width: 100%; }
         }
     </style>
 </head>
@@ -435,13 +526,14 @@
         <!-- Header -->
         <div class="header-card">
             <div class="header-title">
-                <i class="fas fa-bolt"></i>
+                <i class="bi bi-battery-charging"></i>
                 <div>
                     <h1>UPS Backup Status</h1>
+                    <p class="text-muted mb-0 mt-1">Asset Management Dashboard</p>
                 </div>
             </div>
             <div class="live-badge" id="liveIndicator">
-                <i class="fas fa-circle"></i>
+                <i class="bi bi-circle-fill"></i>
                 <span>Loading data...</span>
             </div>
         </div>
@@ -449,28 +541,28 @@
         <!-- Stats Cards -->
         <div class="stats-row" id="statsRow">
             <div class="stat-item">
-                <div class="stat-icon"><i class="fas fa-server"></i></div>
+                <div class="stat-icon"><i class="bi bi-hdd-stack"></i></div>
                 <div class="stat-info">
                     <h3 id="totalUps">0</h3>
                     <p>Total UPS Units</p>
                 </div>
             </div>
             <div class="stat-item">
-                <div class="stat-icon"><i class="fas fa-building"></i></div>
+                <div class="stat-icon"><i class="bi bi-building"></i></div>
                 <div class="stat-info">
                     <h3 id="totalTreasuries">0</h3>
                     <p>Treasuries</p>
                 </div>
             </div>
             <div class="stat-item">
-                <div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                <div class="stat-icon"><i class="bi bi-exclamation-triangle"></i></div>
                 <div class="stat-info">
                     <h3 id="noBackup">0</h3>
                     <p>No Backup</p>
                 </div>
             </div>
             <div class="stat-item">
-                <div class="stat-icon"><i class="fas fa-file-alt"></i></div>
+                <div class="stat-icon"><i class="bi bi-file-text"></i></div>
                 <div class="stat-info">
                     <h3 id="withDocs">0</h3>
                     <p>Documents Uploaded</p>
@@ -481,34 +573,36 @@
         <!-- Controls -->
         <div class="control-card">
             <div class="control-title">
-                <i class="fas fa-sliders-h"></i>
+                <i class="bi bi-sliders"></i>
                 <span>Table Controls</span>
             </div>
             
-            <!-- Backup Condition Filter Dropdown (9th column) -->
+            <!-- Backup Condition Filter Dropdown -->
             <div class="backup-filter-group">
-                <span class="backup-filter-label"><i class="fas fa-filter me-1"></i>Filter by Backup Condition:</span>
+                <span class="backup-filter-label">
+                    <i class="bi bi-filter"></i> Filter by Backup Condition:
+                </span>
                 <select id="backupConditionFilter" class="backup-filter-select">
                     <option value="">All Conditions</option>
                 </select>
-                <button id="clearBackupFilter" class="btn btn-outline-secondary btn-sm" style="border-radius:30px; padding:6px 18px;">
-                    <i class="fas fa-times"></i> Clear
+                <button id="clearBackupFilter" class="btn-clear">
+                    <i class="bi bi-x"></i> Clear
                 </button>
             </div>
             
             <div class="row align-items-center">
-                <div class="col-lg-8">
+                <div class="col-lg-7">
                     <div class="column-toggles" id="columnToggles">
                         <!-- Dynamic toggles will appear here -->
                     </div>
                 </div>
-                <div class="col-lg-4">
+                <div class="col-lg-5">
                     <!-- Custom export buttons -->
                     <div class="export-btns" id="exportButtons">
-                        <button class="export-btn excel" id="exportExcelBtn"><i class="fas fa-file-excel"></i> Excel</button>
-                        <button class="export-btn pdf" id="exportPdfBtn"><i class="fas fa-file-pdf"></i> PDF</button>
-                        <button class="export-btn csv" id="exportCsvBtn"><i class="fas fa-file-csv"></i> CSV</button>
-                        <button class="export-btn print" id="exportPrintBtn"><i class="fas fa-print"></i> Print</button>
+                        <button class="export-btn excel" id="exportExcelBtn"><i class="bi bi-file-earmark-excel"></i> Excel</button>
+                        <button class="export-btn pdf" id="exportPdfBtn"><i class="bi bi-file-earmark-pdf"></i> PDF</button>
+                        <button class="export-btn csv" id="exportCsvBtn"><i class="bi bi-file-earmark-spreadsheet"></i> CSV</button>
+                        <button class="export-btn print" id="exportPrintBtn"><i class="bi bi-printer"></i> Print</button>
                     </div>
                 </div>
             </div>
@@ -546,22 +640,22 @@
         </div>
     </div>
 
-    <!-- Scripts -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- LOCAL SCRIPTS -->
+    <script src="../js/jquery.min.js"></script>
+    <script src="../js/bootstrap.bundle.min.js"></script>
     
     <!-- DataTables Core -->
-    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+    <script src="../js/jquery.dataTables.min.js"></script>
+    <script src="../js/dataTables.bootstrap5.min.js"></script>
     
-    <!-- DataTables Buttons -->
-    <script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.bootstrap5.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.print.min.js"></script>
+    <!-- DataTables Buttons & Dependencies -->
+    <script src="../js/dataTables.buttons.min.js"></script>
+    <script src="../js/buttons.bootstrap5.min.js"></script>
+    <script src="../js/jszip.min.js"></script>
+    <script src="../js/pdfmake.min.js"></script>
+    <script src="../js/vfs_fonts.js"></script>
+    <script src="../js/buttons.html5.min.js"></script>
+    <script src="../js/buttons.print.min.js"></script>
 
     <script>
         // ==================== CONFIGURATION ====================
@@ -654,11 +748,11 @@
             } catch (error) {
                 console.error('Error:', error);
                 $('#loadingSpinner').html(`
-                    <i class="fas fa-exclamation-circle fa-3x text-danger mb-3"></i>
+                    <i class="bi bi-exclamation-triangle-fill fa-3x text-danger mb-3"></i>
                     <h5 class="text-danger">Failed to load data</h5>
                     <p class="text-muted">${error.message}</p>
                     <button class="btn btn-primary mt-3" onclick="location.reload()">
-                        <i class="fas fa-redo-alt"></i> Retry
+                        <i class="bi bi-arrow-repeat"></i> Retry
                     </button>
                 `);
             }
@@ -719,7 +813,6 @@
             const $select = $('#backupConditionFilter');
             $select.find('option:not(:first)').remove();
             sorted.forEach(cond => {
-                // Escape the value properly for option text
                 $select.append($('<option>', {
                     value: cond,
                     text: cond
@@ -756,30 +849,31 @@
                         if (type === 'display') {
                             if (idx === 6) { // Contract
                                 if (data === 'AMC') {
-                                    return `<span class="status-badge badge-amc"><i class="fas fa-check-circle me-1"></i>${data}</span>`;
+                                    return `<span class="status-badge badge-amc"><i class="bi bi-check-circle-fill me-1"></i>${data}</span>`;
                                 } else if (data === 'NOT IN CONTRACT') {
-                                    return `<span class="status-badge badge-nonamc"><i class="fas fa-exclamation-circle me-1"></i>${data}</span>`;
+                                    return `<span class="status-badge badge-nonamc"><i class="bi bi-exclamation-circle-fill me-1"></i>${data}</span>`;
                                 }
                             }
                             else if (idx === 7) { // Age
                                 if (data !== '—' && data !== 'New') {
-                                    return `<span class="age-chip"><i class="far fa-clock me-1"></i>${data}</span>`;
+                                    return `<span class="age-chip"><i class="bi bi-clock-history me-1"></i>${data}</span>`;
                                 }
+                                return `<span class="age-chip">${data}</span>`;
                             }
                             else if (idx === 8) { // Backup Condition
                                 const lower = data.toLowerCase();
                                 if (lower.includes('no backup')) {
-                                    return `<span class="status-badge badge-notworking"><i class="fas fa-times-circle me-1"></i>${data}</span>`;
+                                    return `<span class="status-badge badge-notworking"><i class="bi bi-x-circle-fill me-1"></i>${data}</span>`;
                                 } else if (lower.includes('hour') || lower.includes('backup')) {
-                                    return `<span class="status-badge badge-working"><i class="fas fa-battery-three-quarters me-1"></i>${data}</span>`;
+                                    return `<span class="status-badge badge-working"><i class="bi bi-battery-half me-1"></i>${data}</span>`;
                                 }
                                 return data;
                             }
                             else if (idx === 10) { // Document
                                 if (data && data.includes('http')) {
-                                    return `<a href="${data}" target="_blank" class="doc-btn"><i class="fas fa-external-link-alt"></i> View</a>`;
+                                    return `<a href="${data}" target="_blank" class="doc-btn"><i class="bi bi-box-arrow-up-right"></i> View</a>`;
                                 } else {
-                                    return `<span class="text-muted"><i class="far fa-file"></i> No doc</span>`;
+                                    return `<span class="text-muted"><i class="bi bi-file-earmark"></i> No doc</span>`;
                                 }
                             }
                         }
@@ -848,7 +942,17 @@
                 ],
                 language: {
                     search: "Search:",
-                    searchPlaceholder: "Filter records..."
+                    searchPlaceholder: "Filter records...",
+                    lengthMenu: "Show _MENU_ entries",
+                    info: "Showing _START_ to _END_ of _TOTAL_ entries",
+                    infoEmpty: "Showing 0 to 0 of 0 entries",
+                    infoFiltered: "(filtered from _MAX_ total entries)",
+                    paginate: {
+                        first: '<i class="bi bi-chevron-double-left"></i>',
+                        previous: '<i class="bi bi-chevron-left"></i>',
+                        next: '<i class="bi bi-chevron-right"></i>',
+                        last: '<i class="bi bi-chevron-double-right"></i>'
+                    }
                 }
             });
 
@@ -863,7 +967,7 @@
             columnDefs.forEach((col, index) => {
                 const btn = $(`
                     <span class="toggle-btn active" data-col="${index}">
-                        <i class="fas fa-check-circle"></i> ${col.title}
+                        <i class="bi bi-check-circle-fill"></i> ${col.title}
                     </span>
                 `);
                 
@@ -874,10 +978,10 @@
                         column.visible(!visible);
                         if ($(this).hasClass('active')) {
                             $(this).removeClass('active');
-                            $(this).find('i').removeClass('fa-check-circle').addClass('fa-circle');
+                            $(this).find('i').removeClass('bi-check-circle-fill').addClass('bi-circle');
                         } else {
                             $(this).addClass('active');
-                            $(this).find('i').removeClass('fa-circle').addClass('fa-check-circle');
+                            $(this).find('i').removeClass('bi-circle').addClass('bi-check-circle-fill');
                         }
                     }
                 });
@@ -897,7 +1001,7 @@
 
         function updateLiveIndicator() {
             $('#liveIndicator').html(`
-                <i class="fas fa-circle" style="color:#10b981;"></i>
+                <i class="bi bi-circle-fill" style="color:#10b981;"></i>
                 <span>Updated ${new Date().toLocaleTimeString()}</span>
             `);
         }
