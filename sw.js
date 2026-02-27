@@ -13,9 +13,9 @@ const urlsToCache = [
     `${BASE_PATH}/images/favicon-192x192.png`,
     `${BASE_PATH}/images/favicon-512x512.png`,
     `${BASE_PATH}/images/apple-touch-icon.png`,
-    'https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css',
-    'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css',
-    'https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js'
+    './css/bootstrap.min.css',
+    './css/bootstrap-icons.min.css',
+    './js/bootstrap.bundle.min.js'
 ];
 
 // Install event - cache all static assets
