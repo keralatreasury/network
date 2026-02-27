@@ -410,3 +410,15 @@ if (contentFrame) {
         if (loading) loading.style.display = 'none';
     });
 }
+// Register service worker
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+            .then(registration => {
+                console.log('ServiceWorker registered successfully with scope:', registration.scope);
+            })
+            .catch(error => {
+                console.log('ServiceWorker registration failed:', error);
+            });
+    });
+}
