@@ -10,17 +10,17 @@
         {
             "src": "favicon.svg",
             "sizes": "16x16",
-            "type": "image/png"
+            "type": "image/svg"
         },
         {
             "src": "favicon.svg",
             "sizes": "32x32",
-            "type": "image/png"
+            "type": "image/svg"
         },
         {
             "src": "apple-touch-icon.svg",
             "sizes": "180x180",
-            "type": "image/png"
+            "type": "image/svg"
         }
     ]
 }
