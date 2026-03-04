@@ -29,8 +29,10 @@ body.dark-theme {
     --bg-primary: #0a0c10;
     --bg-secondary: #1e293b;
     --bg-tertiary: #0f172a;
-    --navbar-start: #0f172a;
-    --navbar-end: #1e293b;
+   /* --navbar-start: #0f172a; */
+   /*  --navbar-end: #1e293b; */
+    --navbar-start: rgb(32,33,36);
+    --navbar-end: rgb(32,33,36);
     --text-primary: #f1f5f9;
     --text-secondary: #e2e8f0;
     --text-muted: #94a3b8;
@@ -45,7 +47,8 @@ body.dark-theme {
     --scrollbar-thumb: #475569;
     --scrollbar-thumb-hover: #5f6b7f;
     --logo-color: #8b5cf6;
-    --sidebar-bg: #1e293b;
+    /* --sidebar-bg: #1e293b; */
+    --sidebar-bg: rgb(32,33,36);
     --sidebar-border: #334155;
     --card-bg: #1e293b;
 }
