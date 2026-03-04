@@ -32,7 +32,7 @@
         }
         
         .dashboard-wrapper {
-            max-width: 1600px;
+            max-width: 100%;
             margin: 0 auto;
         }
         
@@ -721,12 +721,13 @@
             { sheet: 'PTA', display: 'Pathanamthitta' },
             { sheet: 'KTM', display: 'Kottayam' },
             { sheet: 'ALP', display: 'Alappuzha' },
-            { sheet: 'CLT', display: 'Calicut' },
-            { sheet: 'EKM', display: 'Ernakulam' },
+            
+            { sheet: 'EKM', display: 'Idukki & Ernakulam' },
             { sheet: 'TRC', display: 'Thrissur' },
             { sheet: 'MLP', display: 'Malappuram' },
+             { sheet: 'CLT', display: 'Kozhicode & Wayanad' },
             { sheet: 'PGT', display: 'Palakkad' },
-            { sheet: 'KNR', display: 'Kannur' }
+            { sheet: 'KNR', display: 'Kannur & kasargode' }
         ];
         
         // Columns to show by default (indices based on the order in the table)
@@ -1125,7 +1126,7 @@
             const displayName = districtMapping.find(item => item.sheet === sheetName)?.display || sheetName;
             $('#liveIndicator').html(`
                 <i class="bi bi-circle-fill" style="color:#10b981;"></i>
-                <span>${displayName} · Updated ${new Date().toLocaleTimeString()}</span>
+                <span>${displayName} Â· Updated ${new Date().toLocaleTimeString()}</span>
             `);
         }
 
