@@ -5,14 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SD-WAN Migration Guide for Treasuries</title>
     
-    <!-- FALLBACK TO CDN FIRST - THEN TRY LOCAL -->
-    <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css">
-    <!-- Select2 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+    <!-- LOCAL RESOURCES - Using your existing project files -->
+    <link rel="stylesheet" href="../css/bootstrap.min.css">
+    <link rel="stylesheet" href="../css/bootstrap-icons.min.css">
     
     <style>
         :root {
@@ -42,7 +37,7 @@
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
             border-radius: 24px;
             overflow: hidden;
-            margin: 30px auto;
+            margin: 30px 20px;
         }
         
         /* Header */
@@ -90,53 +85,47 @@
             font-size: 1rem;
         }
         
-        /* Treasury Selector */
+        /* Treasury Selector - Normal Bootstrap Select */
         .treasury-selector {
             background: rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(10px);
             padding: 15px 25px;
             border-radius: 60px;
             border: 1px solid rgba(255, 255, 255, 0.3);
-            min-width: 350px;
+            min-width: 380px;
         }
         
         .selector-label {
             display: block;
             font-size: 0.85rem;
             font-weight: 500;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
             color: rgba(255, 255, 255, 0.9);
         }
         
         .selector-label i {
             margin-right: 5px;
         }
-        .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
-    padding: 0;
-    font-weight: 400;
-    line-height: 1.5;
-    color: #fff;
-}
-        .select2-container--bootstrap-5 .select2-selection {
-            background: transparent !important;
-            border: 1px solid rgba(255, 255, 255, 0.3) !important;
-            border-radius: 40px !important;
-            color: white !important;
-        }
         
-        .select2-container--bootstrap-5 .select2-selection__rendered {
-            color: white !important;
-        }
-        
-        .select2-container--bootstrap-5 .select2-selection__arrow b {
-            border-top-color: white !important;
-        }
-        
-        .select2-container--bootstrap-5 .select2-dropdown {
+        .treasury-selector select {
             background: white;
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 40px;
+            padding: 10px 15px;
+            width: 100%;
+            color: var(--dark);
+            font-size: 0.95rem;
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%230f5b9c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 15px center;
+            background-size: 16px;
+        }
+        
+        .treasury-selector select:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
         }
         
         .gateway-badge {
@@ -147,11 +136,17 @@
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            margin-left: 15px;
+            margin-top: 10px;
+            width: 100%;
         }
         
         .gateway-badge i {
             font-size: 0.9rem;
+        }
+        
+        .gateway-badge span {
+            font-weight: 600;
+            letter-spacing: 0.5px;
         }
         
         /* Content */
@@ -525,6 +520,7 @@
             display: flex;
             align-items: center;
             gap: 15px;
+            max-width: 400px;
         }
         
         @keyframes slideIn {
@@ -541,7 +537,7 @@
             .document-wrapper { margin: 15px; }
             .document-header { padding: 20px; }
             .header-top { flex-direction: column; }
-            .treasury-selector { width: 100%; }
+            .treasury-selector { width: 100%; min-width: auto; }
             .document-content { padding: 20px; }
             .section-title { font-size: 1.5rem; }
         }
@@ -562,15 +558,15 @@
                     </div>
                 </div>
                 
-                <!-- Treasury Selector -->
+                <!-- Treasury Selector - Normal Bootstrap Select -->
                 <div class="treasury-selector">
                     <div class="selector-label">
                         <i class="bi bi-building"></i> Select Treasury:
                     </div>
-                    <select id="treasurySelect" class="form-select" style="width: 100%;">
+                    <select id="treasurySelect" class="form-select">
                         <option value="">Loading treasuries...</option>
                     </select>
-                    <div id="selectedGateway" class="gateway-badge" style="display: none; margin-top: 10px;">
+                    <div id="selectedGateway" class="gateway-badge" style="display: none;">
                         <i class="bi bi-router"></i> Gateway: <span id="gatewayValue"></span>
                     </div>
                 </div>
@@ -846,10 +842,9 @@ Trace complete.</pre>
         </div>
     </div>
     
-    <!-- SCRIPTS - Using CDN first to ensure they load -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <!-- LOCAL SCRIPTS - Using your existing project files -->
+    <script src="../js/jquery.min.js"></script>
+    <script src="../js/bootstrap.bundle.min.js"></script>
     
     <script>
         // ==================== CONFIGURATION ====================
@@ -865,14 +860,6 @@ Trace complete.</pre>
         // ==================== INITIALIZATION ====================
         $(document).ready(function() {
             console.log('Document ready - jQuery is working');
-            
-            // Initialize Select2
-            $('#treasurySelect').select2({
-                theme: 'bootstrap-5',
-                width: '100%',
-                placeholder: 'Search or select treasury',
-                allowClear: true
-            });
             
             // Load treasury data
             loadTreasuryData();
