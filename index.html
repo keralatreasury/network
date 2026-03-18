@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NOC Admin </title>
+    <title>NOC Admin</title>
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <!-- Bootstrap 5.3 + icons -->
@@ -14,10 +14,8 @@
     <!-- PWA Manifest -->
     <link rel="manifest" href="/network/manifest.json">
     
-    <!-- Favicon - exact match to your logo -->
+    <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="./images/favicon.svg">
-    
-    <!-- Fallback PNG icons for older devices -->
     <link rel="icon" type="image/png" sizes="192x192" href="./images/favicon-192x192.png">
     <link rel="icon" type="image/png" sizes="512x512" href="./images/favicon-512x512.png">
     
@@ -70,10 +68,10 @@
 
     <!-- Main Dashboard (initially hidden) -->
     <div class="dashboard-container" id="dashboardContainer" style="display: none;">
-        <!-- Navbar: hamburger right after brand, theme toggle and mobile icon on right -->
+        <!-- Navbar -->
         <nav class="navbar navbar-custom">
             <div class="container-fluid">
-                <!-- Left group: brand + hamburger (desktop toggle) -->
+                <!-- Left group: brand + hamburger -->
                 <div class="d-flex align-items-center">
                     <a class="navbar-brand" href="#">
                         <div class="logo"><i class="bi bi-compass"></i></div>
@@ -82,11 +80,11 @@
                             <span>Network Operations Center</span>
                         </div>
                     </a>
-                    <!-- Desktop hamburger (visible on lg) to toggle sidebar -->
+                    <!-- Desktop hamburger -->
                     <button class="sidebar-toggle-btn desktop-toggle" id="desktopSidebarToggle" title="Toggle sidebar">
                         <i class="bi bi-list"></i>
                     </button>
-                    <!-- Mobile hamburger (visible below lg) triggers offcanvas -->
+                    <!-- Mobile hamburger -->
                     <button class="sidebar-toggle-btn mobile-only-toggle d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileMenuOffcanvas" aria-label="Menu">
                         <i class="bi bi-list"></i>
                     </button>
@@ -109,10 +107,12 @@
 
         <!-- Wrapper: sidebar + content -->
         <div class="wrapper">
-            <!-- Desktop sidebar (collapsible, visible on large) -->
+            <!-- Desktop sidebar -->
             <div class="sidebar d-none d-lg-block" id="desktopSidebarContainer">
                 <div class="sidebar-menu-container" id="desktopSidebar">
-                    <div class="text-muted p-3"> <div class="loading-spinner"></div></div>
+                    <div class="text-muted p-3">
+                        <div class="loading-spinner"></div> Loading menu...
+                    </div>
                 </div>
             </div>
 
@@ -139,13 +139,15 @@
                 <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
             </div>
             <div class="offcanvas-body" id="mobileSidebar">
-                <div class="text-muted">Loading menu...</div>
+                <div class="text-muted">
+                    <div class="loading-spinner"></div> Loading menu...
+                </div>
             </div>
         </div>
     </div>
 
     <!-- scripts -->
-     <script src="./js/bootstrap.bundle.min.js"></script>
+    <script src="./js/bootstrap.bundle.min.js"></script>
     <script src="./js/main-script.js"></script>
 </body>
 </html>
