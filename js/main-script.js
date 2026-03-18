@@ -6,11 +6,12 @@ const ICON_SHEET = 'icons';
 const LOGIN_SHEET = 'Login';
 const MENU_RANGE = 'A:D';
 const ICON_RANGE = 'A:F';
-const LOGIN_RANGE = 'B3:C3';
+const LOGIN_RANGE = 'B:D';
 
 let menuData = [];
 let iconData = new Map();
 let isAuthenticated = false;
+let currentUser = null;
 
 // Theme functions
 function initTheme() {
@@ -42,7 +43,6 @@ function showLoginError(message) {
         errorText.textContent = message;
         errorDiv.style.display = 'flex';
         
-        // Auto hide after 5 seconds
         setTimeout(() => {
             errorDiv.style.display = 'none';
         }, 5000);
@@ -66,19 +66,37 @@ async function validateLogin(username, password) {
         
         if (data.error) {
             console.error('API Error:', data.error);
-            return false;
+            return null;
         }
         
-        if (data.values && data.values[0] && data.values[0].length >= 2) {
-            const storedUsername = data.values[0][0];
-            const storedPassword = data.values[0][1];
-            return username === storedUsername && password === storedPassword;
+        if (data.values) {
+            for (let i = 0; i < data.values.length; i++) {
+                const row = data.values[i];
+                if (row.length >= 2) {
+                    const storedUsername = row[0];
+                    const storedPassword = row[1];
+                    
+                    if (username === storedUsername && password === storedPassword) {
+                        const menuSheet = row.length >= 3 && row[2] ? row[2].trim() : null;
+                        
+                        if (!menuSheet) {
+                            console.error('No menu sheet specified for user:', username);
+                            return null;
+                        }
+                        
+                        return {
+                            username: storedUsername,
+                            menuSheet: menuSheet
+                        };
+                    }
+                }
+            }
         }
         
-        return false;
+        return null;
     } catch (error) {
         console.error('Login validation error:', error);
-        return false;
+        return null;
     }
 }
 
@@ -91,7 +109,6 @@ async function handleLogin() {
     const loginText = document.getElementById('loginText');
     const loginOverlay = document.getElementById('loginOverlay');
     
-    // Hide any previous error
     hideLoginError();
     
     if (!username || !password) {
@@ -99,54 +116,174 @@ async function handleLogin() {
         return;
     }
     
-    // Show loading state
     loginBtn.disabled = true;
     loginSpinner.classList.remove('d-none');
     loginText.textContent = 'Verifying...';
-    
-    // Remove focus from inputs
     document.activeElement.blur();
     
     try {
-        const isValid = await validateLogin(username, password);
+        const userData = await validateLogin(username, password);
         
-        if (isValid) {
+        if (userData) {
             isAuthenticated = true;
+            currentUser = userData;
+            
+            localStorage.setItem('currentUser', JSON.stringify({
+                username: userData.username,
+                loginTime: new Date().toISOString(),
+                menuSheet: userData.menuSheet
+            }));
+            
+            sessionStorage.setItem('currentUser', JSON.stringify({
+                username: userData.username,
+                loginTime: new Date().toISOString(),
+                menuSheet: userData.menuSheet
+            }));
+            
             loginOverlay.style.opacity = '0';
             
             setTimeout(() => {
                 loginOverlay.style.display = 'none';
                 document.getElementById('dashboardContainer').style.display = 'block';
-                loadMenuData();
+                loadMenuData(userData.menuSheet);
             }, 500);
         } else {
-            // Reset button state
             loginBtn.disabled = false;
             loginSpinner.classList.add('d-none');
             loginText.textContent = 'Login';
-            
-            // Clear password field for security
             document.getElementById('password').value = '';
-            
-            // Show error message
             showLoginError('Invalid username or password');
-            
-            // Focus on username field
             document.getElementById('username').focus();
         }
     } catch (error) {
         console.error('Login error:', error);
-        
-        // Reset button state
         loginBtn.disabled = false;
         loginSpinner.classList.add('d-none');
         loginText.textContent = 'Login';
-        
-        // Show error message
         showLoginError('Unable to verify credentials. Please try again.');
-        
-        // Focus on username field
         document.getElementById('username').focus();
+    }
+}
+
+// Logout function
+function logout() {
+    localStorage.removeItem('currentUser');
+    sessionStorage.removeItem('currentUser');
+    currentUser = null;
+    isAuthenticated = false;
+    
+    const loginOverlay = document.getElementById('loginOverlay');
+    const dashboardContainer = document.getElementById('dashboardContainer');
+    
+    loginOverlay.style.display = 'flex';
+    loginOverlay.style.opacity = '1';
+    dashboardContainer.style.display = 'none';
+    
+    document.getElementById('username').value = '';
+    document.getElementById('password').value = '';
+    
+    setTimeout(() => {
+        document.getElementById('username').focus();
+    }, 100);
+}
+
+// Display logged-in user in sidebar
+function displayLoggedInUser() {
+    const storedUser = localStorage.getItem('currentUser');
+    if (storedUser) {
+        try {
+            const userData = JSON.parse(storedUser);
+            currentUser = userData;
+            
+            // Remove existing user info if any
+            const existingDesktopUser = document.getElementById('desktopUserInfo');
+            if (existingDesktopUser) existingDesktopUser.remove();
+            
+            const existingMobileUser = document.getElementById('mobileUserInfo');
+            if (existingMobileUser) existingMobileUser.remove();
+            
+            // Add user info to desktop sidebar
+            const desktopSidebar = document.getElementById('desktopSidebar');
+            if (desktopSidebar) {
+                const userInfoDiv = document.createElement('div');
+                userInfoDiv.className = 'user-info-sidebar';
+                userInfoDiv.id = 'desktopUserInfo';
+                userInfoDiv.innerHTML = `
+                    <div class="user-info-content">
+                        <div class="user-avatar">
+                            <i class="bi bi-person-circle"></i>
+                        </div>
+                        <div class="user-details">
+                            <span class="user-label">Logged in as</span>
+                            <span class="user-name">${userData.username}</span>
+                            <span class="user-login-time">${new Date(userData.loginTime).toLocaleString()}</span>
+                        </div>
+                        <button class="logout-icon-btn" onclick="logout()" title="Logout">
+                            <i class="bi bi-box-arrow-right"></i>
+                        </button>
+                    </div>
+                `;
+                desktopSidebar.insertBefore(userInfoDiv, desktopSidebar.firstChild);
+            }
+            
+            // Add user info to mobile sidebar
+            const mobileSidebar = document.getElementById('mobileSidebar');
+            if (mobileSidebar) {
+                const userInfoDiv = document.createElement('div');
+                userInfoDiv.className = 'user-info-sidebar';
+                userInfoDiv.id = 'mobileUserInfo';
+                userInfoDiv.innerHTML = `
+                    <div class="user-info-content">
+                        <div class="user-avatar">
+                            <i class="bi bi-person-circle"></i>
+                        </div>
+                        <div class="user-details">
+                            <span class="user-label">Logged in as</span>
+                            <span class="user-name">${userData.username}</span>
+                            <span class="user-login-time">${new Date(userData.loginTime).toLocaleString()}</span>
+                        </div>
+                        <button class="logout-icon-btn" onclick="logout()" title="Logout">
+                            <i class="bi bi-box-arrow-right"></i>
+                        </button>
+                    </div>
+                `;
+                mobileSidebar.insertBefore(userInfoDiv, mobileSidebar.firstChild);
+            }
+        } catch (e) {
+            console.error('Error parsing user data:', e);
+        }
+    }
+}
+
+// Check for existing session
+function checkExistingSession() {
+    const storedUser = localStorage.getItem('currentUser');
+    if (storedUser) {
+        try {
+            const userData = JSON.parse(storedUser);
+            const loginTime = new Date(userData.loginTime);
+            const now = new Date();
+            const hoursSinceLogin = (now - loginTime) / (1000 * 60 * 60);
+            
+            if (hoursSinceLogin > 24) {
+                logout();
+                return;
+            }
+            
+            isAuthenticated = true;
+            currentUser = userData;
+            
+            const loginOverlay = document.getElementById('loginOverlay');
+            const dashboardContainer = document.getElementById('dashboardContainer');
+            
+            loginOverlay.style.display = 'none';
+            dashboardContainer.style.display = 'block';
+            
+            loadMenuData(userData.menuSheet);
+        } catch (e) {
+            console.error('Error restoring session:', e);
+            logout();
+        }
     }
 }
 
@@ -228,12 +365,20 @@ function processMenuData(rows) {
     }));
 }
 
-async function fetchSheetData() {
+async function fetchSheetData(menuSheetName) {
     try {
-        const menuUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${MENU_SHEET}!${MENU_RANGE}?key=${API_KEY}`;
+        console.log('Fetching menu from sheet:', menuSheetName);
+        
+        iconData.clear();
+        
+        const menuUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${menuSheetName}!${MENU_RANGE}?key=${API_KEY}`;
         const menuResponse = await fetch(menuUrl);
         const menuData_raw = await menuResponse.json();
-        if (menuData_raw.error) throw new Error(menuData_raw.error.message);
+        
+        if (menuData_raw.error) {
+            console.error('Menu sheet error:', menuData_raw.error);
+            throw new Error(`Menu sheet '${menuSheetName}' not found or inaccessible`);
+        }
         
         const iconUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${ICON_SHEET}!${ICON_RANGE}?key=${API_KEY}`;
         const iconResponse = await fetch(iconUrl);
@@ -248,17 +393,28 @@ async function fetchSheetData() {
     }
 }
 
-async function loadMenuData() {
+async function loadMenuData(menuSheetName) {
     try {
-        menuData = await fetchSheetData();
+        if (!menuSheetName) {
+            showError('No menu sheet configured for this user');
+            return;
+        }
+        
+        menuData = await fetchSheetData(menuSheetName);
         renderMenuCards(menuData, 'desktopSidebar');
         renderMenuCards(menuData, 'mobileSidebar');
+        
+        displayLoggedInUser();
         
         const welcomeMsg = document.getElementById('welcome-message');
         if (welcomeMsg) welcomeMsg.style.display = 'block';
         
         const loading = document.getElementById('loading');
         if (loading) loading.style.display = 'none';
+        
+        if (currentUser) {
+            console.log(`Logged in as: ${currentUser.username}, using menu sheet: ${menuSheetName}`);
+        }
     } catch (error) {
         console.error('Error loading menu data:', error);
         showError('Error loading menu data');
@@ -268,15 +424,15 @@ async function loadMenuData() {
 function showError(message) {
     const desktop = document.getElementById('desktopSidebar');
     const mobile = document.getElementById('mobileSidebar');
-    if (desktop) desktop.innerHTML = `<div class="error-message">${message}</div>`;
-    if (mobile) mobile.innerHTML = `<div class="error-message">${message}</div>`;
+    if (desktop) desktop.innerHTML = `<div class="error-message text-danger p-3">${message}</div>`;
+    if (mobile) mobile.innerHTML = `<div class="error-message text-danger p-3">${message}</div>`;
 }
 
 function renderMenuCards(menuData, containerId) {
     const container = document.getElementById(containerId);
     if (!container) return;
     if (!menuData || menuData.length === 0) {
-        container.innerHTML = '<div class="text-muted p-2">No menu items</div>';
+        container.innerHTML = '<div class="text-muted p-3">No menu items available for your account</div>';
         return;
     }
     let html = '';
@@ -323,9 +479,6 @@ function loadUrlInIframe(url) {
     if (loading) loading.style.display = 'flex';
     
     let fullUrl = url;
-   // if (!url.startsWith('http://') && !url.startsWith('https://')) {
-    //    fullUrl = 'https://' + url;
-   // }
     
     iframe.onload = function() { 
         if (loading) loading.style.display = 'none'; 
@@ -383,7 +536,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Clear error when user starts typing
     if (username) {
         username.addEventListener('input', hideLoginError);
     }
@@ -396,9 +548,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const welcomeMsg = document.getElementById('welcome-message');
     if (welcomeMsg) welcomeMsg.style.display = 'none';
     
-    // Focus on username field initially
+    checkExistingSession();
+    
     setTimeout(() => {
-        if (username) username.focus();
+        if (!isAuthenticated && username) {
+            username.focus();
+        }
     }, 100);
 });
 
@@ -410,6 +565,7 @@ if (contentFrame) {
         if (loading) loading.style.display = 'none';
     });
 }
+
 // Register service worker
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
