@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WAN Status Dashboard - Network Issues</title>
+    <title>WAN Status Dashboard - Priority View (Oldest First)</title>
     
     <!-- LOCAL CSS - Using same resources as main app -->
     <link rel="stylesheet" href="../css/bootstrap.min.css">
@@ -259,7 +259,8 @@
         
         .danger-card.both-down {
             border-left: 4px solid var(--danger);
-            background: linear-gradient(to right, rgba(239, 68, 68, 0.02), transparent);
+            background: White;
+            order: 0;
         }
         
         .danger-card.one-down {
@@ -276,6 +277,8 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 8px;
         }
         
         .case-id {
@@ -429,6 +432,16 @@
             color: var(--up-color);
         }
         
+        .priority-badge {
+            background: #dc2626;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+        
         /* Treasury Table */
         .table-card {
             background: white;
@@ -578,7 +591,7 @@
                     <h1>WAN Status Dashboard</h1>
                     <p>
                         <i class="bi bi-diagram-3"></i>
-                        <span>Real-time WAN connection status across all branches</span>
+                        <span>WAN connection status | <strong class="text-danger">All Branches</strong></span>
                     </p>
                 </div>
             </div>
@@ -654,6 +667,7 @@
             <i class="bi bi-exclamation-triangle-fill text-danger"></i>
             Active WAN Issues
             <span class="badge" id="unresolvedCount">0</span>
+            <span style="font-size: 0.8rem; margin-left: auto;"><i class="bi bi-sort-numeric-down"></i> Sorted: Both WANs Down first, then by oldest date/time</span>
         </div>
         
         <div id="unresolvedContainer">
@@ -672,7 +686,7 @@
         <!-- All Issues Table (Both Resolved and Unresolved) -->
         <div class="section-title">
             <i class="bi bi-table"></i>
-            Complete Issues History
+             History
             <span class="badge" id="allIssuesCount">0</span>
         </div>
         
@@ -732,14 +746,14 @@
         let isRefreshing = false;
         let currentFilter = 'all';
         
-        // WAN Details mapping (you'll need to fetch this from your WAN Details sheet)
+        // WAN Details mapping
         const wanDetailsMap = new Map();
         
         $(document).ready(function() {
-            console.log('WAN Status Dashboard loaded');
+            console.log('WAN Status Dashboard loaded - Priority: Both WANs Down first, then oldest date/time');
             loadData();
             
-            // Set up auto-refresh every 60 seconds
+            // Auto-refresh every 60 seconds
             refreshInterval = setInterval(function() {
                 autoRefresh();
             }, 60000);
@@ -772,7 +786,6 @@
             showLoading(true);
             
             try {
-                // Load main issues data
                 const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(SHEET_NAME)}?key=${API_KEY}`;
                 console.log('Fetching data from:', url);
                 
@@ -786,9 +799,7 @@
                     throw new Error('No data found');
                 }
                 
-                // Load WAN Details for ISP mapping
                 await loadWanDetails();
-                
                 processData(data.values);
                 populateBranchFilter();
                 updateStats();
@@ -850,7 +861,7 @@
             
             console.log(`Total issues loaded: ${allIssues.length}`);
             
-            // Filter unresolved issues
+            // Filter unresolved issues (pending status)
             unresolvedIssues = allIssues.filter(issue => {
                 const status = issue['Resolve Status'] || '';
                 return status === '' || status.toLowerCase() === 'pending';
@@ -875,25 +886,21 @@
         function updateStats() {
             const totalUnresolved = unresolvedIssues.length;
             
-            // Calculate both WANs down and one WAN down
             let bothDown = 0;
             let oneDown = 0;
             const affectedBranches = new Set();
             
-            // Group issues by branch to determine WAN status
             const branchIssues = new Map();
             
             unresolvedIssues.forEach(issue => {
                 const branch = issue['Branch'];
                 affectedBranches.add(branch);
-                
                 if (!branchIssues.has(branch)) {
                     branchIssues.set(branch, []);
                 }
                 branchIssues.get(branch).push(issue);
             });
             
-            // For each branch, check which WANs are down
             branchIssues.forEach((issues, branch) => {
                 const wan1Down = issues.some(issue => issue['Issue reported WAN'] === 'WAN 1');
                 const wan2Down = issues.some(issue => issue['Issue reported WAN'] === 'WAN 2');
@@ -914,6 +921,32 @@
             $('#allIssuesCount').text(allIssues.length);
         }
         
+        // Helper function to parse date and time into comparable timestamp (oldest first priority)
+        function getIssueTimestamp(issue) {
+            const dateStr = issue['Date'] || '';
+            const timeStr = issue['Time'] || '';
+            
+            // Try to parse date in DD/MM/YYYY or YYYY-MM-DD format
+            let parsedDate = null;
+            if (dateStr.includes('/')) {
+                const parts = dateStr.split('/');
+                if (parts.length === 3) {
+                    // Assuming DD/MM/YYYY
+                    parsedDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}T${timeStr || '00:00'}`);
+                }
+            } else if (dateStr.includes('-')) {
+                parsedDate = new Date(`${dateStr}T${timeStr || '00:00'}`);
+            } else {
+                parsedDate = new Date(dateStr + 'T' + (timeStr || '00:00'));
+            }
+            
+            if (isNaN(parsedDate)) {
+                // Fallback: use string comparison
+                return dateStr + timeStr;
+            }
+            return parsedDate.getTime();
+        }
+        
         function filterAndDisplayData() {
             let filteredIssues = unresolvedIssues;
             
@@ -921,10 +954,10 @@
                 filteredIssues = unresolvedIssues.filter(issue => issue['Branch'] === currentFilter);
             }
             
-            displayUnresolvedCards(filteredIssues);
+            displayUnresolvedCardsWithPrioritySorting(filteredIssues);
         }
         
-        function displayUnresolvedCards(issues) {
+        function displayUnresolvedCardsWithPrioritySorting(issues) {
             const $grid = $('#unresolvedGrid');
             const $empty = $('#unresolvedEmpty');
             const $loading = $('#unresolvedLoading');
@@ -941,7 +974,7 @@
             $grid.show();
             $grid.empty();
             
-            // Group issues by branch to show WAN status correctly
+            // Group issues by branch
             const branchGroups = new Map();
             
             issues.forEach(issue => {
@@ -952,67 +985,115 @@
                 branchGroups.get(branch).push(issue);
             });
             
-            // Create a card for each branch with WAN status
+            // Build branch data objects for sorting
+            const branchData = [];
+            
             branchGroups.forEach((branchIssues, branch) => {
-                // Get branch details from first issue
                 const firstIssue = branchIssues[0];
                 const treasury = firstIssue['Treasury'] || 'Unknown';
                 
-                // Determine WAN status for this branch
                 const wan1Down = branchIssues.some(issue => issue['Issue reported WAN'] === 'WAN 1');
                 const wan2Down = branchIssues.some(issue => issue['Issue reported WAN'] === 'WAN 2');
-                
-                // Get WAN providers from map
-                const wanDetails = wanDetailsMap.get(branch) || { wan1: 'BSNL', wan2: 'RailTel' };
-                
                 const bothDown = wan1Down && wan2Down;
-                const cardClass = bothDown ? 'danger-card both-down' : 
-                                 (wan1Down || wan2Down) ? 'danger-card one-down' : 'danger-card';
                 
-                // Collect case IDs for display
+                // Find the oldest date/time among issues for this branch (for sorting priority)
+                let oldestTimestamp = Infinity;
+                let oldestDateStr = '';
+                let oldestTimeStr = '';
+                branchIssues.forEach(issue => {
+                    const ts = getIssueTimestamp(issue);
+                    if (typeof ts === 'number' && ts < oldestTimestamp) {
+                        oldestTimestamp = ts;
+                        oldestDateStr = issue['Date'] || '';
+                        oldestTimeStr = issue['Time'] || '';
+                    } else if (typeof ts === 'string' && (oldestDateStr === '' || ts < (oldestDateStr + oldestTimeStr))) {
+                        oldestDateStr = issue['Date'] || '';
+                        oldestTimeStr = issue['Time'] || '';
+                    }
+                });
+                
+                const wanDetails = wanDetailsMap.get(branch) || { wan1: 'BSNL', wan2: 'RailTel' };
                 const caseIds = branchIssues.map(issue => issue['Unique CaseID']).join(', ');
                 
+                branchData.push({
+                    branch,
+                    treasury,
+                    wan1Down,
+                    wan2Down,
+                    bothDown,
+                    branchIssues,
+                    firstIssue,
+                    wanDetails,
+                    caseIds,
+                    oldestTimestamp,
+                    oldestDateStr,
+                    oldestTimeStr
+                });
+            });
+            
+            // SORT: Priority 1 - Both WANs Down first (bothDown = true), then by oldest timestamp (ascending)
+            branchData.sort((a, b) => {
+                // Both WANs Down get higher priority (true comes first)
+                if (a.bothDown !== b.bothDown) {
+                    return a.bothDown ? -1 : 1;
+                }
+                // If same bothDown status, sort by oldest timestamp (ascending)
+                const timeA = a.oldestTimestamp;
+                const timeB = b.oldestTimestamp;
+                if (typeof timeA === 'number' && typeof timeB === 'number') {
+                    return timeA - timeB;
+                }
+                // Fallback to string comparison
+                return (a.oldestDateStr + a.oldestTimeStr).localeCompare(b.oldestDateStr + b.oldestTimeStr);
+            });
+            
+            // Render cards in sorted order
+            branchData.forEach(data => {
+                const bothDown = data.bothDown;
+                const cardClass = bothDown ? 'danger-card both-down' : 'danger-card one-down';
+                
                 const card = `
-                    <div class="${cardClass}">
+                    <div class="${cardClass}" data-both-down="${bothDown}" data-oldest-timestamp="${data.oldestTimestamp}">
                         <div class="card-header">
-                            <span class="case-id"><i class="bi bi-tag"></i> ${escapeHtml(caseIds)}</span>
-                            <span class="branch-tag"><i class="bi bi-building"></i> ${escapeHtml(branch)}</span>
+                            <span class="case-id"><i class="bi bi-tag"></i> ${escapeHtml(data.caseIds)}</span>
+                            <span class="branch-tag"><i class="bi bi-building"></i> ${escapeHtml(data.branch)}</span>
                         </div>
                         <div class="card-body">
                             <div class="treasury-name">
-                                <i class="bi bi-pin-map"></i> ${escapeHtml(treasury)}
+                                <i class="bi bi-pin-map"></i> ${escapeHtml(data.treasury)}
                             </div>
                             <div class="wan-status-container">
                                 <div class="wan-item">
                                     <div class="wan-title">
                                         <i class="bi bi-wifi"></i> WAN 1
                                     </div>
-                                    <div class="wan-provider">${escapeHtml(wanDetails.wan1)}</div>
-                                    <div class="status-badge ${wan1Down ? 'status-down' : 'status-up'}">
-                                        <i class="bi ${wan1Down ? 'bi-arrow-down-short' : 'bi-arrow-up-short'}"></i> 
-                                        ${wan1Down ? 'DOWN' : 'UP'}
+                                    <div class="wan-provider">${escapeHtml(data.wanDetails.wan1)}</div>
+                                    <div class="status-badge ${data.wan1Down ? 'status-down' : 'status-up'}">
+                                        <i class="bi ${data.wan1Down ? 'bi-arrow-down-short' : 'bi-arrow-up-short'}"></i> 
+                                        ${data.wan1Down ? 'DOWN' : 'UP'}
                                     </div>
                                 </div>
                                 <div class="wan-item">
                                     <div class="wan-title">
                                         <i class="bi bi-wifi"></i> WAN 2
                                     </div>
-                                    <div class="wan-provider">${escapeHtml(wanDetails.wan2)}</div>
-                                    <div class="status-badge ${wan2Down ? 'status-down' : 'status-up'}">
-                                        <i class="bi ${wan2Down ? 'bi-arrow-down-short' : 'bi-arrow-up-short'}"></i> 
-                                        ${wan2Down ? 'DOWN' : 'UP'}
+                                    <div class="wan-provider">${escapeHtml(data.wanDetails.wan2)}</div>
+                                    <div class="status-badge ${data.wan2Down ? 'status-down' : 'status-up'}">
+                                        <i class="bi ${data.wan2Down ? 'bi-arrow-down-short' : 'bi-arrow-up-short'}"></i> 
+                                        ${data.wan2Down ? 'DOWN' : 'UP'}
                                     </div>
                                 </div>
                             </div>
                             <div class="date-time mt-2">
-                                <i class="bi bi-calendar"></i> Latest: ${escapeHtml(firstIssue['Date'] || '')} ${escapeHtml(firstIssue['Time'] || '')}
+                                <i class="bi bi-calendar"></i> Date & Time: ${escapeHtml(data.oldestDateStr)} ${escapeHtml(data.oldestTimeStr)}
+                                ${bothDown ? '<span class="priority-badge"><i class="bi bi-star-fill"></i> CRITICAL - Both WANs Down</span>' : ''}
                             </div>
-                            ${firstIssue['DoT Remarks'] ? `<div class="remarks mt-2"><i class="bi bi-chat"></i> <strong>DoT:</strong> ${escapeHtml(firstIssue['DoT Remarks'])}</div>` : ''}
+                            ${data.firstIssue['DoT Remarks'] ? `<div class="remarks mt-2"><i class="bi bi-chat"></i> <strong>DoT:</strong> ${escapeHtml(data.firstIssue['DoT Remarks'])}</div>` : ''}
                         </div>
                         <div class="card-footer">
                             <div class="footer-left">
                                 <i class="bi bi-hdd-network"></i>
-                                <span>${branchIssues.length} active issue(s)</span>
+                                <span>${data.branchIssues.length} active issue(s)</span>
                             </div>
                             <span class="resolve-status resolve-pending">
                                 <i class="bi bi-exclamation-circle"></i> Pending
@@ -1042,11 +1123,14 @@
             const tbody = $('#tableBody');
             tbody.empty();
             
-            // Sort by date (newest first)
+            // Sort by date (oldest first for table as well for consistency)
             const sortedIssues = [...allIssues].sort((a, b) => {
-                const dateA = a['Date'] || '';
-                const dateB = b['Date'] || '';
-                return dateB.localeCompare(dateA);
+                const tsA = getIssueTimestamp(a);
+                const tsB = getIssueTimestamp(b);
+                if (typeof tsA === 'number' && typeof tsB === 'number') {
+                    return tsA - tsB;
+                }
+                return (a['Date'] || '').localeCompare(b['Date'] || '');
             });
             
             sortedIssues.forEach(issue => {
@@ -1073,7 +1157,6 @@
                 tbody.append(row);
             });
             
-            // Initialize or reinitialize DataTable
             if (dataTable) {
                 dataTable.destroy();
             }
@@ -1081,7 +1164,7 @@
             dataTable = $('#issuesTable').DataTable({
                 pageLength: 25,
                 lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
-                order: [[0, 'desc']], // Sort by ID
+                order: [[1, 'desc'], [2, 'desc']], // Sort by date asc, then time asc for oldest first
                 language: {
                     search: "Search:",
                     searchPlaceholder: "Filter records...",
@@ -1139,7 +1222,6 @@
             return String(text).replace(/[&<>"']/g, m => map[m]);
         }
         
-        // Clean up interval when leaving page
         window.addEventListener('beforeunload', function() {
             if (refreshInterval) {
                 clearInterval(refreshInterval);
