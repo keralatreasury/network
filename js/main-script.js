@@ -4,14 +4,17 @@ const API_KEY = 'AIzaSyBB1V3vJpNZ9X1GIF-YOwoa6YSt_iXMLo0';
 const MENU_SHEET = 'Menu';
 const ICON_SHEET = 'icons';
 const LOGIN_SHEET = 'Login';
+const FLASH_SHEET = 'scroll texts';
 const MENU_RANGE = 'A:D';
 const ICON_RANGE = 'A:F';
 const LOGIN_RANGE = 'B:D';
+const FLASH_RANGE = 'A:A';
 
 let menuData = [];
 let iconData = new Map();
 let isAuthenticated = false;
 let currentUser = null;
+let flashNewsInterval = null;
 
 // Theme functions
 function initTheme() {
@@ -55,6 +58,100 @@ function hideLoginError() {
     if (errorDiv) {
         errorDiv.style.display = 'none';
     }
+}
+
+// Flash News Functions
+async function fetchAndDisplayFlashNews() {
+    const flashContainer = document.getElementById('flashNewsContainer');
+    const flashTicker = document.getElementById('flashNewsTicker');
+    
+    if (!flashContainer || !flashTicker) return;
+    
+    try {
+        // Fetch from A2:A range (starting from row 2 to skip header)
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${FLASH_SHEET}!A2:A?key=${API_KEY}`;
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (data.error) {
+            console.warn('Flash news sheet error:', data.error);
+            flashContainer.classList.add('hidden');
+            adjustWrapperHeightForTicker();
+            return;
+        }
+        
+        let newsItems = [];
+        if (data.values && data.values.length > 0) {
+            // Filter out empty cells, undefined, null, and whitespace-only strings
+            newsItems = data.values
+                .map(row => row[0] ? row[0].toString().trim() : '')
+                .filter(text => text !== '' && text !== null && text !== undefined);
+        }
+        
+        // Check if there are any valid news items
+        if (newsItems.length === 0) {
+            console.log('No scroll texts found in A2:A range, hiding ticker');
+            flashContainer.classList.add('hidden');
+            adjustWrapperHeightForTicker();
+            return;
+        }
+        
+        // Build ticker HTML with icon and text - NO DUPLICATION
+        let tickerHtml = '';
+        newsItems.forEach((item) => {
+            tickerHtml += `<span><i class="bi bi-megaphone-fill"></i> ${escapeHtml(item)}</span>`;
+        });
+        
+        // Calculate scroll speed based on number of items and total content width
+        // Slower speed for more content, faster for less content
+        const totalItems = newsItems.length;
+        // Base speed: 25 seconds, adjusted by item count (more items = slower speed)
+        // Range: 15 seconds (min) to 40 seconds (max)
+        let scrollDuration = Math.min(40, Math.max(15, 25 + (totalItems * 0.5)));
+        
+        flashTicker.innerHTML = tickerHtml;
+        
+        // Remove existing animation and reapply with new duration
+        flashTicker.style.animation = 'none';
+        flashTicker.offsetHeight; // Force reflow
+        flashTicker.style.animation = `scroll-left ${scrollDuration}s linear infinite`;
+        
+        // Show the container
+        flashContainer.classList.remove('hidden');
+        adjustWrapperHeightForTicker();
+        
+        console.log(`Flash news ticker displayed with ${newsItems.length} items, scroll duration: ${scrollDuration}s`);
+        
+    } catch (error) {
+        console.error('Error fetching flash news:', error);
+        flashContainer.classList.add('hidden');
+        adjustWrapperHeightForTicker();
+    }
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function adjustWrapperHeightForTicker() {
+    const flashContainer = document.getElementById('flashNewsContainer');
+    const wrapper = document.querySelector('.dashboard-container .wrapper');
+    
+    if (!wrapper) return;
+    
+    const navbar = document.querySelector('.navbar-custom');
+    const navbarHeight = navbar ? navbar.offsetHeight : 73;
+    const isTickerVisible = flashContainer && !flashContainer.classList.contains('hidden');
+    const tickerHeight = isTickerVisible && flashContainer ? flashContainer.offsetHeight : 0;
+    const viewportHeight = window.innerHeight;
+    
+    wrapper.style.height = `${viewportHeight - navbarHeight - tickerHeight}px`;
 }
 
 // Login validation
@@ -146,6 +243,9 @@ async function handleLogin() {
                 loginOverlay.style.display = 'none';
                 document.getElementById('dashboardContainer').style.display = 'block';
                 loadMenuData(userData.menuSheet);
+                setTimeout(() => {
+                    fetchAndDisplayFlashNews();
+                }, 100);
             }, 500);
         } else {
             loginBtn.disabled = false;
@@ -174,6 +274,11 @@ function logout() {
     
     const loginOverlay = document.getElementById('loginOverlay');
     const dashboardContainer = document.getElementById('dashboardContainer');
+    const flashContainer = document.getElementById('flashNewsContainer');
+    
+    if (flashContainer) {
+        flashContainer.classList.add('hidden');
+    }
     
     loginOverlay.style.display = 'flex';
     loginOverlay.style.opacity = '1';
@@ -195,14 +300,12 @@ function displayLoggedInUser() {
             const userData = JSON.parse(storedUser);
             currentUser = userData;
             
-            // Remove existing user info if any
             const existingDesktopUser = document.getElementById('desktopUserInfo');
             if (existingDesktopUser) existingDesktopUser.remove();
             
             const existingMobileUser = document.getElementById('mobileUserInfo');
             if (existingMobileUser) existingMobileUser.remove();
             
-            // Add user info to desktop sidebar
             const desktopSidebar = document.getElementById('desktopSidebar');
             if (desktopSidebar) {
                 const userInfoDiv = document.createElement('div');
@@ -215,7 +318,7 @@ function displayLoggedInUser() {
                         </div>
                         <div class="user-details">
                             <span class="user-label">Logged in as</span>
-                            <span class="user-name">${userData.username}</span>
+                            <span class="user-name">${escapeHtml(userData.username)}</span>
                             <span class="user-login-time">${new Date(userData.loginTime).toLocaleString()}</span>
                         </div>
                         <button class="logout-icon-btn" onclick="logout()" title="Logout">
@@ -226,7 +329,6 @@ function displayLoggedInUser() {
                 desktopSidebar.insertBefore(userInfoDiv, desktopSidebar.firstChild);
             }
             
-            // Add user info to mobile sidebar
             const mobileSidebar = document.getElementById('mobileSidebar');
             if (mobileSidebar) {
                 const userInfoDiv = document.createElement('div');
@@ -239,7 +341,7 @@ function displayLoggedInUser() {
                         </div>
                         <div class="user-details">
                             <span class="user-label">Logged in as</span>
-                            <span class="user-name">${userData.username}</span>
+                            <span class="user-name">${escapeHtml(userData.username)}</span>
                             <span class="user-login-time">${new Date(userData.loginTime).toLocaleString()}</span>
                         </div>
                         <button class="logout-icon-btn" onclick="logout()" title="Logout">
@@ -280,6 +382,9 @@ function checkExistingSession() {
             dashboardContainer.style.display = 'block';
             
             loadMenuData(userData.menuSheet);
+            setTimeout(() => {
+                fetchAndDisplayFlashNews();
+            }, 100);
         } catch (e) {
             console.error('Error restoring session:', e);
             logout();
@@ -424,8 +529,8 @@ async function loadMenuData(menuSheetName) {
 function showError(message) {
     const desktop = document.getElementById('desktopSidebar');
     const mobile = document.getElementById('mobileSidebar');
-    if (desktop) desktop.innerHTML = `<div class="error-message text-danger p-3">${message}</div>`;
-    if (mobile) mobile.innerHTML = `<div class="error-message text-danger p-3">${message}</div>`;
+    if (desktop) desktop.innerHTML = `<div class="error-message text-danger p-3">${escapeHtml(message)}</div>`;
+    if (mobile) mobile.innerHTML = `<div class="error-message text-danger p-3">${escapeHtml(message)}</div>`;
 }
 
 function renderMenuCards(menuData, containerId) {
@@ -441,15 +546,15 @@ function renderMenuCards(menuData, containerId) {
         main.subMenus.forEach(sub => {
             let linksHtml = '';
             sub.items.forEach(link => {
-                linksHtml += `<li class="link-item" data-url="${link.url}">${link.icon} ${link.title}</li>`;
+                linksHtml += `<li class="link-item" data-url="${link.url}">${link.icon} ${escapeHtml(link.title)}</li>`;
             });
             subHtml += `<div class="submenu-block">
-                <div class="submenu-title">${sub.icon} ${sub.title}</div>
+                <div class="submenu-title">${sub.icon} ${escapeHtml(sub.title)}</div>
                 <ul class="link-items">${linksHtml}</ul>
             </div>`;
         });
         html += `<div class="menu-card">
-            <div class="menu-card-header">${main.icon} ${main.title}</div>
+            <div class="menu-card-header">${main.icon} ${escapeHtml(main.title)}</div>
             <div class="menu-card-body">${subHtml}</div>
         </div>`;
     });
@@ -471,8 +576,7 @@ function renderMenuCards(menuData, containerId) {
 }
 
 function loadUrlInIframe(url) {
-    
-      const iframe = document.getElementById('content-frame');
+    const iframe = document.getElementById('content-frame');
     const loading = document.getElementById('loading');
     const welcomeMessage = document.getElementById('welcome-message');
     
@@ -481,7 +585,6 @@ function loadUrlInIframe(url) {
     
     let fullUrl = url;
     
-    // If the URL is for treasury status and branch is selected, add branch parameter
     if (url.includes('treasury-status') && currentUser && currentUser.branch) {
         const separator = url.includes('?') ? '&' : '?';
         fullUrl = `${url}${separator}branch=${encodeURIComponent(currentUser.branch)}`;
@@ -557,6 +660,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     checkExistingSession();
     
+    window.addEventListener('resize', () => {
+        if (isAuthenticated) {
+            adjustWrapperHeightForTicker();
+        }
+    });
+    
     setTimeout(() => {
         if (!isAuthenticated && username) {
             username.focus();
@@ -585,3 +694,8 @@ if ('serviceWorker' in navigator) {
             });
     });
 }
+
+// Export functions for global access
+window.fetchAndDisplayFlashNews = fetchAndDisplayFlashNews;
+window.adjustWrapperHeightForTicker = adjustWrapperHeightForTicker;
+window.logout = logout;
