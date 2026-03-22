@@ -471,7 +471,8 @@ function renderMenuCards(menuData, containerId) {
 }
 
 function loadUrlInIframe(url) {
-    const iframe = document.getElementById('content-frame');
+    
+      const iframe = document.getElementById('content-frame');
     const loading = document.getElementById('loading');
     const welcomeMessage = document.getElementById('welcome-message');
     
@@ -479,6 +480,12 @@ function loadUrlInIframe(url) {
     if (loading) loading.style.display = 'flex';
     
     let fullUrl = url;
+    
+    // If the URL is for treasury status and branch is selected, add branch parameter
+    if (url.includes('treasury-status') && currentUser && currentUser.branch) {
+        const separator = url.includes('?') ? '&' : '?';
+        fullUrl = `${url}${separator}branch=${encodeURIComponent(currentUser.branch)}`;
+    }
     
     iframe.onload = function() { 
         if (loading) loading.style.display = 'none'; 
