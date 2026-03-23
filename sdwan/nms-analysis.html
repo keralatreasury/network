@@ -154,7 +154,7 @@
         
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
             gap: 24px;
             margin-bottom: 24px;
         }
@@ -236,41 +236,104 @@
         .gantt-container {
             overflow-x: auto;
             padding: 10px 0;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        .gantt-timeline-header {
+            display: flex;
+            margin-bottom: 15px;
+            padding-left: 180px;
+            font-size: 0.7rem;
+            color: #64748b;
+        }
+        
+        .gantt-timeline-scale {
+            display: flex;
+            flex: 1;
+            gap: 2px;
+        }
+        
+        .gantt-timeline-scale span {
+            flex: 1;
+            text-align: center;
         }
         
         .gantt-row {
             display: flex;
             align-items: center;
-            margin-bottom: 8px;
+            margin-bottom: 12px;
             font-size: 0.8rem;
         }
         
         .gantt-label {
             width: 180px;
-            font-weight: 500;
+            font-weight: 600;
             color: #1e293b;
             flex-shrink: 0;
+            padding-right: 12px;
+            font-size: 0.8rem;
         }
         
         .gantt-bar-container {
             flex: 1;
-            height: 32px;
-            background: #e9ecef;
-            border-radius: 16px;
+            height: 40px;
+            background: #f1f5f9;
+            border-radius: 8px;
             position: relative;
-            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .gantt-bar-container:hover {
+            transform: scaleY(1.05);
         }
         
         .gantt-bar {
             height: 100%;
-            border-radius: 16px;
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: flex-start;
-            padding-left: 8px;
+            padding-left: 10px;
             font-size: 0.7rem;
             color: white;
-            font-weight: 500;
+            font-weight: 600;
+            transition: width 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+        
+        .gantt-bar::after {
+            content: attr(data-duration);
+            position: absolute;
+            right: 8px;
+            font-size: 0.65rem;
+            opacity: 0.9;
+        }
+        
+        .gantt-legend {
+            display: flex;
+            gap: 20px;
+            margin-top: 15px;
+            padding: 10px;
+            background: #f8fafc;
+            border-radius: 12px;
+            justify-content: center;
+        }
+        
+        .gantt-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.75rem;
+        }
+        
+        .gantt-legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
         }
         
         .branch-tag {
@@ -325,8 +388,25 @@
         
         @media (max-width: 768px) {
             .grid { grid-template-columns: 1fr; }
-            .gantt-label { width: 120px; }
+            .gantt-label { width: 120px; font-size: 0.7rem; }
             .kpi-value { font-size: 1.5rem; }
+        }
+        
+        /* Tooltip */
+        .gantt-bar:hover::before {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e293b;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            white-space: nowrap;
+            z-index: 10;
+            pointer-events: none;
         }
     </style>
 </head>
@@ -363,24 +443,43 @@
 
         let chartInstances = [];
 
-        // Helper: parse date/time
+        // Helper: parse date/time with multiple formats
         function parseDateTime(dateStr, timeStr) {
             if (!dateStr) return null;
             try {
-                let d = new Date(dateStr);
-                if (timeStr) {
-                    let [h, m, s] = timeStr.split(':');
-                    d.setHours(parseInt(h), parseInt(m), parseInt(s || 0));
+                let datePart = dateStr;
+                // Handle DD/MM/YYYY format
+                if (dateStr.includes('/')) {
+                    const parts = dateStr.split('/');
+                    if (parts.length === 3) {
+                        datePart = `${parts[2]}-${parts[1]}-${parts[0]}`;
+                    }
                 }
-                return d;
-            } catch(e) { return null; }
+                let d = new Date(datePart);
+                if (timeStr && timeStr.includes(':')) {
+                    let [h, m, s] = timeStr.split(':');
+                    d.setHours(parseInt(h) || 0, parseInt(m) || 0, parseInt(s) || 0);
+                }
+                return isNaN(d.getTime()) ? null : d;
+            } catch(e) { 
+                return null; 
+            }
         }
         
         function getDurationMinutes(startDate, startTime, endDate, endTime) {
             let start = parseDateTime(startDate, startTime);
             let end = parseDateTime(endDate, endTime);
             if (!start || !end) return null;
-            return Math.max(0, (end - start) / 60000);
+            let duration = (end - start) / 60000;
+            return duration > 0 ? Math.round(duration) : null;
+        }
+        
+        function formatDuration(minutes) {
+            if (!minutes) return 'N/A';
+            if (minutes < 60) return `${minutes} min`;
+            let hours = Math.floor(minutes / 60);
+            let mins = minutes % 60;
+            return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
         }
 
         async function loadLiveData() {
@@ -411,24 +510,7 @@
         }
         
         function processOutageData(rows, headers) {
-            // Find column indexes
-            const colIdx = {
-                caseId: 0,
-                downDate: 1,
-                downTime: 2,
-                branch: 3,
-                treasury: 4,
-                issueWan: 5,
-                provider: 6,
-                status: 7,
-                dotRemarks: 8,
-                tryRemarks: 9,
-                resolveStatus: 10,
-                resolvedDate: 11,
-                resolvedTime: 12
-            };
-            
-            // Parse data
+            // Parse all outages
             const outages = [];
             const branches = new Map();
             const rootCauses = new Map();
@@ -439,47 +521,57 @@
             
             rows.forEach(row => {
                 const outage = {
-                    caseId: row[colIdx.caseId] || '',
-                    downDate: row[colIdx.downDate] || '',
-                    downTime: row[colIdx.downTime] || '',
-                    branch: row[colIdx.branch] || '',
-                    treasury: row[colIdx.treasury] || '',
-                    wan: row[colIdx.issueWan] || '',
-                    provider: row[colIdx.provider] || '',
-                    status: row[colIdx.status] || '',
-                    dotRemarks: (row[colIdx.dotRemarks] || '').toLowerCase(),
-                    tryRemarks: (row[colIdx.tryRemarks] || '').toLowerCase(),
-                    resolveStatus: row[colIdx.resolveStatus] || '',
-                    resolvedDate: row[colIdx.resolvedDate] || '',
-                    resolvedTime: row[colIdx.resolvedTime] || ''
+                    caseId: row[0] || '',
+                    downDate: row[1] || '',
+                    downTime: row[2] || '',
+                    branch: row[3] || '',
+                    treasury: row[4] || '',
+                    wan: row[5] || '',
+                    provider: row[6] || '',
+                    status: row[7] || '',
+                    dotRemarks: (row[8] || '').toLowerCase(),
+                    tryRemarks: (row[9] || '').toLowerCase(),
+                    resolveStatus: row[10] || '',
+                    resolvedDate: row[11] || '',
+                    resolvedTime: row[12] || ''
                 };
                 
                 // Calculate duration
                 let duration = null;
+                let startTime = null;
+                let endTime = null;
+                
                 if (outage.resolveStatus === 'Resolved' && outage.resolvedDate) {
                     duration = getDurationMinutes(outage.downDate, outage.downTime, outage.resolvedDate, outage.resolvedTime);
+                    startTime = parseDateTime(outage.downDate, outage.downTime);
+                    endTime = parseDateTime(outage.resolvedDate, outage.resolvedTime);
                 }
+                
                 outage.durationMinutes = duration;
+                outage.startTime = startTime;
+                outage.endTime = endTime;
                 
                 outages.push(outage);
                 
                 // Branch stats
                 const branchName = outage.branch || outage.treasury?.split(' ')[0] || 'Unknown';
                 if (!branches.has(branchName)) {
-                    branches.set(branchName, { total: 0, resolved: 0, totalDuration: 0 });
+                    branches.set(branchName, { total: 0, resolved: 0, totalDuration: 0, outages: [] });
                 }
                 const branchStat = branches.get(branchName);
                 branchStat.total++;
                 if (outage.resolveStatus === 'Resolved') branchStat.resolved++;
                 if (duration) branchStat.totalDuration += duration;
+                branchStat.outages.push(outage);
                 
                 // Root cause analysis
                 let cause = 'Unknown';
                 const remarks = (outage.dotRemarks + ' ' + outage.tryRemarks).toLowerCase();
                 if (remarks.includes('power') || remarks.includes('power failure')) cause = 'Power Failure';
                 else if (remarks.includes('fiber') || remarks.includes('cut')) cause = 'Fiber Cut';
-                else if (remarks.includes('bsnl') || remarks.includes('mpls')) cause = 'Provider Issue';
+                else if (remarks.includes('bsnl') || remarks.includes('mpls')) cause = 'BSNL Issue';
                 else if (remarks.includes('rail')) cause = 'Railtel Issue';
+                else if (remarks.includes('resolved')) cause = 'Quick Resolution';
                 rootCauses.set(cause, (rootCauses.get(cause) || 0) + 1);
                 
                 // WAN distribution
@@ -505,10 +597,10 @@
             });
             
             // Calculate MTTR (mean time to resolve)
-            const resolvedDurations = outages.filter(o => o.durationMinutes !== null).map(o => o.durationMinutes);
+            const resolvedDurations = outages.filter(o => o.durationMinutes !== null && o.durationMinutes > 0).map(o => o.durationMinutes);
             const avgMTTR = resolvedDurations.length > 0 ? Math.round(resolvedDurations.reduce((a,b) => a+b, 0) / resolvedDurations.length) : 0;
             const totalOutages = outages.length;
-            const resolvedCount = outages.filter(o => o.resolveStatus === 'Resolved').length;
+            const resolvedCount = outages.filter(o => o.resolveStatus === 'Resolved' && o.durationMinutes !== null).length;
             
             // Build KPI cards
             buildKPIs(totalOutages, resolvedCount, avgMTTR, branches.size, rootCauses);
@@ -535,7 +627,7 @@
             // 5. Dual-Axis - Resolution Time Analysis (MTTR by Branch)
             addMTTRByBranchChart(grid, branches);
             
-            // 6. Gantt Chart - Concurrent Outages Timeline
+            // 6. Gantt Chart - Concurrent Outages Timeline (FIXED)
             addGanttChart(grid, outages);
             
             // 7. Funnel Chart - Resolution Flow
@@ -544,7 +636,7 @@
             // 8. Scatter Plot - Response Time vs Resolution Time
             addScatterPlot(grid, outages);
             
-            // 9. Tree Map - Outage Impact by Branch (using bar as alternative)
+            // 9. Tree Map - Outage Impact by Branch
             addImpactTreeMap(grid, branches);
             
             // 10. Control Chart - Outage Frequency
@@ -623,16 +715,16 @@
                 }
             });
             const topBranches = [...branchHourMap.entries()].sort((a,b) => b[1].reduce((s,v)=>s+v,0) - a[1].reduce((s,v)=>s+v,0)).slice(0, 6);
-            const heatData = topBranches.map(b => b[1]);
             addCard(parent, 'bi-grid-3x3-gap-fill', 'Outage Heatmap', 'Hour × Branch (color intensity)', 'chart-heat', (id) => {
                 const ctx = document.getElementById(id).getContext('2d');
-                const chart = new Chart(ctx, { type: 'bar', data: { labels: Array.from({length:24},(_,i)=>`${i}:00`), datasets: topBranches.map((b,idx) => ({ label: b[0], data: b[1], backgroundColor: `hsla(${idx * 45}, 70%, 60%, 0.7)`, stack: false })) }, options: { responsive: true, maintainAspectRatio: false, scales: { x: { ticks: { maxRotation: 45, autoSkip: true } } } } });
+                const chart = new Chart(ctx, { type: 'bar', data: { labels: Array.from({length:24},(_,i)=>`${i}:00`), datasets: topBranches.map((b,idx) => ({ label: b[0], data: b[1], backgroundColor: `hsla(${idx * 45}, 70%, 60%, 0.7)` })) }, options: { responsive: true, maintainAspectRatio: false, scales: { x: { ticks: { maxRotation: 45, autoSkip: true } } } } });
                 chartInstances.push(chart);
             }, `Peak hour: ${hourlyOutages.indexOf(Math.max(...hourlyOutages))}:00`);
         }
         
         function addMTTRByBranchChart(parent, branches) {
             const mttrData = [...branches.entries()].map(([name, stats]) => ({ name, mttr: stats.resolved > 0 ? Math.round(stats.totalDuration / stats.resolved) : 0 })).filter(d => d.mttr > 0).sort((a,b) => b.mttr - a.mttr).slice(0, 8);
+            if (mttrData.length === 0) return;
             addCard(parent, 'bi-speedometer2', 'MTTR by Branch', 'Mean time to resolve (minutes)', 'chart-mttr', (id) => {
                 const ctx = document.getElementById(id).getContext('2d');
                 const chart = new Chart(ctx, { type: 'bar', data: { labels: mttrData.map(d => d.name), datasets: [{ label: 'Avg Resolution Time (mins)', data: mttrData.map(d => d.mttr), backgroundColor: '#10b981' }] }, options: { responsive: true, maintainAspectRatio: false } });
@@ -640,24 +732,97 @@
             }, `Slowest resolution: ${mttrData[0]?.name} (${mttrData[0]?.mttr} mins)`);
         }
         
+        // FIXED: Gantt Chart with proper duration display
         function addGanttChart(parent, outages) {
-            const recentOutages = outages.filter(o => o.resolvedDate).slice(0, 12);
+            // Filter only resolved outages with valid duration
+            const resolvedOutages = outages
+                .filter(o => o.durationMinutes !== null && o.durationMinutes > 0 && o.startTime && o.endTime)
+                .sort((a, b) => a.startTime - b.startTime)
+                .slice(0, 15); // Show last 15 resolved outages
+            
+            if (resolvedOutages.length === 0) {
+                const ganttContainer = document.createElement('div');
+                ganttContainer.className = 'card full-width';
+                ganttContainer.innerHTML = `<div class="card-header"><i class="bi bi-calendar-range"></i><div><h3>Concurrent Outages Timeline (Gantt)</h3><p>No resolved outages with duration data available</p></div></div>`;
+                parent.appendChild(ganttContainer);
+                return;
+            }
+            
+            // Find min and max time for scaling
+            const minTime = Math.min(...resolvedOutages.map(o => o.startTime.getTime()));
+            const maxTime = Math.max(...resolvedOutages.map(o => o.endTime.getTime()));
+            const timeRange = maxTime - minTime;
+            
             const ganttContainer = document.createElement('div');
             ganttContainer.className = 'card full-width';
-            ganttContainer.innerHTML = `<div class="card-header"><i class="bi bi-calendar-range"></i><div><h3>Concurrent Outages Timeline (Gantt)</h3><p>Recent outage durations by branch</p></div></div><div class="gantt-container" id="gantt-visual"></div><div class="stats-mini">Horizontal bars show outage duration · Overlap indicates concurrent failures</div>`;
+            ganttContainer.innerHTML = `
+                <div class="card-header">
+                    <i class="bi bi-calendar-range"></i>
+                    <div>
+                        <h3>Concurrent Outages Timeline (Gantt)</h3>
+                        <p>Visualizing outage duration and overlap between branches</p>
+                    </div>
+                </div>
+                <div class="gantt-container" id="gantt-visual"></div>
+                <div class="gantt-legend">
+                    <div class="gantt-legend-item"><div class="gantt-legend-color" style="background: #0f5b9c;"></div><span>WAN 1 (BSNL MPLS)</span></div>
+                    <div class="gantt-legend-item"><div class="gantt-legend-color" style="background: #8b5cf6;"></div><span>WAN 2 (RAILTEL)</span></div>
+                    <div class="gantt-legend-item"><div class="gantt-legend-color" style="background: #10b981;"></div><span>Resolved</span></div>
+                </div>
+                <div class="stats-mini">Showing last ${resolvedOutages.length} resolved outages · Bars show outage duration</div>
+            `;
             parent.appendChild(ganttContainer);
+            
             const ganttDiv = ganttContainer.querySelector('#gantt-visual');
-            const maxDuration = Math.max(...recentOutages.map(o => o.durationMinutes || 0), 1);
-            recentOutages.forEach(o => {
-                const widthPercent = Math.min(100, ((o.durationMinutes || 5) / maxDuration) * 100);
-                const branchName = o.branch || o.treasury?.substring(0,15) || 'Unknown';
-                const color = o.wan === 'WAN 1' ? '#0f5b9c' : '#8b5cf6';
-                const durationText = o.durationMinutes ? `${Math.round(o.durationMinutes)} min` : 'N/A';
+            
+            resolvedOutages.forEach(outage => {
+                const startOffset = outage.startTime.getTime() - minTime;
+                const durationMs = outage.durationMinutes * 60 * 1000;
+                const leftPercent = (startOffset / timeRange) * 100;
+                const widthPercent = (durationMs / timeRange) * 100;
+                
+                const branchName = outage.branch || outage.treasury?.substring(0, 20) || 'Unknown';
+                const wanType = outage.wan || 'WAN';
+                const color = wanType === 'WAN 1' ? '#0f5b9c' : '#8b5cf6';
+                const durationText = formatDuration(outage.durationMinutes);
+                const tooltip = `${branchName} (${wanType}): ${durationText} | ${outage.downDate} ${outage.downTime} → ${outage.resolvedDate} ${outage.resolvedTime}`;
+                
                 const row = document.createElement('div');
                 row.className = 'gantt-row';
-                row.innerHTML = `<div class="gantt-label">${branchName} (${o.wan})</div><div class="gantt-bar-container"><div class="gantt-bar" style="width: ${widthPercent}%; background: ${color};">${durationText}</div></div>`;
+                row.innerHTML = `
+                    <div class="gantt-label">
+                        <i class="bi bi-building me-1"></i>${branchName}<br>
+                        <small style="font-size: 0.65rem; color: #64748b;">${wanType} · ${outage.provider || 'N/A'}</small>
+                    </div>
+                    <div class="gantt-bar-container">
+                        <div class="gantt-bar" style="width: ${Math.max(2, widthPercent)}%; left: ${leftPercent}%; position: relative; background: ${color};" 
+                             data-duration="${durationText}" 
+                             data-tooltip="${tooltip}">
+                            ${durationText}
+                        </div>
+                    </div>
+                `;
                 ganttDiv.appendChild(row);
             });
+            
+            // Add CSS for absolute positioning within container
+            const style = document.createElement('style');
+            style.textContent = `
+                .gantt-bar-container {
+                    position: relative;
+                    background: #e9ecef;
+                }
+                .gantt-bar {
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    min-width: 30px;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+            `;
+            document.head.appendChild(style);
         }
         
         function addFunnelChart(parent, outages, resolved, total) {
@@ -671,19 +836,20 @@
         
         function addScatterPlot(parent, outages) {
             const resolvedOutages = outages.filter(o => o.durationMinutes !== null && o.durationMinutes > 0).slice(0, 30);
-            const scatterData = resolvedOutages.map((o, idx) => ({ x: idx, y: o.durationMinutes }));
+            if (resolvedOutages.length === 0) return;
+            const scatterData = resolvedOutages.map((o, idx) => ({ x: idx + 1, y: o.durationMinutes }));
             addCard(parent, 'bi-scatter', 'Response vs Resolution', 'Each point = outage duration', 'chart-scatter', (id) => {
                 const ctx = document.getElementById(id).getContext('2d');
-                const chart = new Chart(ctx, { type: 'scatter', data: { datasets: [{ label: 'Outage Duration (mins)', data: scatterData, backgroundColor: '#f59e0b', pointRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { title: { display: true, text: 'Duration (mins)' } } } } });
+                const chart = new Chart(ctx, { type: 'scatter', data: { datasets: [{ label: 'Outage Duration (mins)', data: scatterData, backgroundColor: '#f59e0b', pointRadius: 6, pointHoverRadius: 8 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { title: { display: true, text: 'Duration (mins)' } }, x: { title: { display: true, text: 'Outage Sequence' } } } } });
                 chartInstances.push(chart);
-            }, `Avg duration: ${Math.round(resolvedOutages.reduce((a,b)=>a+(b.durationMinutes||0),0)/resolvedOutages.length||0)} mins`);
+            }, `Avg duration: ${Math.round(resolvedOutages.reduce((a,b)=>a+(b.durationMinutes||0),0)/resolvedOutages.length||0)} mins · Range: ${Math.min(...resolvedOutages.map(o=>o.durationMinutes))}-${Math.max(...resolvedOutages.map(o=>o.durationMinutes))} mins`);
         }
         
         function addImpactTreeMap(parent, branches) {
             const impactData = [...branches.entries()].map(([name, stats]) => ({ name, outages: stats.total })).sort((a,b) => b.outages - a.outages).slice(0, 10);
-            addCard(parent, 'bi-diagram-3', 'Impact Tree Map', 'Outage count by branch', 'chart-impact', (id) => {
+            addCard(parent, 'bi-diagram-3', 'Impact Analysis', 'Outage count by branch', 'chart-impact', (id) => {
                 const ctx = document.getElementById(id).getContext('2d');
-                const chart = new Chart(ctx, { type: 'bar', data: { labels: impactData.map(d => d.name), datasets: [{ label: 'Outage Count', data: impactData.map(d => d.outages), backgroundColor: '#ef4444' }] }, options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y' } });
+                const chart = new Chart(ctx, { type: 'bar', data: { labels: impactData.map(d => d.name), datasets: [{ label: 'Outage Count', data: impactData.map(d => d.outages), backgroundColor: '#ef4444', borderRadius: 8 }] }, options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y' } });
                 chartInstances.push(chart);
             }, `Most impacted: ${impactData[0]?.name} (${impactData[0]?.outages} outages)`);
         }
@@ -691,18 +857,21 @@
         function addControlChart(parent, dailyOutages) {
             const sorted = [...dailyOutages.keys()].sort();
             const values = sorted.map(d => dailyOutages.get(d));
+            if (values.length === 0) return;
             const avg = values.reduce((a,b)=>a+b,0) / (values.length || 1);
-            const ucl = avg + 2 * Math.sqrt(avg);
-            const lcl = Math.max(0, avg - 2 * Math.sqrt(avg));
+            const stdDev = Math.sqrt(values.reduce((a,b)=>a+Math.pow(b-avg,2),0) / values.length);
+            const ucl = avg + 2 * stdDev;
+            const lcl = Math.max(0, avg - 2 * stdDev);
             addCard(parent, 'bi-graph-up', 'Control Chart', 'Outage frequency with control limits', 'chart-control', (id) => {
                 const ctx = document.getElementById(id).getContext('2d');
                 const chart = new Chart(ctx, { type: 'line', data: { labels: sorted, datasets: [
-                    { label: 'Daily Outages', data: values, borderColor: '#0f5b9c', tension: 0.2 },
-                    { label: 'UCL', data: Array(values.length).fill(ucl), borderColor: '#ef4444', borderDash: [5,5], fill: false },
-                    { label: 'LCL', data: Array(values.length).fill(lcl), borderColor: '#10b981', borderDash: [5,5], fill: false }
-                ] }, options: { responsive: true, maintainAspectRatio: false } });
+                    { label: 'Daily Outages', data: values, borderColor: '#0f5b9c', tension: 0.2, pointRadius: 4, pointBackgroundColor: '#0f5b9c' },
+                    { label: 'UCL (Upper Control Limit)', data: Array(values.length).fill(ucl), borderColor: '#ef4444', borderDash: [5,5], fill: false, pointRadius: 0 },
+                    { label: 'Mean', data: Array(values.length).fill(avg), borderColor: '#10b981', borderDash: [3,3], fill: false, pointRadius: 0 },
+                    { label: 'LCL (Lower Control Limit)', data: Array(values.length).fill(lcl), borderColor: '#f59e0b', borderDash: [5,5], fill: false, pointRadius: 0 }
+                ] }, options: { responsive: true, maintainAspectRatio: false, plugins: { tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.raw.toFixed(1)}` } } } } });
                 chartInstances.push(chart);
-            }, `Avg: ${avg.toFixed(1)} · UCL: ${ucl.toFixed(1)} · ${values[values.length-1] > ucl ? '⚠️ Above threshold' : 'Stable'}`);
+            }, `Mean: ${avg.toFixed(1)} · UCL: ${ucl.toFixed(1)} · ${values[values.length-1] > ucl ? '⚠️ Above threshold - Investigate!' : 'Process stable'}`);
         }
         
         window.onload = loadLiveData;
