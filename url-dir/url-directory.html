@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>URL Bookmark Manager | Treasury Suite</title>
+    <title>URL Bookmark Manager | Dynamic Types</title>
     
     <!-- LOCAL CSS (from your existing resources) -->
     <link rel="stylesheet" href="../css/bootstrap.min.css">
@@ -398,6 +398,24 @@
             .tab-pane { padding: 20px; }
             .btn-submit, .btn-reset { padding: 8px 20px; }
         }
+        
+        .select2-container--bootstrap-5 .select2-selection {
+            border-radius: 12px;
+            padding: 5px 12px;
+            min-height: 44px;
+            border-color: var(--border);
+        }
+        
+        .type-loading-badge {
+            background: #f1f5f9;
+            font-size: 0.7rem;
+            padding: 4px 8px;
+            border-radius: 40px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-left: 10px;
+        }
     </style>
 </head>
 <body>
@@ -444,7 +462,7 @@
                                     <th>URL / IP Address</th>
                                     <th>User ID</th>
                                     <th>Password</th>
-                                 </tr>
+                                </tr>
                             </thead>
                             <tbody>
                                 <tr><td colspan="5" class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-2 text-muted">Loading bookmarks...</p></td></tr>
@@ -457,51 +475,40 @@
                     </div>
                 </div>
                 
-                <!-- TAB 2: ADD FORM -->
+                <!-- TAB 2: ADD FORM with DYNAMIC TYPES from 'types' sheet -->
                 <div class="tab-pane fade" id="addPane" role="tabpanel">
                     <form id="addUrlForm">
                         <div class="row g-4">
                             <div class="col-md-6">
-                                <label class="form-label required"><i class="bi bi-tag"></i> Type</label>
+                                <label class="form-label required"><i class="bi bi-tag"></i> Type 
+                                    <span id="typeLoadStatus" class="type-loading-badge"><i class="bi bi-arrow-repeat spin-icon"></i> loading...</span>
+                                </label>
                                 <select id="inputType" class="form-select" required>
-
-                                    <option value="">Select Type</option>
-
-
-                                    <option value="Wifi Modem">Wifi Modem</option>
-                                    <option value="Router">Router</option>
-                                    <option value="Switch">Switch</option>
-                                    <option value="Computer">Computer</option>
-                                    <option value="Website">Website</option>
-                                    <option value="Application">Application</option>
-                                     <option value="Sheets">Google Sheets & Forms</option>
-
-                                    <option value="Other">Other</option>
-
-
+                                    <option value="">-- Select Type --</option>
                                 </select>
+                                <small class="text-muted">Types fetched from sheet "types" column A (A2:A)</small>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label required"><i class="bi bi-laptop"></i> Company / Device Name</label>
-                                <input type="text" id="inputDevice" class="form-control" placeholder="" required>
+                                <input type="text" id="inputDevice" class="form-control" placeholder="e.g., HQ Router, Finance Laptop" required>
                             </div>
                             <div class="col-12">
                                 <label class="form-label required"><i class="bi bi-link-45deg"></i> URL / IP Address</label>
-                                <input type="text" id="inputUrl" class="form-control" placeholder="" required>
+                                <input type="text" id="inputUrl" class="form-control" placeholder="https://192.168.1.1 or https://example.com" required>
                                 <small class="text-muted">Supports http://, https://, or IP addresses</small>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label"><i class="bi bi-person"></i> User ID / Username</label>
-                                <input type="text" id="inputUserId" class="form-control" placeholder="">
+                                <input type="text" id="inputUserId" class="form-control" placeholder="admin / user@example.com">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label"><i class="bi bi-key"></i> Password</label>
-                                <input type="text" id="inputPassword" class="form-control" placeholder="">
+                                <input type="text" id="inputPassword" class="form-control" placeholder="••••••••">
                             </div>
                             <div class="col-12">
                                 <div class="info-note bg-light">
                                     <i class="bi bi-shield-lock-fill me-2"></i>
-                                    
+                                    Credentials stored securely in Google Sheets.
                                 </div>
                             </div>
                             <div class="col-12 d-flex justify-content-end gap-3">
@@ -519,7 +526,7 @@
         </div>
         
         <footer>
-            <i class="bi bi-shield-check"></i>
+            <i class="bi bi-shield-check"></i> Types dynamically loaded from "types" sheet
         </footer>
     </div>
     
@@ -529,7 +536,7 @@
         <span>Password copied to clipboard!</span>
     </div>
     
-    <!-- LOCAL SCRIPTS (checking your existing js folder) -->
+    <!-- LOCAL SCRIPTS (existing paths) -->
     <script src="../js/jquery.min.js"></script>
     <script src="../js/bootstrap.bundle.min.js"></script>
     <script src="../js/jquery.dataTables.min.js"></script>
@@ -542,20 +549,22 @@
             const API_KEY = 'AIzaSyBB1V3vJpNZ9X1GIF-YOwoa6YSt_iXMLo0';
             const SPREADSHEET_ID = '1jckPlli3Pcq2l30cCqvkKL3Q1WZluqlvFrTsF2uQ2Es';
             const SHEET_NAME = 'URL-Bookmarks';
+            const TYPES_SHEET_NAME = 'types';   // Sheet name for dynamic types (column A)
             
-            // IMPORTANT: Replace this with your actual Apps Script Web App URL
             const APPS_SCRIPT_WRITE_URL = 'https://script.google.com/macros/s/AKfycbyLQi2DCzglZ9hk4sVgd3Div3bMQcxfIrDZWIPRuvcGVC4SJWWTeTR5U1UEo6uObrF9/exec';
             
             // ==================== GLOBAL VARIABLES ====================
             let dataTable = null;
+            let dynamicTypeOptions = []; // store fetched types
             
             // ==================== HELPER FUNCTIONS ====================
             function showAlert(message, type = 'success') {
                 const icon = type === 'success' ? 'bi-check-circle-fill' : (type === 'danger' ? 'bi-exclamation-triangle-fill' : 'bi-info-circle-fill');
+                const borderColor = type === 'success' ? '#10b981' : type === 'danger' ? '#ef4444' : '#0f5b9c';
                 const alertDiv = $(`
-                    <div class="alert alert-custom alert-${type} shadow-sm" role="alert" style="background: white; border-left-color: ${type === 'success' ? '#10b981' : type === 'danger' ? '#ef4444' : '#0f5b9c'}">
+                    <div class="alert alert-custom shadow-sm" role="alert" style="background: white; border-left-color: ${borderColor};">
                         <div class="d-flex align-items-center gap-2">
-                            <i class="bi ${icon} fs-5" style="color: ${type === 'success' ? '#10b981' : type === 'danger' ? '#ef4444' : '#0f5b9c'}"></i>
+                            <i class="bi ${icon} fs-5" style="color: ${borderColor}"></i>
                             <span>${message}</span>
                             <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" style="font-size: 0.7rem;"></button>
                         </div>
@@ -589,7 +598,75 @@
                 return str.length > len ? str.substring(0, len) + '…' : str;
             }
             
-            // ==================== LOAD DATA FROM GOOGLE SHEETS ====================
+            // ==================== FETCH TYPES FROM 'types' SHEET (A2:A) ====================
+            async function fetchDynamicTypes() {
+                try {
+                    // Range: types sheet, column A, starting from row 2 to get all non-empty values
+                    const range = `${TYPES_SHEET_NAME}!A2:A`;
+                    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(range)}?key=${API_KEY}`;
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    const data = await response.json();
+                    
+                    let typesList = [];
+                    if (data.values && data.values.length > 0) {
+                        // Flatten and filter out empty strings, nulls, and trim whitespace
+                        typesList = data.values
+                            .map(row => row[0] ? row[0].toString().trim() : '')
+                            .filter(val => val !== '');
+                    }
+                    
+                    // If no types found in sheet, fallback to default set (so form still works)
+                    if (typesList.length === 0) {
+                        console.warn('No types found in "types" sheet, using fallback defaults.');
+                        typesList = ['Wifi Modem', 'Router', 'Switch', 'Computer', 'Website', 'Application', 'Sheets', 'Other'];
+                    }
+                    
+                    // Remove duplicates (optional)
+                    typesList = [...new Set(typesList)];
+                    dynamicTypeOptions = typesList;
+                    return typesList;
+                } catch (err) {
+                    console.error('Error fetching types from sheet:', err);
+                    // Fallback to default types if network/sheet error occurs
+                    const fallback = ['Wifi Modem', 'Router', 'Switch', 'Computer', 'Website', 'Application', 'Sheets', 'Other'];
+                    dynamicTypeOptions = fallback;
+                    showAlert(`Could not load types from sheet. Using defaults. Error: ${err.message}`, 'warning');
+                    return fallback;
+                }
+            }
+            
+            // ==================== POPULATE SELECT2 WITH DYNAMIC TYPES ====================
+            async function populateTypeDropdown() {
+                // Show loading indicator
+                $('#typeLoadStatus').html('<i class="bi bi-arrow-repeat spin-icon"></i> loading types...').show();
+                const types = await fetchDynamicTypes();
+                
+                const $select = $('#inputType');
+                $select.empty().append('<option value="">-- Select Type --</option>');
+                types.forEach(type => {
+                    $select.append(`<option value="${escapeHtml(type)}">${escapeHtml(type)}</option>`);
+                });
+                
+                // Reinitialize Select2 with fresh data
+                if ($select.hasClass('select2-hidden-accessible')) {
+                    $select.select2('destroy');
+                }
+                $select.select2({
+                    theme: 'bootstrap-5',
+                    width: '100%',
+                    placeholder: 'Select type',
+                    allowClear: true
+                });
+                
+                // Update status badge to success
+                $('#typeLoadStatus').html(`<i class="bi bi-check-circle-fill text-success"></i> ${types.length} types loaded`).removeClass('text-muted');
+                setTimeout(() => {
+                    $('#typeLoadStatus').fadeOut(500, function() { $(this).remove(); });
+                }, 3000);
+            }
+            
+            // ==================== LOAD DATA FROM URL-BOOKMARKS SHEET ====================
             async function loadBookmarks() {
                 try {
                     const range = `${SHEET_NAME}!A:E`;
@@ -613,7 +690,7 @@
                         password: row[4] || ''
                     }));
                 } catch (err) {
-                    console.error('Load error:', err);
+                    console.error('Load bookmarks error:', err);
                     showAlert('Failed to load bookmarks: ' + err.message, 'danger');
                     return [];
                 }
@@ -630,7 +707,6 @@
                 } else {
                     let html = '';
                     records.forEach(rec => {
-                        // URL link formatting
                         let urlDisplay = '';
                         if (rec.url_ip && (rec.url_ip.startsWith('http://') || rec.url_ip.startsWith('https://'))) {
                             urlDisplay = `<a href="${escapeHtml(rec.url_ip)}" target="_blank" class="hyperlink-url" title="Open link"><i class="bi bi-box-arrow-up-right"></i> ${escapeHtml(truncate(rec.url_ip, 45))}</a>`;
@@ -640,7 +716,6 @@
                             urlDisplay = '—';
                         }
                         
-                        // Password with copy button
                         const hasPwd = rec.password && rec.password.trim() !== '';
                         const pwdDisplay = hasPwd ? '••••••••' : '—';
                         const copyBtn = hasPwd ? `<button class="btn-icon-sm copy-pwd-btn" data-pwd="${escapeHtml(rec.password.replace(/"/g, '&quot;'))}" title="Copy password"><i class="bi bi-eye"></i></button>` : '';
@@ -658,7 +733,6 @@
                     tbody.html(html);
                     $('#recordCount').text(records.length);
                     
-                    // Attach copy event to dynamically created buttons
                     $('.copy-pwd-btn').off('click').on('click', function(e) {
                         e.preventDefault();
                         const pwd = $(this).data('pwd');
@@ -666,7 +740,6 @@
                     });
                 }
                 
-                // Initialize/Reinitialize DataTable
                 if (dataTable) {
                     dataTable.destroy();
                 }
@@ -696,8 +769,7 @@
             // ==================== ADD RECORD TO SHEET ====================
             async function addRecordToSheet(record) {
                 if (!APPS_SCRIPT_WRITE_URL || APPS_SCRIPT_WRITE_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
-                    console.warn('Apps Script URL not configured');
-                    showAlert('⚠️ Apps Script endpoint not configured. Please update APPS_SCRIPT_WRITE_URL in the code.', 'warning');
+                    showAlert('⚠️ Apps Script endpoint not configured.', 'warning');
                     return false;
                 }
                 
@@ -724,7 +796,9 @@
             
             function resetAddForm() {
                 $('#addUrlForm')[0].reset();
-                $('#inputType').val('').trigger('change');
+                if ($('#inputType').length) {
+                    $('#inputType').val('').trigger('change');
+                }
                 $('.is-invalid').removeClass('is-invalid');
             }
             
@@ -767,10 +841,8 @@
                     if (success !== false) {
                         showAlert('✅ Record added successfully! Refresh the view tab to see changes.', 'success');
                         resetAddForm();
-                    } else if (APPS_SCRIPT_WRITE_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
-                        showAlert('⚠️ Apps Script URL not configured. Please update the code.', 'warning');
                     } else {
-                        showAlert('Failed to add record. Check console for details.', 'danger');
+                        showAlert('Failed to add record. Check Apps Script or network.', 'danger');
                     }
                 } catch (err) {
                     showAlert('Error: ' + err.message, 'danger');
@@ -788,22 +860,19 @@
                 renderDataTable();
             });
             
-            // Initialize Select2
-            $('#inputType').select2({
-                theme: 'bootstrap-5',
-                width: '100%',
-                placeholder: 'Select type',
-                allowClear: true
-            });
+            // Initialize: fetch dynamic types and populate dropdown, then load bookmarks
+            async function init() {
+                await populateTypeDropdown();   // fetch from "types" sheet (A2:A) and populate select2
+                await renderDataTable();         // load main bookmarks
+            }
             
-            // Initial load
-            renderDataTable();
+            init();
             
-            // Show config reminder if needed
+            // Optional: Reminder for Apps Script write URL if default placeholder (not used anymore but fine)
             if (APPS_SCRIPT_WRITE_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
                 setTimeout(() => {
-                    showAlert('📝 Setup Required: Please update APPS_SCRIPT_WRITE_URL in the code with your Apps Script Web App URL to enable adding records.', 'info');
-                }, 500);
+                    showAlert('📝 Setup: Update APPS_SCRIPT_WRITE_URL if needed.', 'info');
+                }, 800);
             }
         });
     </script>
