@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>URL Bookmark Manager | Dynamic Types</title>
+    <title>URL Bookmark Manager | Admin Only</title>
     
     <!-- LOCAL CSS (from your existing resources) -->
     <link rel="stylesheet" href="../css/bootstrap.min.css">
@@ -135,6 +135,73 @@
         
         .tab-pane {
             padding: 25px;
+        }
+        
+        /* Access Denied Styles */
+        .access-denied-container {
+            background: white;
+            border-radius: 24px;
+            padding: 60px 40px;
+            text-align: center;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }
+        
+        .access-denied-icon {
+            width: 100px;
+            height: 100px;
+            background: var(--danger-light);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 25px;
+            color: var(--danger);
+            font-size: 3rem;
+        }
+        
+        .access-denied-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--danger);
+            margin-bottom: 15px;
+        }
+        
+        .access-denied-message {
+            color: #64748b;
+            margin-bottom: 25px;
+            font-size: 1.1rem;
+        }
+        
+        .login-redirect-btn {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border: none;
+            color: white;
+            padding: 12px 32px;
+            border-radius: 40px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.2s;
+        }
+        
+        .login-redirect-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 14px rgba(15, 91, 156, 0.3);
+            color: white;
+        }
+        
+        .user-info-badge {
+            background: var(--primary-light);
+            color: var(--primary);
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
         }
         
         /* DataTable Styling */
@@ -392,13 +459,6 @@
             font-size: 0.8rem;
         }
         
-        @media (max-width: 768px) {
-            body { padding: 15px; }
-            .header-card { flex-direction: column; align-items: flex-start; }
-            .tab-pane { padding: 20px; }
-            .btn-submit, .btn-reset { padding: 8px 20px; }
-        }
-        
         .select2-container--bootstrap-5 .select2-selection {
             border-radius: 12px;
             padding: 5px 12px;
@@ -416,115 +476,152 @@
             gap: 6px;
             margin-left: 10px;
         }
+        
+        @media (max-width: 768px) {
+            body { padding: 15px; }
+            .header-card { flex-direction: column; align-items: flex-start; }
+            .tab-pane { padding: 20px; }
+            .btn-submit, .btn-reset { padding: 8px 20px; }
+            .access-denied-container { padding: 40px 20px; }
+            .access-denied-title { font-size: 1.4rem; }
+        }
     </style>
 </head>
 <body>
-    <div class="bookmark-container">
-        <!-- Header -->
-        <div class="header-card">
-            <div class="header-title">
-                <i class="bi bi-bookmark-star-fill"></i>
-                <div>
-                    <h1>URL Bookmark Manager</h1>
-                    <p>Secure credentials vault for all network devices and applications</p>
+    <div id="mainContent" style="display: none;">
+        <div class="bookmark-container">
+            <!-- Header -->
+            <div class="header-card">
+                <div class="header-title">
+                    <i class="bi bi-bookmark-star-fill"></i>
+                    <div>
+                        <h1>URL Bookmark Manager</h1>
+                        <p>Secure credentials vault for all network devices and applications</p>
+                    </div>
+                </div>
+                <div class="refresh-badge">
+                    <i class="bi bi-database"></i>
+                    <span id="recordCount">0</span> Records
                 </div>
             </div>
-            <div class="refresh-badge">
-                <i class="bi bi-database"></i>
-                <span id="recordCount">0</span> Records
-            </div>
-        </div>
-        
-        <!-- Tabs Container -->
-        <div class="tabs-container">
-            <ul class="nav nav-tabs-custom nav-tabs" id="mainTab" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="view-tab" data-bs-toggle="tab" data-bs-target="#viewPane" type="button" role="tab">
-                        <i class="bi bi-table"></i> View Bookmarks
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="add-tab" data-bs-toggle="tab" data-bs-target="#addPane" type="button" role="tab">
-                        <i class="bi bi-plus-circle"></i> Add New URL
-                    </button>
-                </li>
-            </ul>
             
-            <div class="tab-content">
-                <!-- TAB 1: VIEW TABLE -->
-                <div class="tab-pane fade show active" id="viewPane" role="tabpanel">
-                    <div class="table-responsive">
-                        <table id="urlBookmarksTable" class="table table-hover" style="width:100%">
-                            <thead>
-                                <tr>
-                                    <th>Type</th>
-                                    <th>Company/Device</th>
-                                    <th>URL / IP Address</th>
-                                    <th>User ID</th>
-                                    <th>Password</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr><td colspan="5" class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-2 text-muted">Loading bookmarks...</p></td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="info-note">
-                        <i class="bi bi-info-circle-fill me-2"></i>
-                        Click the <i class="bi bi-eye"></i> icon to copy password to clipboard. URLs open in a new tab.
-                    </div>
-                </div>
+            <!-- Tabs Container -->
+            <div class="tabs-container">
+                <ul class="nav nav-tabs-custom nav-tabs" id="mainTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="view-tab" data-bs-toggle="tab" data-bs-target="#viewPane" type="button" role="tab">
+                            <i class="bi bi-table"></i> View Bookmarks
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="add-tab" data-bs-toggle="tab" data-bs-target="#addPane" type="button" role="tab">
+                            <i class="bi bi-plus-circle"></i> Add New URL
+                        </button>
+                    </li>
+                </ul>
                 
-                <!-- TAB 2: ADD FORM with DYNAMIC TYPES from 'types' sheet -->
-                <div class="tab-pane fade" id="addPane" role="tabpanel">
-                    <form id="addUrlForm">
-                        <div class="row g-4">
-                            <div class="col-md-6">
-                                <label class="form-label required"><i class="bi bi-tag"></i> Type 
-                                    <span id="typeLoadStatus" class="type-loading-badge"><i class="bi bi-arrow-repeat spin-icon"></i> loading...</span>
-                                </label>
-                                <select id="inputType" class="form-select" required>
-                                    <option value="">-- Select Type --</option>
-                                </select>
-                                <small class="text-muted">Types fetched from sheet "types" column A (A2:A)</small>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label required"><i class="bi bi-laptop"></i> Company / Device Name</label>
-                                <input type="text" id="inputDevice" class="form-control" placeholder="e.g., HQ Router, Finance Laptop" required>
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label required"><i class="bi bi-link-45deg"></i> URL / IP Address</label>
-                                <input type="text" id="inputUrl" class="form-control" placeholder="https://192.168.1.1 or https://example.com" required>
-                                <small class="text-muted">Supports http://, https://, or IP addresses</small>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label"><i class="bi bi-person"></i> User ID / Username</label>
-                                <input type="text" id="inputUserId" class="form-control" placeholder="admin / user@example.com">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label"><i class="bi bi-key"></i> Password</label>
-                                <input type="text" id="inputPassword" class="form-control" placeholder="••••••••">
-                            </div>
-                            <div class="col-12">
-                                <div class="info-note bg-light">
-                                    <i class="bi bi-shield-lock-fill me-2"></i>
-                                    Credentials stored securely in Google Sheets.
+                <div class="tab-content">
+                    <!-- TAB 1: VIEW TABLE -->
+                    <div class="tab-pane fade show active" id="viewPane" role="tabpanel">
+                        <div class="table-responsive">
+                            <table id="urlBookmarksTable" class="table table-hover" style="width:100%">
+                                <thead>
+                                    <tr>
+                                        <th>Type</th>
+                                        <th>Company/Device</th>
+                                        <th>URL / IP Address</th>
+                                        <th>User ID</th>
+                                        <th>Password</th>
+                                    </thead>
+                                <tbody>
+                                    <tr><td colspan="5" class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-2 text-muted">Loading bookmarks...</p>32</tbody>
+                            </table>
+                        </div>
+                        <div class="info-note">
+                            <i class="bi bi-info-circle-fill me-2"></i>
+                            Click the <i class="bi bi-eye"></i> icon to copy password to clipboard. URLs open in a new tab.
+                        </div>
+                    </div>
+                    
+                    <!-- TAB 2: ADD FORM with DYNAMIC TYPES from 'types' sheet -->
+                    <div class="tab-pane fade" id="addPane" role="tabpanel">
+                        <form id="addUrlForm">
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <label class="form-label required"><i class="bi bi-tag"></i> Type 
+                                        <span id="typeLoadStatus" class="type-loading-badge"><i class="bi bi-arrow-repeat spin-icon"></i> loading...</span>
+                                    </label>
+                                    <select id="inputType" class="form-select" required>
+                                        <option value="">-- Select Type --</option>
+                                    </select>
+                                    <small class="text-muted">Types fetched from sheet "types" column A (A2:A)</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label required"><i class="bi bi-laptop"></i> Company / Device Name</label>
+                                    <input type="text" id="inputDevice" class="form-control" placeholder="e.g., HQ Router, Finance Laptop" required>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label required"><i class="bi bi-link-45deg"></i> URL / IP Address</label>
+                                    <input type="text" id="inputUrl" class="form-control" placeholder="https://192.168.1.1 or https://example.com" required>
+                                    <small class="text-muted">Supports http://, https://, or IP addresses</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label"><i class="bi bi-person"></i> User ID / Username</label>
+                                    <input type="text" id="inputUserId" class="form-control" placeholder="admin / user@example.com">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label"><i class="bi bi-key"></i> Password</label>
+                                    <input type="text" id="inputPassword" class="form-control" placeholder="••••••••">
+                                </div>
+                                <div class="col-12">
+                                    <div class="info-note bg-light">
+                                        <i class="bi bi-shield-lock-fill me-2"></i>
+                                        Credentials stored securely in Google Sheets.
+                                    </div>
+                                </div>
+                                <div class="col-12 d-flex justify-content-end gap-3">
+                                    <button type="button" id="resetAddBtn" class="btn-reset">
+                                        <i class="bi bi-arrow-repeat"></i> Reset
+                                    </button>
+                                    <button type="submit" id="submitAddBtn" class="btn-submit">
+                                        <i class="bi bi-save"></i> Add
+                                    </button>
                                 </div>
                             </div>
-                            <div class="col-12 d-flex justify-content-end gap-3">
-                                <button type="button" id="resetAddBtn" class="btn-reset">
-                                    <i class="bi bi-arrow-repeat"></i> Reset
-                                </button>
-                                <button type="submit" id="submitAddBtn" class="btn-submit">
-                                    <i class="bi bi-save"></i> Add
-                                </button>
-                            </div>
-                        </div>
-                    </form>
+                        </form>
+                    </div>
                 </div>
             </div>
+            
+            <footer>
+                <i class="bi bi-shield-check"></i> Admin Secure Vault
+            </footer>
         </div>
-       
+    </div>
+    
+    <!-- Access Denied Container -->
+    <div id="accessDeniedContainer" style="display: none;">
+        <div class="bookmark-container">
+            <div class="access-denied-container">
+                <div class="access-denied-icon">
+                    <i class="bi bi-shield-lock-fill"></i>
+                </div>
+                <div class="access-denied-title">
+                    Access Denied
+                </div>
+                <div class="access-denied-message">
+                    You do not have permission to view this page.<br>
+                    This area is restricted to Admin users only.
+                </div>
+                <div id="currentUserDisplay" class="mb-4">
+                    <span class="user-info-badge">
+                        <i class="bi bi-person-circle"></i>
+                        <span id="currentUserName">Not logged in</span>
+                    </span>
+                </div>
+               
+            </div>
+        </div>
     </div>
     
     <!-- Toast for copy feedback -->
@@ -533,7 +630,7 @@
         <span>Password copied to clipboard!</span>
     </div>
     
-    <!-- LOCAL SCRIPTS (existing paths) -->
+    <!-- LOCAL SCRIPTS -->
     <script src="../js/jquery.min.js"></script>
     <script src="../js/bootstrap.bundle.min.js"></script>
     <script src="../js/jquery.dataTables.min.js"></script>
@@ -541,20 +638,73 @@
     <script src="../js/select2.min.js"></script>
     
     <script>
-        $(document).ready(function() {
-            // ==================== CONFIGURATION ====================
+        // ==================== AUTHENTICATION CHECK ====================
+        function checkAdminAccess() {
+            let currentUser = null;
+            
+            // Check sessionStorage first (from main app login)
+            const sessionUser = sessionStorage.getItem('currentUser');
+            if (sessionUser) {
+                try {
+                    const userData = JSON.parse(sessionUser);
+                    currentUser = userData.username;
+                } catch (e) {
+                    console.error('Error parsing session user:', e);
+                }
+            }
+            
+            // Fallback to localStorage
+            if (!currentUser) {
+                const localUser = localStorage.getItem('currentUser');
+                if (localUser) {
+                    try {
+                        const userData = JSON.parse(localUser);
+                        currentUser = userData.username;
+                    } catch (e) {
+                        console.error('Error parsing local user:', e);
+                    }
+                }
+            }
+            
+            // Check if user is Admin (case-insensitive)
+            const isAdmin = currentUser && currentUser.toLowerCase() === 'admin';
+            
+            // Display current user in access denied screen
+            $('#currentUserName').text(currentUser || 'Not logged in');
+            
+            if (isAdmin) {
+                // Show main content
+                $('#mainContent').show();
+                $('#accessDeniedContainer').hide();
+                initializeApp();
+                return true;
+            } else {
+                // Show access denied
+                $('#mainContent').hide();
+                $('#accessDeniedContainer').show();
+                return false;
+            }
+        }
+        
+        function redirectToLogin() {
+            // Try to find the login page path
+            const loginPath = window.location.pathname.includes('/sdwan/') ? '../../index.html' : '../index.html';
+            window.location.href = loginPath;
+        }
+        
+        // ==================== MAIN APPLICATION (Admin Only) ====================
+        function initializeApp() {
+            // CONFIGURATION
             const API_KEY = 'AIzaSyBB1V3vJpNZ9X1GIF-YOwoa6YSt_iXMLo0';
             const SPREADSHEET_ID = '1jckPlli3Pcq2l30cCqvkKL3Q1WZluqlvFrTsF2uQ2Es';
             const SHEET_NAME = 'URL-Bookmarks';
-            const TYPES_SHEET_NAME = 'types';   // Sheet name for dynamic types (column A)
-            
+            const TYPES_SHEET_NAME = 'types';
             const APPS_SCRIPT_WRITE_URL = 'https://script.google.com/macros/s/AKfycbyLQi2DCzglZ9hk4sVgd3Div3bMQcxfIrDZWIPRuvcGVC4SJWWTeTR5U1UEo6uObrF9/exec';
             
-            // ==================== GLOBAL VARIABLES ====================
             let dataTable = null;
-            let dynamicTypeOptions = []; // store fetched types
+            let dynamicTypeOptions = [];
             
-            // ==================== HELPER FUNCTIONS ====================
+            // Helper Functions
             function showAlert(message, type = 'success') {
                 const icon = type === 'success' ? 'bi-check-circle-fill' : (type === 'danger' ? 'bi-exclamation-triangle-fill' : 'bi-info-circle-fill');
                 const borderColor = type === 'success' ? '#10b981' : type === 'danger' ? '#ef4444' : '#0f5b9c';
@@ -595,10 +745,9 @@
                 return str.length > len ? str.substring(0, len) + '…' : str;
             }
             
-            // ==================== FETCH TYPES FROM 'types' SHEET (A2:A) ====================
+            // Fetch Types from 'types' sheet
             async function fetchDynamicTypes() {
                 try {
-                    // Range: types sheet, column A, starting from row 2 to get all non-empty values
                     const range = `${TYPES_SHEET_NAME}!A2:A`;
                     const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(range)}?key=${API_KEY}`;
                     const response = await fetch(url);
@@ -607,35 +756,29 @@
                     
                     let typesList = [];
                     if (data.values && data.values.length > 0) {
-                        // Flatten and filter out empty strings, nulls, and trim whitespace
                         typesList = data.values
                             .map(row => row[0] ? row[0].toString().trim() : '')
                             .filter(val => val !== '');
                     }
                     
-                    // If no types found in sheet, fallback to default set (so form still works)
                     if (typesList.length === 0) {
-                        console.warn('No types found in "types" sheet, using fallback defaults.');
+                        console.warn('No types found, using fallback defaults.');
                         typesList = ['Wifi Modem', 'Router', 'Switch', 'Computer', 'Website', 'Application', 'Sheets', 'Other'];
                     }
                     
-                    // Remove duplicates (optional)
                     typesList = [...new Set(typesList)];
                     dynamicTypeOptions = typesList;
                     return typesList;
                 } catch (err) {
-                    console.error('Error fetching types from sheet:', err);
-                    // Fallback to default types if network/sheet error occurs
+                    console.error('Error fetching types:', err);
                     const fallback = ['Wifi Modem', 'Router', 'Switch', 'Computer', 'Website', 'Application', 'Sheets', 'Other'];
                     dynamicTypeOptions = fallback;
-                    showAlert(`Could not load types from sheet. Using defaults. Error: ${err.message}`, 'warning');
+                    showAlert(`Could not load types from sheet. Using defaults.`, 'warning');
                     return fallback;
                 }
             }
             
-            // ==================== POPULATE SELECT2 WITH DYNAMIC TYPES ====================
             async function populateTypeDropdown() {
-                // Show loading indicator
                 $('#typeLoadStatus').html('<i class="bi bi-arrow-repeat spin-icon"></i> loading types...').show();
                 const types = await fetchDynamicTypes();
                 
@@ -645,7 +788,6 @@
                     $select.append(`<option value="${escapeHtml(type)}">${escapeHtml(type)}</option>`);
                 });
                 
-                // Reinitialize Select2 with fresh data
                 if ($select.hasClass('select2-hidden-accessible')) {
                     $select.select2('destroy');
                 }
@@ -656,14 +798,12 @@
                     allowClear: true
                 });
                 
-                // Update status badge to success
                 $('#typeLoadStatus').html(`<i class="bi bi-check-circle-fill text-success"></i> ${types.length} types loaded`).removeClass('text-muted');
                 setTimeout(() => {
                     $('#typeLoadStatus').fadeOut(500, function() { $(this).remove(); });
                 }, 3000);
             }
             
-            // ==================== LOAD DATA FROM URL-BOOKMARKS SHEET ====================
             async function loadBookmarks() {
                 try {
                     const range = `${SHEET_NAME}!A:E`;
@@ -672,13 +812,9 @@
                     if (!response.ok) throw new Error(`HTTP ${response.status}`);
                     const data = await response.json();
                     
-                    if (!data.values || data.values.length < 2) {
-                        return [];
-                    }
+                    if (!data.values || data.values.length < 2) return [];
                     
-                    const headers = data.values[0];
                     const rows = data.values.slice(1);
-                    
                     return rows.map(row => ({
                         type: row[0] || '',
                         company: row[1] || '',
@@ -693,7 +829,6 @@
                 }
             }
             
-            // ==================== RENDER DATATABLE ====================
             async function renderDataTable() {
                 const records = await loadBookmarks();
                 const tbody = $('#urlBookmarksTable tbody');
@@ -737,9 +872,7 @@
                     });
                 }
                 
-                if (dataTable) {
-                    dataTable.destroy();
-                }
+                if (dataTable) dataTable.destroy();
                 
                 dataTable = $('#urlBookmarksTable').DataTable({
                     paging: true,
@@ -763,9 +896,8 @@
                 });
             }
             
-            // ==================== ADD RECORD TO SHEET ====================
             async function addRecordToSheet(record) {
-                if (!APPS_SCRIPT_WRITE_URL || APPS_SCRIPT_WRITE_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
+                if (!APPS_SCRIPT_WRITE_URL || APPS_SCRIPT_WRITE_URL.includes('YOUR_APPS_SCRIPT_URL')) {
                     showAlert('⚠️ Apps Script endpoint not configured.', 'warning');
                     return false;
                 }
@@ -793,9 +925,7 @@
             
             function resetAddForm() {
                 $('#addUrlForm')[0].reset();
-                if ($('#inputType').length) {
-                    $('#inputType').val('').trigger('change');
-                }
+                if ($('#inputType').length) $('#inputType').val('').trigger('change');
                 $('.is-invalid').removeClass('is-invalid');
             }
             
@@ -807,7 +937,7 @@
                 return urlPattern.test(str) || ipPattern.test(str) || localPattern.test(str) || str.startsWith('http');
             }
             
-            // ==================== EVENT HANDLERS ====================
+            // Event Handlers
             $('#addUrlForm').on('submit', async function(e) {
                 e.preventDefault();
                 
@@ -836,10 +966,10 @@
                 try {
                     const success = await addRecordToSheet(newRecord);
                     if (success !== false) {
-                        showAlert('✅ Record added successfully! Refresh the view tab to see changes.', 'success');
+                        showAlert('✅ Record added successfully!', 'success');
                         resetAddForm();
                     } else {
-                        showAlert('Failed to add record. Check Apps Script or network.', 'danger');
+                        showAlert('Failed to add record.', 'danger');
                     }
                 } catch (err) {
                     showAlert('Error: ' + err.message, 'danger');
@@ -857,21 +987,21 @@
                 renderDataTable();
             });
             
-            // Initialize: fetch dynamic types and populate dropdown, then load bookmarks
             async function init() {
-                await populateTypeDropdown();   // fetch from "types" sheet (A2:A) and populate select2
-                await renderDataTable();         // load main bookmarks
+                await populateTypeDropdown();
+                await renderDataTable();
             }
             
             init();
-            
-            // Optional: Reminder for Apps Script write URL if default placeholder (not used anymore but fine)
-            if (APPS_SCRIPT_WRITE_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
-                setTimeout(() => {
-                    showAlert('📝 Setup: Update APPS_SCRIPT_WRITE_URL if needed.', 'info');
-                }, 800);
-            }
+        }
+        
+        // Run authentication check when page loads
+        $(document).ready(function() {
+            checkAdminAccess();
         });
+        
+        // Expose redirect function globally
+        window.redirectToLogin = redirectToLogin;
     </script>
 </body>
 </html>
