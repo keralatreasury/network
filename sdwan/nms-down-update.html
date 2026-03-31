@@ -336,12 +336,12 @@
             <div class="remark-section">
                 <div class="row g-2">
                     <div class="col-md-6">
-                        <label class="form-label"><i class="bi bi-chat"></i> DoT Remarks</label>
+                        <label class="form-label"><i class="bi bi-chat"></i> Circuit-ID</label>
                         <textarea id="dotRemarks" class="form-control" rows="2" placeholder=""></textarea>
                         <!-- LCO/Circle Code Info Badge -->
                         <div id="lcoInfoContainer" class="lco-info-badge" style="display: none;">
                             <i class="bi bi-tag"></i>
-                            <span id="lcoCodeValue">LCO/Circle Code: </span>
+                            <span id="lcoCodeValue">Circle Code: </span>
                         </div>
                     </div>
                     <div class="col-md-6">
@@ -376,7 +376,7 @@
             const API_KEY = 'AIzaSyBB1V3vJpNZ9X1GIF-YOwoa6YSt_iXMLo0';
             const SPREADSHEET_ID = '1q70H2WSERyz_agwb0ZirYzs2MhAO1sIB7GKlAGxvtUo';
             const WAN_SHEET = 'WAN Details';
-            const CIRCUIT_SHEET = 'Circute-ID';   // Sheet name for LCO/Circle Codes (Branches in B2:B, LCO Code in C2:C)
+            const CIRCUIT_SHEET = 'Circute-ID';  
             
             // YOUR ACTUAL APPS SCRIPT URL
             const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyv6E-EcvWPz6NZneuOzgs1jPohaXs94Z_Ql-PqhWjcvNirOqMKeWoMV2J2X6dvjLQe6g/exec';
@@ -567,7 +567,7 @@
                 if (!isBSNL) {
                     // Remove any existing LCO tag from DoT remarks if provider is not BSNL MPLS
                     const currentRemarks = $('#dotRemarks').val();
-                    if (currentRemarks && currentRemarks.includes('[LCO:')) {
+                    if (currentRemarks && currentRemarks.includes('[')) {
                         const cleanedRemarks = currentRemarks.replace(/\[LCO:.*?\]\s*/g, '');
                         $('#dotRemarks').val(cleanedRemarks.trim());
                     }
@@ -579,12 +579,12 @@
                 
                 if (lcoCode && lcoCode.trim() !== '') {
                     // Display LCO/Circle Code badge
-                    $('#lcoCodeValue').html(`<strong>LCO/Circle Code:</strong> ${escapeHtml(lcoCode)}`);
+                    $('#lcoCodeValue').html(`<strong>LCD/Circle Code:</strong> ${escapeHtml(lcoCode)}`);
                     $('#lcoInfoContainer').show();
                     
                     // Update DoT Remarks with LCO code
                     const currentRemarks = $('#dotRemarks').val();
-                    const lcoPrefix = `[LCO: ${lcoCode}] `;
+                    const lcoPrefix = `[Circuit ID: ${lcoCode}] `;
                     
                     // Check if LCO tag already exists with this specific code
                     if (!currentRemarks.includes(`[LCO: ${lcoCode}]`)) {
@@ -601,12 +601,12 @@
                     }
                 } else {
                     // No LCO code found for this branch in Circute-ID sheet
-                    $('#lcoCodeValue').html(`<strong>LCO/Circle Code:</strong> Not found`);
+                    $('#lcoCodeValue').html(`<strong>LCD/Circuit Code:</strong> Not found`);
                     $('#lcoInfoContainer').show();
                     
                     // Optionally, we can still indicate in remarks but we won't force add
                     const currentRemarks = $('#dotRemarks').val();
-                    if (currentRemarks && currentRemarks.includes('[LCO:')) {
+                    if (currentRemarks && currentRemarks.includes('[')) {
                         const cleanedRemarks = currentRemarks.replace(/\[LCO:.*?\]\s*/g, '');
                         $('#dotRemarks').val(cleanedRemarks.trim());
                     }
