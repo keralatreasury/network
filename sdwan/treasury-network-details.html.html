@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Treasury WAN Pool IP & Gateway Details</title>
+    
+    <!-- LOCAL CSS - Using existing resources -->
+    <link rel="stylesheet" href="../css/bootstrap.min.css">
+    <link rel="stylesheet" href="../css/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="../css/dataTables.bootstrap5.min.css">
+    
+    <style>
+        body {
+            background-color: #f0f5fa;
+            padding: 24px;
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+            color: #1e293b;
+        }
+        
+        .main-wrapper {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+        
+        .page-header {
+            background: linear-gradient(135deg, #0f5b9c 0%, #1a4b7a 100%);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 20px 20px 0 0;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .page-header i {
+            font-size: 2rem;
+            background: rgba(255,255,255,0.15);
+            padding: 12px;
+            border-radius: 16px;
+        }
+        
+        .page-header h2 {
+            margin: 0;
+            font-weight: 600;
+        }
+        
+        .page-header p {
+            margin: 5px 0 0;
+            opacity: 0.8;
+            font-size: 0.9rem;
+        }
+        
+        .card-db {
+            background: white;
+            border-radius: 0 0 20px 20px;
+            padding: 0;
+            box-shadow: 0 10px 30px rgba(0,20,40,0.12);
+            border: 1px solid #e9ecef;
+            overflow: hidden;
+        }
+        
+        .card-body {
+            padding: 28px;
+        }
+        
+        .stats-bar {
+            background: #f8fafc;
+            border-radius: 16px;
+            padding: 16px 24px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .stats-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .stats-item i {
+            font-size: 1.5rem;
+            color: #0f5b9c;
+            background: #e8f0fe;
+            padding: 10px;
+            border-radius: 12px;
+        }
+        
+        .stats-item .count {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #1e293b;
+            line-height: 1.2;
+        }
+        
+        .stats-item .label {
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+        
+        .refresh-btn {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 40px;
+            padding: 10px 24px;
+            color: #0f5b9c;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .refresh-btn:hover {
+            background: #e8f0fe;
+            border-color: #0f5b9c;
+        }
+        
+        .table {
+            margin-bottom: 0;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .table thead th {
+            background: linear-gradient(135deg, #0f5b9c 0%, #1a4b7a 100%);
+            color: white;
+            font-weight: 500;
+            font-size: 0.9rem;
+            vertical-align: middle;
+            white-space: nowrap;
+            padding: 14px 12px;
+            border-right: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .table thead th:last-child { 
+            border-right: none; 
+        }
+        
+        .table td {
+            padding: 12px;
+            vertical-align: middle;
+            font-size: 0.9rem;
+            color: #1e293b;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .table tbody tr:hover { 
+            background-color: #f0f7ff; 
+        }
+        
+        .gateway-ip {
+            font-family: monospace;
+            font-weight: 600;
+            color: #0f5b9c;
+            background: #e8f0fe;
+            padding: 4px 10px;
+            border-radius: 30px;
+            display: inline-block;
+            font-size: 0.85rem;
+        }
+        
+        .lan-pool {
+            font-family: monospace;
+            font-size: 0.85rem;
+            background: #f1f5f9;
+            padding: 4px 8px;
+            border-radius: 6px;
+            display: inline-block;
+        }
+        
+        .dataTables_wrapper .dataTables_length,
+        .dataTables_wrapper .dataTables_filter {
+            margin-bottom: 20px;
+        }
+        
+        .dataTables_wrapper .dataTables_length select,
+        .dataTables_wrapper .dataTables_filter input {
+            border: 1px solid #e2e8f0;
+            border-radius: 40px;
+            padding: 8px 16px;
+            background: white;
+            color: #1e293b;
+            font-size: 0.9rem;
+        }
+        
+        .dataTables_wrapper .dataTables_filter input {
+            width: 260px;
+            padding-left: 38px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'%3E%3C/circle%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'%3E%3C/line%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: 12px center;
+        }
+        
+        .dataTables_wrapper .dataTables_length select:focus,
+        .dataTables_wrapper .dataTables_filter input:focus {
+            outline: none;
+            border-color: #0f5b9c;
+            box-shadow: 0 0 0 3px rgba(15, 91, 156, 0.1);
+        }
+        
+        .dataTables_wrapper .dataTables_paginate {
+            margin-top: 20px;
+        }
+        
+        .dataTables_wrapper .dataTables_paginate .paginate_button {
+            border-radius: 40px;
+            margin: 0 3px;
+            border: 1px solid #e2e8f0;
+            color: #1e293b !important;
+        }
+        
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+            background: #0f5b9c !important;
+            border-color: #0f5b9c !important;
+            color: white !important;
+        }
+        
+        .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+            background: #f1f5f9 !important;
+            border-color: #cbd5e1 !important;
+            color: #0f5b9c !important;
+        }
+        
+        .dataTables_wrapper .dataTables_info {
+            color: #64748b;
+            font-size: 0.9rem;
+            padding-top: 15px;
+        }
+        
+        .footer-note {
+            margin-top: 20px;
+            background: #e8f0f7;
+            padding: 16px 24px;
+            border-radius: 40px;
+            color: #1e405e;
+            font-size: 0.95rem;
+            border-left: 4px solid #0f5b9c;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .footer-note i {
+            color: #0f5b9c;
+            font-size: 1.2rem;
+        }
+        
+        .loading-spinner {
+            text-align: center;
+            padding: 50px;
+        }
+        
+        .spinner-border.text-primary {
+            color: #0f5b9c !important;
+        }
+        
+        @media (max-width: 768px) {
+            body { padding: 16px; }
+            .stats-bar { flex-direction: column; align-items: flex-start; }
+            .dataTables_wrapper .dataTables_filter input { width: 100%; }
+            .page-header { flex-direction: column; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+<div class="main-wrapper">
+    <!-- Header -->
+    <div class="page-header">
+        <i class="bi bi-hdd-network-fill"></i>
+        <div>
+            <h2>Treasury WAN Pool IP & Gateway Details</h2>
+            <p>Network configuration details for all treasuries - LAN Pool IP ranges and FatPipe Gateway IPs</p>
+        </div>
+    </div>
+
+    <!-- Main Card -->
+    <div class="card-db">
+        <div class="card-body">
+            <!-- Stats Bar -->
+            <div class="stats-bar">
+                <div class="stats-item">
+                    <i class="bi bi-building"></i>
+                    <div>
+                        <div class="count" id="totalCount">0</div>
+                        <div class="label">Total Treasuries</div>
+                    </div>
+                </div>
+                <div class="stats-item">
+                    <i class="bi bi-router"></i>
+                    <div>
+                        <div class="count" id="gatewayCount">0</div>
+                        <div class="label">Gateways Configured</div>
+                    </div>
+                </div>
+                <div class="stats-item">
+                    <i class="bi bi-diagram-3"></i>
+                    <div>
+                        <div class="count" id="lanPoolCount">0</div>
+                        <div class="label">LAN Pools Defined</div>
+                    </div>
+                </div>
+                <button id="refreshBtn" class="refresh-btn">
+                    <i class="bi bi-arrow-repeat"></i> Refresh Data
+                </button>
+            </div>
+            
+            <!-- Table -->
+            <div class="table-responsive">
+                <table id="treasuryNetworkTable" class="table table-hover" style="width:100%">
+                    <thead>
+                        <tr>
+                            <th>Treasury Name</th>
+                            <th>BR Code</th>
+                            <th>Office Head</th>
+                            <th>Address</th>
+                            <th>PIN</th>
+                            <th>LAN Pool</th>
+                            <th>FatPipe Device IP (Gateway)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="7" class="text-center py-5">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p class="mt-2 text-muted">Loading treasury network data...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Footer Note -->
+            <div class="footer-note">
+                <i class="bi bi-info-circle-fill"></i>
+                <div>
+                    <strong>Network Configuration Details</strong> · LAN Pool IP ranges and FatPipe Gateway IP addresses for all treasuries
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- LOCAL SCRIPTS -->
+<script src="../js/jquery.min.js"></script>
+<script src="../js/bootstrap.bundle.min.js"></script>
+<script src="../js/jquery.dataTables.min.js"></script>
+<script src="../js/dataTables.bootstrap5.min.js"></script>
+
+<script>
+(function() {
+    // ----------------------------------------------
+    // GLOBALS & CONFIG
+    // ----------------------------------------------
+    const API_KEY = 'AIzaSyBB1V3vJpNZ9X1GIF-YOwoa6YSt_iXMLo0';
+    const SPREADSHEET_ID = '105FU8biUFJETqboPumblZ1BJYv7TzKiOy7Jwfbn3zTw';
+    const SHEET_NAME = 'Treasuries';
+    const RANGE = 'A2:G';  // A:G columns
+
+    let treasuryData = [];
+    let dataTable = null;
+
+    // ----------------------------------------------
+    // LOAD DATA FROM SHEET
+    // ----------------------------------------------
+    function loadTreasuryData() {
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(SHEET_NAME)}!${RANGE}?key=${API_KEY}`;
+        
+        $('#treasuryNetworkTable tbody').html(`
+            <tr><td colspan="7" class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-2 text-muted">Loading treasury network data...</p></td></tr>
+        `);
+        
+        fetch(url)
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) {
+                    console.error('API Error:', data.error);
+                    throw new Error(data.error.message);
+                }
+                treasuryData = data.values || [];
+                renderTable(treasuryData);
+                updateStats(treasuryData);
+            })
+            .catch(err => {
+                console.error('Error loading treasury data:', err);
+                $('#treasuryNetworkTable tbody').html(`
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-danger">
+                            <i class="bi bi-exclamation-triangle-fill fs-1"></i>
+                            <p class="mt-2">Failed to load data. Please check connection.</p>
+                            <button class="btn btn-primary mt-2" onclick="location.reload()">
+                                <i class="bi bi-arrow-repeat"></i> Retry
+                            </button>
+                        </td>
+                    </tr>
+                `);
+            });
+    }
+
+    function renderTable(rows) {
+        const tbody = $('#treasuryNetworkTable tbody');
+        
+        if (!rows || rows.length === 0) {
+            tbody.html(`<tr><td colspan="7" class="text-center py-5">No records found</td></tr>`);
+            if (dataTable) {
+                dataTable.destroy();
+                dataTable = null;
+            }
+            return;
+        }
+
+        let htmlRows = '';
+        let gatewayConfigured = 0;
+        let lanPoolConfigured = 0;
+        
+        rows.forEach(row => {
+            // Ensure row has at least 7 columns
+            const treasuryName = (row[0] !== undefined && row[0] !== null) ? row[0].toString().trim() : '';
+            const brCode = (row[1] !== undefined && row[1] !== null) ? row[1].toString().trim() : '';
+            const officeHead = (row[2] !== undefined && row[2] !== null) ? row[2].toString().trim() : '';
+            const address = (row[3] !== undefined && row[3] !== null) ? row[3].toString().trim() : '';
+            const pin = (row[4] !== undefined && row[4] !== null) ? row[4].toString().trim() : '';
+            let lanPool = (row[5] !== undefined && row[5] !== null) ? row[5].toString().trim() : '';
+            let gatewayIP = (row[6] !== undefined && row[6] !== null) ? row[6].toString().trim() : '';
+            
+            // Remove spaces from gateway IP
+            if (gatewayIP) {
+                gatewayIP = gatewayIP.replace(/\s+/g, '');
+                if (gatewayIP) gatewayConfigured++;
+            }
+            if (lanPool) lanPoolConfigured++;
+            
+            // Format LAN Pool display
+            const lanPoolDisplay = lanPool ? `<span class="lan-pool">${escapeHtml(lanPool)}</span>` : '<span class="empty-cell">—</span>';
+            
+            // Format Gateway IP display
+            const gatewayDisplay = gatewayIP ? `<span class="gateway-ip"><i class="bi bi-router me-1"></i>${escapeHtml(gatewayIP)}</span>` : '<span class="empty-cell">—</span>';
+            
+            htmlRows += `<tr>
+                <td><strong>${escapeHtml(treasuryName) || '—'}</strong></td>
+                <td>${escapeHtml(brCode) || '—'}</td>
+                <td>${escapeHtml(officeHead) || '—'}</td>
+                <td>${escapeHtml(address) || '—'}</td>
+                <td>${escapeHtml(pin) || '—'}</td>
+                <td>${lanPoolDisplay}</td>
+                <td>${gatewayDisplay}</td>
+            </tr>`;
+        });
+        
+        tbody.html(htmlRows);
+        
+        // Store counts for stats
+        window.gatewayCount = gatewayConfigured;
+        window.lanPoolCount = lanPoolConfigured;
+        
+        // Initialize DataTable
+        if (dataTable) {
+            dataTable.destroy();
+        }
+        
+        dataTable = $('#treasuryNetworkTable').DataTable({
+            paging: true,
+            pageLength: 25,
+            lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
+            ordering: true,
+            scrollX: true,
+            autoWidth: false,
+            language: {
+                search: '',
+                searchPlaceholder: 'Search treasury, BR Code, address...',
+                lengthMenu: 'Show _MENU_ entries',
+                info: 'Showing _START_ to _END_ of _TOTAL_ entries',
+                infoEmpty: 'Showing 0 to 0 of 0 entries',
+                infoFiltered: '(filtered from _MAX_ total entries)'
+            },
+            columnDefs: [
+                { targets: 0, width: '250px' },
+                { targets: 1, width: '100px' },
+                { targets: 2, width: '150px' },
+                { targets: 3, width: '200px' },
+                { targets: 4, width: '100px' },
+                { targets: 5, width: '180px' },
+                { targets: 6, width: '200px' }
+            ]
+        });
+    }
+
+    function updateStats(rows) {
+        const totalCount = rows ? rows.length : 0;
+        $('#totalCount').text(totalCount);
+        $('#gatewayCount').text(window.gatewayCount || 0);
+        $('#lanPoolCount').text(window.lanPoolCount || 0);
+    }
+
+    // ----------------------------------------------
+    // REFRESH FUNCTION
+    // ----------------------------------------------
+    function refreshData() {
+        loadTreasuryData();
+    }
+
+    // ----------------------------------------------
+    // UTILITY FUNCTIONS
+    // ----------------------------------------------
+    function escapeHtml(text) {
+        if (text === undefined || text === null) return '';
+        if (typeof text !== 'string') text = String(text);
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return text.replace(/[&<>"']/g, m => map[m]);
+    }
+
+    // ----------------------------------------------
+    // INITIALIZATION
+    // ----------------------------------------------
+    $(document).ready(function() {
+        loadTreasuryData();
+        
+        $('#refreshBtn').on('click', function() {
+            $(this).html('<span class="spinner-border spinner-border-sm me-2"></span> Loading...');
+            loadTreasuryData();
+            setTimeout(() => {
+                $('#refreshBtn').html('<i class="bi bi-arrow-repeat"></i> Refresh Data');
+            }, 1000);
+        });
+    });
+})();
+</script>
+</body>
+</html>
