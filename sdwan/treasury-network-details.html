@@ -65,56 +65,18 @@
             padding: 28px;
         }
         
-        .stats-bar {
-            background: #f8fafc;
-            border-radius: 16px;
-            padding: 16px 24px;
-            margin-bottom: 25px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 15px;
-            border: 1px solid #e2e8f0;
-        }
-        
-        .stats-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        
-        .stats-item i {
-            font-size: 1.5rem;
-            color: #0f5b9c;
-            background: #e8f0fe;
-            padding: 10px;
-            border-radius: 12px;
-        }
-        
-        .stats-item .count {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: #1e293b;
-            line-height: 1.2;
-        }
-        
-        .stats-item .label {
-            font-size: 0.85rem;
-            color: #64748b;
-        }
-        
         .refresh-btn {
             background: white;
             border: 1px solid #e2e8f0;
             border-radius: 40px;
-            padding: 10px 24px;
+            padding: 8px 20px;
             color: #0f5b9c;
             font-weight: 500;
             transition: all 0.2s;
             display: inline-flex;
             align-items: center;
             gap: 8px;
+            margin-bottom: 20px;
         }
         
         .refresh-btn:hover {
@@ -235,24 +197,6 @@
             padding-top: 15px;
         }
         
-        .footer-note {
-            margin-top: 20px;
-            background: #e8f0f7;
-            padding: 16px 24px;
-            border-radius: 40px;
-            color: #1e405e;
-            font-size: 0.95rem;
-            border-left: 4px solid #0f5b9c;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        
-        .footer-note i {
-            color: #0f5b9c;
-            font-size: 1.2rem;
-        }
-        
         .loading-spinner {
             text-align: center;
             padding: 50px;
@@ -264,7 +208,6 @@
         
         @media (max-width: 768px) {
             body { padding: 16px; }
-            .stats-bar { flex-direction: column; align-items: flex-start; }
             .dataTables_wrapper .dataTables_filter input { width: 100%; }
             .page-header { flex-direction: column; text-align: center; }
         }
@@ -284,29 +227,8 @@
     <!-- Main Card -->
     <div class="card-db">
         <div class="card-body">
-            <!-- Stats Bar -->
-            <div class="stats-bar">
-                <div class="stats-item">
-                    <i class="bi bi-building"></i>
-                    <div>
-                        <div class="count" id="totalCount">0</div>
-                        <div class="label">Total Treasuries</div>
-                    </div>
-                </div>
-                <div class="stats-item">
-                    <i class="bi bi-router"></i>
-                    <div>
-                        <div class="count" id="gatewayCount">0</div>
-                        <div class="label">Gateways Configured</div>
-                    </div>
-                </div>
-                <div class="stats-item">
-                    <i class="bi bi-diagram-3"></i>
-                    <div>
-                        <div class="count" id="lanPoolCount">0</div>
-                        <div class="label">LAN Pools Defined</div>
-                    </div>
-                </div>
+            <!-- Refresh Button -->
+            <div class="d-flex justify-content-end mb-3">
                 <button id="refreshBtn" class="refresh-btn">
                     <i class="bi bi-arrow-repeat"></i> Refresh Data
                 </button>
@@ -337,14 +259,6 @@
                         </tr>
                     </tbody>
                 </table>
-            </div>
-            
-            <!-- Footer Note -->
-            <div class="footer-note">
-                <i class="bi bi-info-circle-fill"></i>
-                <div>
-                    <strong>Network Configuration Details</strong> · LAN Pool IP ranges and FatPipe Gateway IP addresses for all treasuries
-                </div>
             </div>
         </div>
     </div>
@@ -388,7 +302,6 @@
                 }
                 treasuryData = data.values || [];
                 renderTable(treasuryData);
-                updateStats(treasuryData);
             })
             .catch(err => {
                 console.error('Error loading treasury data:', err);
@@ -419,8 +332,6 @@
         }
 
         let htmlRows = '';
-        let gatewayConfigured = 0;
-        let lanPoolConfigured = 0;
         
         rows.forEach(row => {
             // Ensure row has at least 7 columns
@@ -435,9 +346,7 @@
             // Remove spaces from gateway IP
             if (gatewayIP) {
                 gatewayIP = gatewayIP.replace(/\s+/g, '');
-                if (gatewayIP) gatewayConfigured++;
             }
-            if (lanPool) lanPoolConfigured++;
             
             // Format LAN Pool display
             const lanPoolDisplay = lanPool ? `<span class="lan-pool">${escapeHtml(lanPool)}</span>` : '<span class="empty-cell">—</span>';
@@ -457,10 +366,6 @@
         });
         
         tbody.html(htmlRows);
-        
-        // Store counts for stats
-        window.gatewayCount = gatewayConfigured;
-        window.lanPoolCount = lanPoolConfigured;
         
         // Initialize DataTable
         if (dataTable) {
@@ -494,18 +399,16 @@
         });
     }
 
-    function updateStats(rows) {
-        const totalCount = rows ? rows.length : 0;
-        $('#totalCount').text(totalCount);
-        $('#gatewayCount').text(window.gatewayCount || 0);
-        $('#lanPoolCount').text(window.lanPoolCount || 0);
-    }
-
     // ----------------------------------------------
     // REFRESH FUNCTION
     // ----------------------------------------------
     function refreshData() {
+        const $btn = $('#refreshBtn');
+        $btn.html('<span class="spinner-border spinner-border-sm me-2"></span> Loading...');
         loadTreasuryData();
+        setTimeout(() => {
+            $btn.html('<i class="bi bi-arrow-repeat"></i> Refresh Data');
+        }, 1000);
     }
 
     // ----------------------------------------------
@@ -531,11 +434,7 @@
         loadTreasuryData();
         
         $('#refreshBtn').on('click', function() {
-            $(this).html('<span class="spinner-border spinner-border-sm me-2"></span> Loading...');
-            loadTreasuryData();
-            setTimeout(() => {
-                $('#refreshBtn').html('<i class="bi bi-arrow-repeat"></i> Refresh Data');
-            }, 1000);
+            refreshData();
         });
     });
 })();
