@@ -799,7 +799,7 @@
             // ==================== SERVICE PROVIDER CHECK & LCO LOGIC ====================
             function isServiceProviderBSNLMPLS() {
                 const provider = $('#providerInput').val();
-                return provider && (provider.toLowerCase().includes('bsnl mpls') || provider.toLowerCase().includes('bsnl-mpls'));
+                return provider && (provider.toLowerCase().includes('bsnl') || provider.toLowerCase().includes('bsnl'));
             }
 
             function updateLCOCodeForBranch() {
