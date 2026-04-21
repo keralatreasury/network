@@ -51,22 +51,55 @@
             display: flex;
             align-items: center;
             gap: 15px;
+            flex-wrap: wrap;
+            justify-content: space-between;
         }
-        .page-header i {
+        .page-header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .page-header-left i {
             font-size: 2rem;
             background: rgba(255,255,255,0.15);
             padding: 12px;
             border-radius: 16px;
         }
-        .page-header h1 {
+        .page-header-left h1 {
             margin: 0;
             font-size: 1.5rem;
             font-weight: 600;
         }
-        .page-header p {
+        .page-header-left p {
             margin: 5px 0 0;
             opacity: 0.8;
             font-size: 0.85rem;
+        }
+        .export-buttons {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .btn-export {
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            border-radius: 40px;
+            padding: 8px 20px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            backdrop-filter: blur(4px);
+        }
+        .btn-export:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+            color: white;
+        }
+        .btn-export i {
+            font-size: 1.1rem;
         }
         .filter-section {
             padding: 25px 30px;
@@ -276,6 +309,8 @@
             .summary-stats { margin: 15px; flex-direction: column; }
             .total-footer { margin: 15px; flex-direction: column; text-align: center; }
             .datetime-display { font-size: 0.75rem; }
+            .page-header { flex-direction: column; align-items: stretch; }
+            .export-buttons { justify-content: flex-start; margin-top: 10px; }
         }
     </style>
 </head>
@@ -283,10 +318,17 @@
     <div class="report-container">
         <div class="report-card">
             <div class="page-header">
-                <i class="bi bi-graph-up"></i>
-                <div>
-                    <h1>Power Down Hours Report</h1>
-                
+                <div class="page-header-left">
+                    <i class="bi bi-graph-up"></i>
+                    <div>
+                        <h1>Power Down Hours Report</h1>
+                        <p>Treasury Power Failure Analytics & Downtime Tracking</p>
+                    </div>
+                </div>
+                <div class="export-buttons">
+                    <button id="exportExcelBtn" class="btn-export"><i class="bi bi-file-earmark-spreadsheet"></i> Excel (XLS)</button>
+                    <button id="exportCsvBtn" class="btn-export"><i class="bi bi-filetype-csv"></i> CSV</button>
+                    <button id="exportPdfBtn" class="btn-export"><i class="bi bi-file-earmark-pdf"></i> PDF</button>
                 </div>
             </div>
             
@@ -383,6 +425,11 @@
     <script src="../js/dataTables.bootstrap5.min.js"></script>
     <script src="../js/flatpickr.min.js"></script>
     <script src="../js/sweetalert2.min.js"></script>
+    <!-- Export libraries (XLSX, FileSaver, jsPDF, autoTable) -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
     <script>
         // ======================== CONFIGURATION ========================
@@ -392,6 +439,7 @@
         
         let flatpickrFrom, flatpickrTo;
         let dataTable = null;
+        let currentEventsData = []; // Store current events for export
 
         // ======================== UTILITY FUNCTIONS ========================
         function parseDMY(dateStr) {
@@ -401,7 +449,6 @@
             return new Date(Date.UTC(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]), 12, 0, 0));
         }
         
-        // Parse DD/MM/YYYY HH:MM:SS to Date object
         function parseDateTime(dateStr, timeStr) {
             if (!dateStr || !timeStr) return null;
             const dateParts = dateStr.split('/');
@@ -416,13 +463,6 @@
             const seconds = timeParts[2] ? parseInt(timeParts[2]) : 0;
             
             return new Date(year, month, day, hours, minutes, seconds);
-        }
-        
-        function formatDateTime(date, time) {
-            if (!date) return "—";
-            if (date === "—") return "—";
-            if (time === "Unknown" || time === "Ongoing") return `${date} ${time}`;
-            return `${date} ${time}`;
         }
         
         function formatDuration(seconds) {
@@ -449,7 +489,6 @@
             const hours = Math.floor((seconds % 86400) / 3600);
             const minutes = Math.floor((seconds % 3600) / 60);
             const secs = seconds % 60;
-            
             if (days > 0) return `${days}d ${hours}h ${minutes}m`;
             if (hours > 0) return `${hours}h ${minutes}m`;
             if (minutes > 0) return `${minutes}m ${secs}s`;
@@ -506,7 +545,6 @@
                 const endOfPeriod = new Date(toDateObj);
                 endOfPeriod.setUTCHours(23, 59, 59, 999);
                 
-                // Collect all confirmed records within date range
                 let allRecords = [];
                 for (let i = startIdx; i < sheetRows.length; i++) {
                     const row = sheetRows[i];
@@ -515,7 +553,6 @@
                         const recordDateObj = parseDMY(recordDate);
                         const confirmStatus = row[6] || "";
                         
-                        // Include all confirmed records (G column = "Yes")
                         if (recordDateObj && fromDateObj && toDateObj && 
                             recordDateObj >= fromDateObj && recordDateObj <= toDateObj &&
                             confirmStatus === "Yes") {
@@ -532,107 +569,61 @@
                     }
                 }
                 
-                // Sort by branch and timestamp
                 allRecords.sort((a, b) => {
                     if (a.branch !== b.branch) return a.branch.localeCompare(b.branch);
                     return (a.timestampISO || "").localeCompare(b.timestampISO || "");
                 });
                 
-                // Process events by branch
                 const downtimeEvents = [];
                 const branchMap = new Map();
                 let ongoingCount = 0;
                 
                 for (const record of allRecords) {
-                    if (!branchMap.has(record.branch)) {
-                        branchMap.set(record.branch, []);
-                    }
+                    if (!branchMap.has(record.branch)) branchMap.set(record.branch, []);
                     branchMap.get(record.branch).push(record);
                 }
                 
-                // Process each branch's events
                 for (const [branch, records] of branchMap.entries()) {
                     let i = 0;
                     while (i < records.length) {
                         const current = records[i];
-                        
                         if (current.status === "Down") {
-                            // Look for the next Up event
                             let upEvent = null;
                             let j = i + 1;
-                            while (j < records.length && records[j].status !== "Up") {
-                                j++;
-                            }
-                            
+                            while (j < records.length && records[j].status !== "Up") j++;
                             if (j < records.length && records[j].status === "Up") {
                                 upEvent = records[j];
-                                
-                                // Combine date and time correctly for both events
                                 const downDateTime = parseDateTime(current.date, current.time);
                                 const upDateTime = parseDateTime(upEvent.date, upEvent.time);
-                                
-                                let durationSeconds = 0;
-                                
-                                if (downDateTime && upDateTime) {
-                                    durationSeconds = Math.max(0, Math.floor((upDateTime - downDateTime) / 1000));
-                                }
-                                
+                                let durationSeconds = (downDateTime && upDateTime) ? Math.max(0, Math.floor((upDateTime - downDateTime) / 1000)) : 0;
                                 downtimeEvents.push({
-                                    branch: branch,
-                                    downDateTime: downDateTime,
-                                    downDate: current.date,
-                                    downTime: current.time,
-                                    upDateTime: upDateTime,
-                                    upDate: upEvent.date,
-                                    upTime: upEvent.time,
-                                    duration: durationSeconds,
-                                    status: "Resolved"
+                                    branch, downDateTime, downDate: current.date, downTime: current.time,
+                                    upDateTime, upDate: upEvent.date, upTime: upEvent.time,
+                                    duration: durationSeconds, status: "Resolved"
                                 });
                                 i = j + 1;
                             } else {
-                                // No Up event found - ongoing failure
                                 const downDateTime = parseDateTime(current.date, current.time);
-                                let durationSeconds = 0;
-                                
-                                if (downDateTime) {
-                                    durationSeconds = Math.max(0, Math.floor((endOfPeriod - downDateTime) / 1000));
-                                }
-                                
+                                let durationSeconds = downDateTime ? Math.max(0, Math.floor((endOfPeriod - downDateTime) / 1000)) : 0;
                                 downtimeEvents.push({
-                                    branch: branch,
-                                    downDateTime: downDateTime,
-                                    downDate: current.date,
-                                    downTime: current.time,
-                                    upDateTime: null,
-                                    upDate: "—",
-                                    upTime: "Ongoing",
-                                    duration: durationSeconds,
-                                    status: "Ongoing"
+                                    branch, downDateTime, downDate: current.date, downTime: current.time,
+                                    upDateTime: null, upDate: "—", upTime: "Ongoing",
+                                    duration: durationSeconds, status: "Ongoing"
                                 });
                                 ongoingCount++;
                                 i++;
                             }
                         } else if (current.status === "Up") {
-                            // Up event without a preceding Down - Unknown start
                             downtimeEvents.push({
-                                branch: branch,
-                                downDateTime: null,
-                                downDate: "Unknown",
-                                downTime: "Unknown",
-                                upDateTime: parseDateTime(current.date, current.time),
-                                upDate: current.date,
-                                upTime: current.time,
-                                duration: 0,
-                                status: "Unknown Start"
+                                branch, downDateTime: null, downDate: "Unknown", downTime: "Unknown",
+                                upDateTime: parseDateTime(current.date, current.time), upDate: current.date, upTime: current.time,
+                                duration: 0, status: "Unknown Start"
                             });
                             i++;
-                        } else {
-                            i++;
-                        }
+                        } else { i++; }
                     }
                 }
                 
-                // Sort by down date time (chronological)
                 downtimeEvents.sort((a, b) => {
                     if (!a.downDateTime && !b.downDateTime) return 0;
                     if (!a.downDateTime) return 1;
@@ -640,139 +631,120 @@
                     return a.downDateTime - b.downDateTime;
                 });
                 
-                // Calculate totals
+                currentEventsData = downtimeEvents;
+                
                 const totalIncidents = downtimeEvents.length;
-                const totalDurationSeconds = downtimeEvents.reduce((sum, event) => sum + event.duration, 0);
+                const totalDurationSeconds = downtimeEvents.reduce((sum, e) => sum + e.duration, 0);
                 const uniqueTreasuries = new Set(downtimeEvents.map(e => e.branch)).size;
                 
-                // Update summary stats
                 $('#totalTreasuries').text(uniqueTreasuries);
                 $('#totalIncidents').text(totalIncidents);
                 $('#totalDowntime').text(formatDurationShort(totalDurationSeconds));
                 $('#ongoingIncidents').text(ongoingCount);
                 $('#summaryStats').show();
-                
-                // Update total footer
                 $('#totalDuration').text(formatDuration(totalDurationSeconds));
                 $('#totalFooter').show();
                 
-                // Render table
                 renderTable(downtimeEvents);
                 hideLoading();
                 
                 if (downtimeEvents.length === 0) {
                     Swal.fire({ icon: 'info', title: 'No Downtime Events', text: 'No confirmed power failure events found in the selected date range', confirmButtonColor: '#0f5b9c' });
                 }
-                
             } catch (err) {
-                console.error("Error generating report:", err);
+                console.error(err);
                 hideLoading();
                 Swal.fire({ icon: 'error', title: 'Report Failed', text: 'Could not fetch data from sheet', confirmButtonColor: '#0f5b9c' });
             }
         }
 
-        // ======================== RENDER TABLE ========================
         function renderTable(events) {
             const tbody = $("#downtimeTable tbody");
-            
-            if (dataTable) {
-                dataTable.destroy();
-                tbody.empty();
-            }
-            
+            if (dataTable) { dataTable.destroy(); tbody.empty(); }
             if (events.length === 0) {
                 tbody.html('<tr><td colspan="6" class="text-center py-5">No downtime events found in the selected date range</td></tr>');
                 return;
             }
-            
-            let html = '';
-            let serialNo = 1;
-            
+            let html = '', serialNo = 1;
             for (const event of events) {
-                let statusBadge = '';
-                let durationClass = 'duration-badge';
+                let statusBadge = '', durationClass = 'duration-badge';
+                if (event.status === "Resolved") statusBadge = `<span class="badge-up"><i class="bi bi-check-circle"></i> Resolved</span>`;
+                else if (event.status === "Ongoing") { statusBadge = `<span class="badge-ongoing"><i class="bi bi-exclamation-triangle"></i> Ongoing</span>`; durationClass += ' duration-ongoing'; }
+                else statusBadge = `<span class="badge-down"><i class="bi bi-question-circle"></i> Unknown Start</span>`;
                 
-                if (event.status === "Resolved") {
-                    statusBadge = `<span class="badge-up"><i class="bi bi-check-circle"></i> Resolved</span>`;
-                } else if (event.status === "Ongoing") {
-                    statusBadge = `<span class="badge-ongoing"><i class="bi bi-exclamation-triangle"></i> Ongoing</span>`;
-                    durationClass += ' duration-ongoing';
-                } else {
-                    statusBadge = `<span class="badge-down"><i class="bi bi-question-circle"></i> Unknown Start</span>`;
-                }
-                
-                // Format Down Date & Time
-                let downDisplay = '';
-                if (event.downDate === "Unknown") {
-                    downDisplay = `<span class="text-muted"><i class="bi bi-question-circle"></i> Unknown</span>`;
-                } else {
-                    downDisplay = `<div class="datetime-display">
-                        <span class="badge-down" style="background-color: #ef4444; color: white; padding: 2px 8px; border-radius: 20px; font-size: 0.7rem; margin-right: 6px;">DOWN</span>
-                        ${event.downDate} ${event.downTime}
-                    </div>`;
-                }
-                
-                // Format Up Date & Time
-                let upDisplay = '';
-                if (event.upTime === "Ongoing") {
-                    upDisplay = `<div class="datetime-display">
-                        <span class="badge-ongoing" style="background-color: #f59e0b; color: white; padding: 2px 8px; border-radius: 20px; font-size: 0.7rem; margin-right: 6px;">ONGOING</span>
-                        Not yet restored
-                    </div>`;
-                } else if (event.upDate === "Unknown" || event.upDate === "—") {
-                    upDisplay = `<span class="text-muted"><i class="bi bi-question-circle"></i> Unknown</span>`;
-                } else {
-                    upDisplay = `<div class="datetime-display">
-                        <span class="badge-up" style="background-color: #10b981; color: white; padding: 2px 8px; border-radius: 20px; font-size: 0.7rem; margin-right: 6px;">UP</span>
-                        ${event.upDate} ${event.upTime}
-                    </div>`;
-                }
-                
-                const durationDisplay = event.status === "Unknown Start" ? 
-                    `<span class="text-muted">—</span>` : 
-                    `<span class="${durationClass}"><i class="bi bi-clock"></i> ${formatDuration(event.duration)}</span>`;
-                
-                html += `
-                    <tr>
-                        <td>${serialNo++}</td>
-                        <td><i class="bi bi-building me-1"></i> <strong>${escapeHtml(event.branch)}</strong></td>
-                        <td>${downDisplay}</td>
-                        <td>${upDisplay}</td>
-                        <td>${statusBadge}</td>
-                        <td>${durationDisplay}</td>
-                    </tr>
-                `;
+                let downDisplay = (event.downDate === "Unknown") ? `<span class="text-muted"><i class="bi bi-question-circle"></i> Unknown</span>` : `<div class="datetime-display"><span class="badge-down" style="background-color: #ef4444; color: white; padding: 2px 8px; border-radius: 20px; font-size: 0.7rem; margin-right: 6px;">DOWN</span> ${event.downDate} ${event.downTime}</div>`;
+                let upDisplay = (event.upTime === "Ongoing") ? `<div class="datetime-display"><span class="badge-ongoing" style="background-color: #f59e0b; color: white; padding: 2px 8px; border-radius: 20px; font-size: 0.7rem; margin-right: 6px;">ONGOING</span> Not yet restored</div>` : (event.upDate === "Unknown" || event.upDate === "—") ? `<span class="text-muted"><i class="bi bi-question-circle"></i> Unknown</span>` : `<div class="datetime-display"><span class="badge-up" style="background-color: #10b981; color: white; padding: 2px 8px; border-radius: 20px; font-size: 0.7rem; margin-right: 6px;">UP</span> ${event.upDate} ${event.upTime}</div>`;
+                const durationDisplay = event.status === "Unknown Start" ? `<span class="text-muted">—</span>` : `<span class="${durationClass}"><i class="bi bi-clock"></i> ${formatDuration(event.duration)}</span>`;
+                html += `<tr><td>${serialNo++}</td><td><i class="bi bi-building me-1"></i> <strong>${escapeHtml(event.branch)}</strong></td><td>${downDisplay}</td><td>${upDisplay}</td><td>${statusBadge}</td><td>${durationDisplay}</td></tr>`;
             }
-            
             tbody.html(html);
-            
-            dataTable = $("#downtimeTable").DataTable({
-                paging: false,
-                searching: true,
-                ordering: true,
-                info: true,
-                language: {
-                    search: "Filter:",
-                    searchPlaceholder: "Search by treasury...",
-                    info: "Showing _START_ to _END_ of _TOTAL_ entries",
-                    infoEmpty: "Showing 0 to 0 of 0 entries"
-                },
-                columnDefs: [
-                    { orderable: true, targets: [0, 1, 5] },
-                    { orderable: false, targets: [2, 3, 4] }
-                ],
-                order: [[0, 'asc']]
-            });
+            dataTable = $("#downtimeTable").DataTable({ paging: false, searching: true, ordering: true, info: true, language: { search: "Filter:", searchPlaceholder: "Search by treasury...", info: "Showing _START_ to _END_ of _TOTAL_ entries" }, columnDefs: [{ orderable: true, targets: [0,1,5] }, { orderable: false, targets: [2,3,4] }], order: [[0, 'asc']] });
         }
 
-        function escapeHtml(str) {
-            if (!str) return '';
-            return str.replace(/[&<>]/g, function(m) {
-                if (m === '&') return '&amp;';
-                if (m === '<') return '&lt;';
-                if (m === '>') return '&gt;';
-                return m;
+        function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;'); }
+
+        // ======================== EXPORT FUNCTIONS ========================
+        function getTableDataForExport() {
+            if (!currentEventsData || currentEventsData.length === 0) return [];
+            return currentEventsData.map((event, idx) => ({
+                "SL.no": idx + 1,
+                "Treasury / Branch": event.branch,
+                "Down Date & Time": event.downDate === "Unknown" ? "Unknown" : `${event.downDate} ${event.downTime}`,
+                "Up Date & Time": event.upTime === "Ongoing" ? "Ongoing" : (event.upDate === "—" ? "Not restored" : `${event.upDate} ${event.upTime}`),
+                "Status": event.status,
+                "Failure Duration": event.status === "Unknown Start" ? "—" : formatDuration(event.duration)
+            }));
+        }
+
+        function exportToExcel() {
+            if (!currentEventsData.length) { Swal.fire('No Data', 'No report data to export', 'info'); return; }
+            const worksheetData = getTableDataForExport();
+            const ws = XLSX.utils.json_to_sheet(worksheetData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Power_Downtime_Report");
+            XLSX.writeFile(wb, `power_downtime_report_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.xlsx`);
+        }
+
+        function exportToCSV() {
+            if (!currentEventsData.length) { Swal.fire('No Data', 'No report data to export', 'info'); return; }
+            const worksheetData = getTableDataForExport();
+            const ws = XLSX.utils.json_to_sheet(worksheetData);
+            const csv = XLSX.utils.sheet_to_csv(ws);
+            const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+            saveAs(blob, `power_downtime_report_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.csv`);
+        }
+
+        function exportToPDF() {
+            if (!currentEventsData.length) { Swal.fire('No Data', 'No report data to export', 'info'); return; }
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ orientation: 'landscape', unit: 'mm' });
+            const tableData = currentEventsData.map((event, idx) => [
+                idx + 1,
+                event.branch,
+                event.downDate === "Unknown" ? "Unknown" : `${event.downDate} ${event.downTime}`,
+                event.upTime === "Ongoing" ? "Ongoing" : (event.upDate === "—" ? "Not restored" : `${event.upDate} ${event.upTime}`),
+                event.status,
+                event.status === "Unknown Start" ? "—" : formatDuration(event.duration)
+            ]);
+            const fromDate = $('#fromDate').val() || 'N/A';
+            const toDate = $('#toDate').val() || 'N/A';
+            doc.setFontSize(16);
+            doc.text("Power Down Hours Report", 14, 15);
+            doc.setFontSize(10);
+            doc.text(`Period: ${fromDate} to ${toDate}`, 14, 25);
+            doc.autoTable({
+                head: [["SL.no", "Treasury / Branch", "Down Date & Time", "Up Date & Time", "Status", "Failure Duration"]],
+                body: tableData,
+                startY: 32,
+                theme: 'striped',
+                headStyles: { fillColor: [15, 91, 156], textColor: 255, fontStyle: 'bold' },
+                margin: { left: 10, right: 10 }
             });
+            const finalY = doc.lastAutoTable.finalY + 8;
+            const totalSecs = currentEventsData.reduce((sum, e) => sum + e.duration, 0);
+            doc.setFontSize(10);
+            doc.text(`Total Downtime: ${formatDuration(totalSecs)}`, 14, finalY);
+            doc.save(`power_downtime_report_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.pdf`);
         }
 
         // ======================== DATE FUNCTIONS ========================
@@ -780,47 +752,33 @@
             const now = new Date();
             const firstDay = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1, 12, 0, 0));
             const lastDay = new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 0, 12, 0, 0));
-            
-            flatpickrFrom = flatpickr("#fromDate", { 
-                dateFormat: "d/m/Y", 
-                defaultDate: firstDay
-            });
-            flatpickrTo = flatpickr("#toDate", { 
-                dateFormat: "d/m/Y", 
-                defaultDate: lastDay
-            });
+            flatpickrFrom = flatpickr("#fromDate", { dateFormat: "d/m/Y", defaultDate: firstDay });
+            flatpickrTo = flatpickr("#toDate", { dateFormat: "d/m/Y", defaultDate: lastDay });
         }
         
         function setCurrentMonth() {
             const now = new Date();
-            const firstDay = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1, 12, 0, 0));
-            const lastDay = new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 0, 12, 0, 0));
-            flatpickrFrom.setDate(firstDay);
-            flatpickrTo.setDate(lastDay);
+            flatpickrFrom.setDate(new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1)));
+            flatpickrTo.setDate(new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 0)));
             generateReport();
         }
         
         function setPreviousMonth() {
             const now = new Date();
-            const firstDay = new Date(Date.UTC(now.getFullYear(), now.getMonth() - 1, 1, 12, 0, 0));
-            const lastDay = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 0, 12, 0, 0));
-            flatpickrFrom.setDate(firstDay);
-            flatpickrTo.setDate(lastDay);
+            flatpickrFrom.setDate(new Date(Date.UTC(now.getFullYear(), now.getMonth() - 1, 1)));
+            flatpickrTo.setDate(new Date(Date.UTC(now.getFullYear(), now.getMonth(), 0)));
             generateReport();
         }
 
-        // ======================== INIT ========================
         $(document).ready(function() {
             setDefaultDates();
-            
             $('#generateReportBtn').on('click', generateReport);
             $('#currentMonthBtn').on('click', setCurrentMonth);
             $('#previousMonthBtn').on('click', setPreviousMonth);
-            
-            // Auto-generate report on page load
-            setTimeout(() => {
-                generateReport();
-            }, 500);
+            $('#exportExcelBtn').on('click', exportToExcel);
+            $('#exportCsvBtn').on('click', exportToCSV);
+            $('#exportPdfBtn').on('click', exportToPDF);
+            setTimeout(() => { generateReport(); }, 500);
         });
     </script>
 </body>
