@@ -19,6 +19,16 @@
     <link rel="manifest" href="mobile-manifest.json">
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
     <meta name="theme-color" content="#f8fafc">
+     <script>
+        const currentPage = window.location.pathname.split('/').pop() || 'app.html';
+        const isMobile = (window.innerWidth <= 768 || /Mobile|iPhone|iPad|Android/i.test(navigator.userAgent));
+        
+        if (isMobile && currentPage !== 'app.html') {
+            window.location.href = "app.html";
+        } else if (!isMobile && currentPage !== 'index.html') {
+            window.location.href = "index.html";
+        }
+    </script>
 </head>
 <body class="mobile-app light-theme">
 
