@@ -81,7 +81,7 @@
             "name": "Dashboard",
             "short_name": "Home",
             "description": "Return to main menu",
-            "url": "index.html",
+            "url": "app.html",
             "icons": [
                 {
                     "src": "icons/favicon-96x96.png",
