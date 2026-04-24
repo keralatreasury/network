@@ -8,18 +8,18 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="NOC Mobile">
-    <!-- Bootstrap 5.3 + icons (lightweight) -->
+    <!-- Bootstrap 5.3 + icons -->
     <link href="./css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="./css/bootstrap-icons.min.css">
-    <!-- Google Fonts: Noto Malayalam + system font fallback -->
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&family=Noto+Sans+Malayalam:wght@400;500&display=swap" rel="stylesheet">
-    <!-- Main Styles (embedded but will be separate file as requested) 
-    <link rel="stylesheet" href="mobile-style.css">
     <!-- PWA Manifest -->
     <link rel="manifest" href="mobile-manifest.json">
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
     <meta name="theme-color" content="#f8fafc">
-     <script>
+    
+    <!-- Mobile/Desktop Redirect Script -->
+    <script>
         const currentPage = window.location.pathname.split('/').pop() || 'app.html';
         const isMobile = (window.innerWidth <= 768 || /Mobile|iPhone|iPad|Android/i.test(navigator.userAgent));
         
@@ -32,7 +32,7 @@
 </head>
 <body class="mobile-app light-theme">
 
-<!-- LOGIN SCREEN (light elegant) -->
+<!-- LOGIN SCREEN -->
 <div class="login-overlay" id="loginOverlay">
     <div class="login-card glass-card">
         <div class="login-header">
@@ -63,9 +63,9 @@
     </div>
 </div>
 
-<!-- MAIN DASHBOARD (mobile tiled menu) -->
+<!-- MAIN DASHBOARD -->
 <div class="dashboard-main" id="dashboardMain" style="display: none;">
-    <!-- Top Bar with user & logout -->
+    <!-- Top Bar -->
     <div class="mobile-top-bar">
         <div class="brand-area">
             <img class="mini-logo" src="https://profile.mgovcloud.in/file?fs=thumb&amp;ID=2109903&amp;nps=404&amp;allowCORP=true" alt="logo">
@@ -83,12 +83,12 @@
         </div>
     </div>
     
-    <!-- Flash News Ticker (adjustable) -->
+    <!-- Flash News Ticker -->
     <div id="flashNewsStrip" class="flash-strip hidden">
         <div class="ticker-wrap"><div class="ticker-content" id="mobileTicker"></div></div>
     </div>
     
-    <!-- Main Menu Grid (Tiles with icons + labels at bottom) -->
+    <!-- Main Menu Grid -->
     <div class="menu-grid-container">
         <div class="section-header"><i class="bi bi-grid-3x3-gap-fill"></i> Applications</div>
         <div class="tiles-grid" id="mobileMenuGrid">
@@ -96,11 +96,11 @@
         </div>
     </div>
     
-    <!-- Footer note -->
+    <!-- Footer -->
     <div class="app-footer">NOC Admin · Secure Access</div>
 </div>
 
-<!-- POPUP IFRAME MODAL (fullscreen with back button) -->
+<!-- POPUP IFRAME MODAL -->
 <div class="iframe-modal" id="iframeModal" style="display: none;">
     <div class="modal-header-bar">
         <button class="back-to-menu-btn" id="closeIframeBtn"><i class="bi bi-arrow-left-short"></i> Menu</button>
@@ -112,7 +112,7 @@
 </div>
 
 <script>
-    // ---------- CONFIG ----------
+    // ========== CONFIGURATION ==========
     const SPREADSHEET_ID = '1jd1xZe9x2mrZm5KAwGT12vMNYjbrnynsmelNKeK95jc';
     const API_KEY = 'AIzaSyBB1V3vJpNZ9X1GIF-YOwoa6YSt_iXMLo0';
     const MENU_SHEET = 'Menu';
@@ -121,20 +121,30 @@
     const FLASH_SHEET = 'scroll texts';
     
     let currentUserData = null;
-    let menuStructure = [];    // { title, iconClass, subMenus: [{title, items: [{title, url, icon}]}] }
+    let menuStructure = [];
     let iconMap = new Map();
     
-    // ---------- HELPERS ----------
-    function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, function(m){ if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;});}
+    // ========== HELPER FUNCTIONS ==========
+    function escapeHtml(str) { 
+        if(!str) return ''; 
+        return str.replace(/[&<>]/g, function(m){ 
+            if(m==='&') return '&amp;'; 
+            if(m==='<') return '&lt;'; 
+            if(m==='>') return '&gt;'; 
+            return m;
+        });
+    }
     
     async function fetchSheetJSON(url) {
         try {
             const res = await fetch(url);
             return await res.json();
-        } catch(e) { return { error: true }; }
+        } catch(e) { 
+            return { error: true }; 
+        }
     }
     
-    // Icon processor (icons sheet columns: mainMenu, mainIcon, subMenu, subIcon, linkItem, linkIcon)
+    // Icon processor
     function processIcons(rows) {
         if(!rows || rows.length<2) return;
         for(let i=1; i<rows.length; i++) {
@@ -198,7 +208,10 @@
             if(menuRes.error) throw new Error(`Menu sheet error: ${menuSheetName}`);
             if(iconRes.values) processIcons(iconRes.values);
             return buildMenuFromRows(menuRes.values);
-        } catch(e) { console.error(e); return []; }
+        } catch(e) { 
+            console.error(e); 
+            return []; 
+        }
     }
     
     // Flash news
@@ -210,21 +223,28 @@
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${FLASH_SHEET}!A2:A?key=${API_KEY}`;
             const resp = await fetch(url);
             const data = await resp.json();
-            if(data.error || !data.values || data.values.length===0) { strip.classList.add('hidden'); return; }
+            if(data.error || !data.values || data.values.length===0) { 
+                strip.classList.add('hidden'); 
+                return; 
+            }
             const texts = data.values.map(row => row[0] ? row[0].toString().trim() : '').filter(t => t!=='');
-            if(texts.length===0) { strip.classList.add('hidden'); return; }
+            if(texts.length===0) { 
+                strip.classList.add('hidden'); 
+                return; 
+            }
             let html = '';
             texts.forEach(t => { html += `<span><i class="bi bi-megaphone-fill"></i> ${escapeHtml(t)}</span>`; });
             tickerDiv.innerHTML = html;
             strip.classList.remove('hidden');
-            // simple marquee effect
             const tickerWrap = document.querySelector('.ticker-wrap');
             if(tickerWrap) tickerWrap.style.animation = 'none';
             setTimeout(()=> { if(tickerWrap) tickerWrap.style.animation = 'tickerScroll 25s linear infinite'; }, 10);
-        } catch(e) { strip.classList.add('hidden'); }
+        } catch(e) { 
+            strip.classList.add('hidden'); 
+        }
     }
     
-    // Render TILES (menu items as clickable cards)
+    // Render TILES
     function renderMobileTiles(menuData) {
         const container = document.getElementById('mobileMenuGrid');
         if(!container) return;
@@ -233,7 +253,6 @@
             return;
         }
         let allLinks = [];
-        // flatten all link items from main->sub->items
         for(let main of menuData) {
             for(let sub of main.subMenus) {
                 for(let link of sub.items) {
@@ -261,7 +280,6 @@
             `;
         });
         container.innerHTML = tileHtml;
-        // attach click events
         document.querySelectorAll('.menu-tile').forEach(tile => {
             tile.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -272,7 +290,7 @@
         });
     }
     
-    // POPUP IFRAME (full screen modal)
+    // POPUP IFRAME
     const iframeModal = document.getElementById('iframeModal');
     const popupIframe = document.getElementById('popupIframe');
     const modalTitle = document.getElementById('modalTitleText');
@@ -293,7 +311,6 @@
             iframeLoading.innerHTML = '<div class="alert alert-danger m-3">Failed to load content</div>';
             iframeLoading.style.display = 'flex';
         };
-        // prevent body scroll
         document.body.style.overflow = 'hidden';
     }
     
@@ -305,7 +322,98 @@
         document.body.style.overflow = '';
     }
     
-    // LOGIN logic
+    // ========== LOGIN & SESSION MANAGEMENT (FIXED) ==========
+    
+    // Store user data in BOTH localStorage and sessionStorage (like index.html)
+    function storeUserSession(userData) {
+        const sessionData = {
+            username: userData.username,
+            loginTime: new Date().toISOString(),
+            menuSheet: userData.menuSheet
+        };
+        
+        // Store in both storage mechanisms for redundancy
+        localStorage.setItem('currentUser', JSON.stringify(sessionData));
+        sessionStorage.setItem('currentUser', JSON.stringify(sessionData));
+        
+        // Also store mobile-specific key
+        localStorage.setItem('mobileUser', JSON.stringify({ 
+            username: userData.username, 
+            menuSheet: userData.menuSheet, 
+            loginTime: Date.now() 
+        }));
+        
+        console.log('User session stored:', userData.username);
+    }
+    
+    // Clear user session
+    function clearUserSession() {
+        localStorage.removeItem('currentUser');
+        sessionStorage.removeItem('currentUser');
+        localStorage.removeItem('mobileUser');
+        sessionStorage.removeItem('mobileUser');
+        console.log('User session cleared');
+    }
+    
+    // Check existing session (improved version)
+    function checkExistingSession() {
+        // First try to get from localStorage (persists across browser restarts)
+        let storedUser = localStorage.getItem('currentUser');
+        
+        // If not found, try sessionStorage
+        if (!storedUser) {
+            storedUser = sessionStorage.getItem('currentUser');
+        }
+        
+        // If still not found, try mobileUser key
+        if (!storedUser) {
+            const mobileUser = localStorage.getItem('mobileUser');
+            if (mobileUser) {
+                try {
+                    const parsed = JSON.parse(mobileUser);
+                    if (parsed.username && parsed.menuSheet) {
+                        storedUser = JSON.stringify({
+                            username: parsed.username,
+                            menuSheet: parsed.menuSheet,
+                            loginTime: parsed.loginTime ? new Date(parsed.loginTime).toISOString() : new Date().toISOString()
+                        });
+                    }
+                } catch(e) {}
+            }
+        }
+        
+        if (storedUser) {
+            try {
+                const userData = JSON.parse(storedUser);
+                const loginTime = new Date(userData.loginTime);
+                const now = new Date();
+                const hoursSinceLogin = (now - loginTime) / (1000 * 60 * 60);
+                
+                // Session expires after 24 hours
+                if (hoursSinceLogin <= 24) {
+                    currentUserData = {
+                        username: userData.username,
+                        menuSheet: userData.menuSheet
+                    };
+                    
+                    // Refresh the stored session
+                    storeUserSession(currentUserData);
+                    
+                    console.log('Valid session found for user:', userData.username);
+                    return true;
+                } else {
+                    console.log('Session expired (24h limit)');
+                    clearUserSession();
+                }
+            } catch(e) {
+                console.error('Error parsing stored user:', e);
+                clearUserSession();
+            }
+        }
+        return false;
+    }
+    
+    // Login validation
     async function validateMobileLogin(username, password) {
         const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${LOGIN_SHEET}!B:D?key=${API_KEY}`;
         try {
@@ -314,19 +422,23 @@
             if(data.error) return null;
             if(data.values) {
                 for(let row of data.values) {
-                    if(row.length>=2) {
+                    if(row.length >= 2) {
                         const storedUser = row[0], storedPass = row[1];
                         if(username === storedUser && password === storedPass) {
-                            const menuSheet = (row.length>=3 && row[2]) ? row[2].trim() : 'Menu';
+                            const menuSheet = (row.length >= 3 && row[2]) ? row[2].trim() : 'Menu';
                             return { username: storedUser, menuSheet: menuSheet };
                         }
                     }
                 }
             }
             return null;
-        } catch(e) { return null; }
+        } catch(e) { 
+            console.error('Login validation error:', e);
+            return null; 
+        }
     }
     
+    // Handle login
     async function handleMobileLogin() {
         const username = document.getElementById('mobileUsername').value.trim();
         const password = document.getElementById('mobilePassword').value.trim();
@@ -334,34 +446,58 @@
         const loginBtn = document.getElementById('mobileLoginBtn');
         const spinner = document.getElementById('loginSpinner');
         const btnText = document.getElementById('loginBtnText');
-        if(!username || !password) { showLoginErr('Enter username & password'); return; }
+        
+        if(!username || !password) { 
+            showLoginErr('Enter username & password'); 
+            return; 
+        }
+        
         errDiv.style.display = 'none';
         loginBtn.disabled = true;
         spinner.classList.remove('d-none');
         btnText.innerText = 'Verifying...';
-        const user = await validateMobileLogin(username, password);
-        if(user) {
-            currentUserData = user;
-            localStorage.setItem('mobileUser', JSON.stringify({ username: user.username, menuSheet: user.menuSheet, loginTime: Date.now() }));
-            // proceed to dashboard
-            document.getElementById('loginOverlay').style.opacity = '0';
-            setTimeout(async () => {
-                document.getElementById('loginOverlay').style.display = 'none';
-                document.getElementById('dashboardMain').style.display = 'block';
-                document.body.style.overflow = 'auto';
-                // load menu
-                const menuData = await loadMenusAndIcons(user.menuSheet);
-                menuStructure = menuData;
-                renderMobileTiles(menuData);
-                displayUserOnTop(user.username);
-                loadFlashNews();
-            }, 300);
-        } else {
+        
+        try {
+            const user = await validateMobileLogin(username, password);
+            
+            if(user) {
+                currentUserData = user;
+                
+                // Store session data
+                storeUserSession(user);
+                
+                // Hide login with animation
+                const loginOverlay = document.getElementById('loginOverlay');
+                loginOverlay.style.opacity = '0';
+                
+                setTimeout(async () => {
+                    loginOverlay.style.display = 'none';
+                    document.getElementById('dashboardMain').style.display = 'block';
+                    document.body.style.overflow = 'auto';
+                    
+                    // Load menu data
+                    const menuData = await loadMenusAndIcons(user.menuSheet);
+                    menuStructure = menuData;
+                    renderMobileTiles(menuData);
+                    displayUserOnTop(user.username);
+                    loadFlashNews();
+                    
+                    console.log('Login successful, dashboard loaded');
+                }, 300);
+            } else {
+                loginBtn.disabled = false;
+                spinner.classList.add('d-none');
+                btnText.innerText = 'Sign in';
+                showLoginErr('Invalid username or password');
+                document.getElementById('mobilePassword').value = '';
+                document.getElementById('mobileUsername').focus();
+            }
+        } catch(error) {
+            console.error('Login error:', error);
             loginBtn.disabled = false;
             spinner.classList.add('d-none');
             btnText.innerText = 'Sign in';
-            showLoginErr('Invalid username or password');
-            document.getElementById('mobilePassword').value = '';
+            showLoginErr('Unable to verify credentials. Please try again.');
         }
     }
     
@@ -374,79 +510,127 @@
     
     function displayUserOnTop(username) {
         const shortSpan = document.getElementById('userShortName');
-        if(shortSpan) shortSpan.innerText = username.split('@')[0].substring(0,12);
-        const badgeSpan = document.getElementById('userShortName');
-        if(badgeSpan) badgeSpan.title = username;
-    }
-    
-    function checkSession() {
-        const stored = localStorage.getItem('mobileUser');
-        if(stored) {
-            try {
-                const data = JSON.parse(stored);
-                const hours = (Date.now() - data.loginTime) / (1000*3600);
-                if(hours < 24) {
-                    currentUserData = data;
-                    document.getElementById('loginOverlay').style.display = 'none';
-                    document.getElementById('dashboardMain').style.display = 'block';
-                    loadMenusAndIcons(data.menuSheet).then(menu => {
-                        menuStructure = menu;
-                        renderMobileTiles(menu);
-                        displayUserOnTop(data.username);
-                        loadFlashNews();
-                    });
-                    return true;
-                } else { localStorage.removeItem('mobileUser'); }
-            } catch(e) { localStorage.removeItem('mobileUser'); }
+        if(shortSpan) {
+            const displayName = username.split('@')[0].substring(0, 12);
+            shortSpan.innerText = displayName;
+            shortSpan.title = username;
         }
-        return false;
     }
     
+    // Logout function
     function logoutMobile() {
-        localStorage.removeItem('mobileUser');
+        clearUserSession();
         currentUserData = null;
-        document.getElementById('dashboardMain').style.display = 'none';
-        document.getElementById('loginOverlay').style.display = 'flex';
-        document.getElementById('loginOverlay').style.opacity = '1';
+        
+        const dashboardMain = document.getElementById('dashboardMain');
+        const loginOverlay = document.getElementById('loginOverlay');
+        const iframeModal = document.getElementById('iframeModal');
+        
+        dashboardMain.style.display = 'none';
+        loginOverlay.style.display = 'flex';
+        loginOverlay.style.opacity = '1';
+        
+        // Clear input fields
         document.getElementById('mobileUsername').value = '';
         document.getElementById('mobilePassword').value = '';
+        
+        // Close iframe modal if open
         if(iframeModal) iframeModal.style.display = 'none';
+        
         document.body.style.overflow = '';
+        
+        // Focus on username field
+        setTimeout(() => {
+            document.getElementById('mobileUsername').focus();
+        }, 100);
+        
+        console.log('User logged out');
     }
     
-    // Event listeners
+    // ========== INITIALIZATION ==========
     document.addEventListener('DOMContentLoaded', () => {
+        console.log('DOM loaded, initializing app...');
+        
+        // Set up event listeners
         const loginBtn = document.getElementById('mobileLoginBtn');
         if(loginBtn) loginBtn.addEventListener('click', handleMobileLogin);
+        
         const logoutBtn = document.getElementById('mobileLogoutBtn');
         if(logoutBtn) logoutBtn.addEventListener('click', logoutMobile);
+        
         const closeBtn = document.getElementById('closeIframeBtn');
         if(closeBtn) closeBtn.addEventListener('click', closeIframePopup);
-        // press enter on login
+        
+        // Enter key handlers
         const pwdField = document.getElementById('mobilePassword');
-        if(pwdField) pwdField.addEventListener('keypress', (e) => { if(e.key === 'Enter') handleMobileLogin(); });
+        if(pwdField) {
+            pwdField.addEventListener('keypress', (e) => { 
+                if(e.key === 'Enter') handleMobileLogin(); 
+            });
+        }
+        
         const userField = document.getElementById('mobileUsername');
-        if(userField) userField.addEventListener('keypress', (e) => { if(e.key === 'Enter') pwdField.focus(); });
-        const sessionExists = checkSession();
-        if(!sessionExists) {
+        if(userField) {
+            userField.addEventListener('keypress', (e) => { 
+                if(e.key === 'Enter') pwdField.focus(); 
+            });
+        }
+        
+        // Input handlers to hide error
+        const usernameInput = document.getElementById('mobileUsername');
+        const passwordInput = document.getElementById('mobilePassword');
+        if(usernameInput) usernameInput.addEventListener('input', () => hideLoginError());
+        if(passwordInput) passwordInput.addEventListener('input', () => hideLoginError());
+        
+        function hideLoginError() {
+            const errDiv = document.getElementById('loginErrorMsg');
+            if(errDiv) errDiv.style.display = 'none';
+        }
+        
+        // Check for existing session
+        const hasSession = checkExistingSession();
+        
+        if(hasSession && currentUserData) {
+            console.log('Restoring session for:', currentUserData.username);
+            // Show dashboard immediately
+            document.getElementById('loginOverlay').style.display = 'none';
+            document.getElementById('dashboardMain').style.display = 'block';
+            
+            // Load menu data
+            loadMenusAndIcons(currentUserData.menuSheet).then(menu => {
+                menuStructure = menu;
+                renderMobileTiles(menu);
+                displayUserOnTop(currentUserData.username);
+                loadFlashNews();
+                console.log('Session restored successfully');
+            }).catch(err => {
+                console.error('Failed to restore session menu:', err);
+                logoutMobile();
+            });
+        } else {
+            console.log('No valid session found, showing login screen');
             document.getElementById('loginOverlay').style.display = 'flex';
             document.getElementById('dashboardMain').style.display = 'none';
+            setTimeout(() => {
+                document.getElementById('mobileUsername').focus();
+            }, 100);
         }
-        // adjust flash animation reset on window resize (optional)
-        window.addEventListener('resize', () => { if(document.getElementById('flashNewsStrip') && !document.getElementById('flashNewsStrip').classList.contains('hidden')) { /* keep ticker */ } });
     });
     
     // Service worker registration
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('mobile-sw.js').catch(err => console.log('SW error', err));
+            navigator.serviceWorker.register('mobile-sw.js')
+                .then(registration => {
+                    console.log('ServiceWorker registered successfully:', registration.scope);
+                })
+                .catch(err => console.log('ServiceWorker registration failed:', err));
         });
     }
 </script>
 
-<!-- Separate CSS content for mobile app (light theme, tiles with icon+label at bottom) -->
 <style>
-    /* mobile-style.css equivalent */
+    /* mobile-style.css equivalent - same as before */
     * { margin:0; padding:0; box-sizing: border-box; }
     body.mobile-app { font-family: 'Inter', 'Noto Sans Malayalam', system-ui, -apple-system, sans-serif; background: #f1f5f9; overflow-x: hidden; height: 100vh; }
     .light-theme { --bg-surface: #ffffff; --bg-soft: #f8fafc; --primary: #0f3b6a; --primary-dark: #0457a4; --text-primary: #0f172a; --text-secondary: #334155; --border: #e2e8f0; --card-shadow: 0 8px 20px rgba(0,0,0,0.03), 0 2px 6px rgba(0,0,0,0.05); }
@@ -459,8 +643,9 @@
     .login-header h2 { font-size: 1.7rem; font-weight: 700; color: #0f3b6a; margin: 0;}
     .login-body { padding: 20px 24px 32px; }
     .form-control { border-radius: 44px; border: 1px solid #cbd5e1; padding: 12px 20px; background: #fefefe; font-size: 1rem;}
-    .btn-primary { background: #0f3b6a; border: none; border-radius: 44px; padding: 12px; font-weight: 600; letter-spacing: 0.3px;}
-    .login-error { background: #fee2e2; color: #b91c1c; border-radius: 60px; padding: 8px 16px; font-size: 0.85rem; gap:8px; margin-bottom: 16px;}
+    .btn-primary { background: #0f3b6a; border: none; border-radius: 44px; padding: 12px; font-weight: 600; letter-spacing: 0.3px; cursor: pointer;}
+    .btn-primary:disabled { opacity: 0.7; cursor: not-allowed; }
+    .login-error { background: #fee2e2; color: #b91c1c; border-radius: 60px; padding: 8px 16px; font-size: 0.85rem; gap:8px; margin-bottom: 16px; display: flex; align-items: center;}
     /* DASHBOARD */
     .dashboard-main { display: flex; flex-direction: column; height: 100vh; background: #f1f5f9; overflow-y: auto; }
     .mobile-top-bar { background: white; padding: 12px 18px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; position: sticky; top:0; z-index: 10; box-shadow: 0 1px 3px rgba(0,0,0,0.03);}
@@ -471,7 +656,7 @@
     .top-actions { display: flex; align-items: center; gap: 12px;}
     .user-badge { background: #eef2ff; padding: 5px 10px; border-radius: 40px; display: flex; align-items: center; gap: 6px; font-weight: 500; font-size:0.8rem;}
     .logout-mobile-btn { background: none; border: none; font-size: 1.4rem; color: #4b5563; cursor: pointer; padding: 5px;}
-    /* Flash news strip */
+    /* Flash news */
     .flash-strip { background: #0f3b6a; color: white; overflow: hidden; white-space: nowrap; padding: 8px 0; font-size: 0.75rem; border-radius: 0; margin-bottom: 6px;}
     .flash-strip.hidden { display: none; }
     .ticker-wrap { display: inline-block; white-space: nowrap; padding-left: 100%; animation: tickerScroll 20s linear infinite; }
@@ -491,16 +676,16 @@
     /* IFRAME MODAL */
     .iframe-modal { position: fixed; top:0; left:0; width:100%; height:100%; background: white; z-index: 20000; display: flex; flex-direction: column; }
     .modal-header-bar { background: #0f3b6a; color: white; padding: 14px 12px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e4a76; }
-    .back-to-menu-btn { background: rgba(255,255,255,0.2); border: none; border-radius: 40px; padding: 8px 16px; color: white; font-weight: 500; display: flex; align-items: center; gap: 6px; font-size: 0.9rem;}
+    .back-to-menu-btn { background: rgba(255,255,255,0.2); border: none; border-radius: 40px; padding: 8px 16px; color: white; font-weight: 500; display: flex; align-items: center; gap: 6px; font-size: 0.9rem; cursor: pointer;}
     .modal-title-text { font-weight: 600; font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 50vw;}
     .modal-iframe { width: 100%; flex: 1; border: none; background: #fff; transition: opacity 0.2s;}
     .iframe-loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 12px 24px; border-radius: 100px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 12px; z-index: 10;}
     .empty-state { text-align: center; padding: 48px 16px; color: #6c757d; background: white; border-radius: 32px;}
+    .loading-spinner { text-align: center; padding: 20px; color: #6c757d; }
     /* Responsive */
     @media (max-width: 480px) { .tiles-grid { grid-template-columns: repeat(3, 1fr); } .menu-tile { padding: 12px 4px; } .tile-icon i { font-size: 1.8rem; } .tile-label { font-size: 0.65rem; } }
     @keyframes fadeUp { from { opacity: 0; transform: translateY(20px);} to { opacity: 1; transform: translateY(0);} }
     ::-webkit-scrollbar { width: 4px; }
 </style>
-<!-- Note: manifest, sw.js files are provided as separate files: mobile-manifest.json and mobile-sw.js -->
 </body>
 </html>
