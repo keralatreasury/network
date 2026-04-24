@@ -8,8 +8,8 @@ const urlsToCache = [
     `${BASE_PATH}/app.html`,
     `${BASE_PATH}/mobile-manifest.json`,
     `${BASE_PATH}/mobile-style.css`,
-    `https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css`,
-    `https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css`,
+    `./css/bootstrap.min.css`,
+    `.css/bootstrap-icons.min.css`,
     `https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&family=Noto+Sans+Malayalam:wght@400;500&display=swap`
 ];
 
