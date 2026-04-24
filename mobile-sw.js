@@ -7,9 +7,9 @@ const urlsToCache = [
     `${BASE_PATH}/`,
     `${BASE_PATH}/app.html`,
     `${BASE_PATH}/mobile-manifest.json`,
-    `${BASE_PATH}/mobile-style.css`,
-    `./css/bootstrap.min.css`,
-    `.css/bootstrap-icons.min.css`,
+   
+    `${BASE_PATH}/css/bootstrap.min.css`,
+    `${BASE_PATH}/css/bootstrap-icons.min.css`,
     `https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&family=Noto+Sans+Malayalam:wght@400;500&display=swap`
 ];
 
