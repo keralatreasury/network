@@ -330,6 +330,61 @@
             width: 100%;
         }
         
+        /* Stats Summary Cards */
+        .stats-summary {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid #e2e8f0;
+            justify-content: center;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+            border-radius: 20px;
+            padding: 16px 24px;
+            flex: 1;
+            min-width: 140px;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            border-color: var(--primary);
+        }
+        
+        .stat-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            font-weight: 700;
+            color: #64748b;
+            margin-bottom: 8px;
+        }
+        
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--primary);
+            line-height: 1.2;
+        }
+        
+        .stat-sub {
+            font-size: 0.7rem;
+            color: #94a3b8;
+            margin-top: 4px;
+        }
+        
+        .stat-card.success .stat-value { color: #10b981; }
+        .stat-card.warning .stat-value { color: #f59e0b; }
+        .stat-card.info .stat-value { color: #0f5b9c; }
+        
         .dataTables_wrapper .dataTables_filter input,
         .dataTables_wrapper .dataTables_length select {
             border-radius: 40px;
@@ -425,6 +480,8 @@
             iframe { height: 350px; }
             .tab-content { padding: 16px !important; }
             canvas { max-height: 250px; }
+            .stat-card { min-width: 120px; padding: 12px 16px; }
+            .stat-value { font-size: 1.3rem; }
         }
     </style>
 </head>
@@ -433,9 +490,8 @@
     <div class="page-header d-flex align-items-center">
         <i class="bi bi-graph-up me-3"></i>
         <div>
-            <h2 class="mb-0">NMS Data Monitor</h2>
-            <small>Web Scraper | Auto Monitoring | Report Engine</small>
-        </div>
+            <h2 class="mb-0">NMS Data Monitor- Logs</h2>
+                   </div>
     </div>
 
     <div class="card-db">
@@ -537,7 +593,7 @@
                 <div class="compact-card">
                     <h6><i class="bi bi-code-square"></i> CSS Selector for Auto Extraction</h6>
                     <div class="d-flex gap-2">
-                        <input type="text" id="autoSelector" class="form-control" value ="CPU Utilization" placeholder="e.g., .price, #memory-value">
+                        <input type="text" id="autoSelector" class="form-control" value="CPU Utilization" placeholder="e.g., .price, #memory-value">
                         <button id="testExtractBtn" class="btn-outline-custom">Test Extract</button>
                     </div>
                     <small class="text-muted">Element value will be auto-captured at each interval</small>
@@ -592,17 +648,41 @@
                 <!-- Graphical Representation Section -->
                 <div class="chart-container" id="chartSection" style="display: none;">
                     <div class="chart-header">
-                        <h6><i class="bi bi-bar-chart-steps"></i> Value Trend Analysis</h6>
+                        <h6><i class="bi bi-bar-chart-steps"></i>Captured Log Trend Analysis</h6>
                         <button id="downloadChartBtn" class="btn-download-chart"><i class="bi bi-camera"></i> Download Graph (PNG)</button>
                     </div>
                     <canvas id="trendChart" width="400" height="200" style="max-height: 350px; width: 100%;"></canvas>
-                    <div class="mt-2 text-center">
-                        <small class="text-muted"><i class="bi bi-graph-up"></i> Line chart showing captured values over time (based on log entries)</small>
+                    
+                    <!-- Statistics Summary Cards (No Sum) -->
+                    <div class="stats-summary" id="statsSummary">
+                        <div class="stat-card info">
+                            <div class="stat-label"><i class="bi bi-database"></i> Total Records</div>
+                            <div class="stat-value" id="statCount">0</div>
+                            <div class="stat-sub">entries</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label"><i class="bi bi-calculator"></i> Average Value</div>
+                            <div class="stat-value" id="statAvg">0.00</div>
+                            <div class="stat-sub">mean</div>
+                        </div>
+                        <div class="stat-card success">
+                            <div class="stat-label"><i class="bi bi-arrow-up-circle"></i> Maximum Value</div>
+                            <div class="stat-value" id="statMax">0.00</div>
+                            <div class="stat-sub">peak</div>
+                        </div>
+                        <div class="stat-card warning">
+                            <div class="stat-label"><i class="bi bi-arrow-down-circle"></i> Minimum Value</div>
+                            <div class="stat-value" id="statMin">0.00</div>
+                            <div class="stat-sub">lowest</div>
+                        </div>
+                    </div>
+                    <div class="mt-3 text-center">
+                        <small class="text-muted"><i class="bi bi-info-circle"></i> Statistics calculated from numeric values in the Value column</small>
                     </div>
                 </div>
                 
                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-                    <h5 class="mb-0"><i class="bi bi-database"></i> Captured Values Logs</h5>
+                    <h5 class="mb-0"><i class="bi bi-database"></i>Captured Log Table</h5>
                     <div class="btn-group">
                         <button id="exportCsvBtn" class="btn btn-sm btn-success rounded-pill"><i class="bi bi-filetype-csv"></i> CSV</button>
                         <button id="exportPdfBtn" class="btn btn-sm btn-danger rounded-pill"><i class="bi bi-filetype-pdf"></i> PDF</button>
@@ -760,26 +840,140 @@ function parseDate(dateStr) {
     return null;
 }
 
+function extractNumericValue(valueStr) {
+    if (!valueStr || valueStr === '') return null;
+    // Try to extract numeric value from string (handles values like "123", "45.67", "$123.45", "123 MB", etc.)
+    const match = valueStr.toString().match(/-?\d+(?:\.\d+)?/);
+    if (match) {
+        const num = parseFloat(match[0]);
+        return isNaN(num) ? null : num;
+    }
+    return null;
+}
+
+function calculateStatistics(dataRows) {
+    const numericValues = [];
+    let validCount = 0;
+    
+    dataRows.forEach(row => {
+        if (row.value && row.value !== '') {
+            const numVal = extractNumericValue(row.value);
+            if (numVal !== null) {
+                numericValues.push(numVal);
+                validCount++;
+            }
+        }
+    });
+    
+    if (numericValues.length === 0) {
+        return { 
+            count: dataRows.length, 
+            avg: 0, 
+            max: 0, 
+            min: 0,
+            numericCount: 0
+        };
+    }
+    
+    const sum = numericValues.reduce((a, b) => a + b, 0);
+    const avg = sum / numericValues.length;
+    const max = Math.max(...numericValues);
+    const min = Math.min(...numericValues);
+    
+    return {
+        count: dataRows.length,
+        avg: avg,
+        max: max,
+        min: min,
+        numericCount: numericValues.length
+    };
+}
+
+function updateStatisticsDisplay(stats) {
+    $('#statCount').text(stats.count);
+    
+    // Format with appropriate decimal places
+    if (stats.avg !== 0 && stats.numericCount > 0) {
+        $('#statAvg').text(stats.avg.toFixed(2));
+    } else {
+        $('#statAvg').text('0.00');
+    }
+    
+    if (stats.max !== 0 && stats.numericCount > 0) {
+        $('#statMax').text(stats.max.toFixed(2));
+    } else {
+        $('#statMax').text('0.00');
+    }
+    
+    if (stats.min !== 0 && stats.numericCount > 0) {
+        $('#statMin').text(stats.min.toFixed(2));
+    } else {
+        $('#statMin').text('0.00');
+    }
+    
+    // Add tooltip or info if no numeric values found
+    if (stats.numericCount === 0 && stats.count > 0) {
+        $('#statAvg').attr('title', 'No numeric values found in the Value column');
+        $('#statMax').attr('title', 'No numeric values found in the Value column');
+        $('#statMin').attr('title', 'No numeric values found in the Value column');
+    } else {
+        $('#statAvg').removeAttr('title');
+        $('#statMax').removeAttr('title');
+        $('#statMin').removeAttr('title');
+    }
+}
+
 function renderChart(dataRows) {
     if (!dataRows || dataRows.length === 0) {
         $('#chartSection').hide();
         return;
     }
     
-    // Prepare data for chart: group by date and take latest value per day or show all points
+    // Calculate and display statistics
+    const stats = calculateStatistics(dataRows);
+    updateStatisticsDisplay(stats);
+    
+    // Prepare data for chart - extract numeric values
     const chartData = [];
     const chartLabels = [];
     
     dataRows.forEach(row => {
-        if (row.value && !isNaN(parseFloat(row.value))) {
-            const dateTime = `${row.date} ${row.time}`;
-            chartLabels.push(dateTime);
-            chartData.push(parseFloat(row.value));
+        if (row.value && row.value !== '') {
+            const numVal = extractNumericValue(row.value);
+            if (numVal !== null) {
+                const dateTime = `${row.date} ${row.time}`;
+                chartLabels.push(dateTime);
+                chartData.push(numVal);
+            }
         }
     });
     
     if (chartData.length === 0) {
-        $('#chartSection').hide();
+        $('#chartSection').show();
+        // Show message in chart area
+        const ctx = document.getElementById('trendChart').getContext('2d');
+        if (trendChart) trendChart.destroy();
+        
+        // Create empty chart with message
+        trendChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['No numeric data'],
+                datasets: [{
+                    label: 'No numeric values found in selected range',
+                    data: [0],
+                    borderColor: '#cbd5e1',
+                    backgroundColor: 'rgba(203, 213, 225, 0.1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
         return;
     }
     
@@ -795,7 +989,7 @@ function renderChart(dataRows) {
         data: {
             labels: chartLabels,
             datasets: [{
-                label: 'Captured Value',
+                label: 'Captured Value (numeric)',
                 data: chartData,
                 borderColor: '#0f5b9c',
                 backgroundColor: 'rgba(15, 91, 156, 0.1)',
@@ -832,7 +1026,7 @@ function renderChart(dataRows) {
                     beginAtZero: true,
                     title: {
                         display: true,
-                        text: 'Value',
+                        text: 'Numeric Value',
                         color: '#64748b'
                     },
                     grid: {
@@ -942,7 +1136,7 @@ async function refreshTableWithFilter() {
     const rows = await loadLogsWithDateFilter(fromDate, toDate);
     currentFilteredData = rows;
     
-    // Render chart with the data
+    // Render chart with the data (this will also update statistics)
     renderChart(rows);
     
     if ($.fn.DataTable.isDataTable('#logsTable')) {
@@ -975,6 +1169,7 @@ async function refreshTableWithFilter() {
     
     if (rows.length === 0) {
         showToast(`No records found between ${fromDate} and ${toDate}`, 'info');
+        $('#chartSection').hide();
     } else {
         showToast(`Displaying ${rows.length} records in sheet order`, 'success');
     }
