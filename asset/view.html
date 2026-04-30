@@ -163,10 +163,10 @@
             background: linear-gradient(135deg, #1a4b7a 0%, #1a4b7a 100%);
             color: white;
             font-weight: 500;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             vertical-align: middle;
             white-space: nowrap;
-            padding: 12px 10px;
+            padding: 12px 8px;
             border-right: 1px solid rgba(255,255,255,0.1);
         }
         
@@ -175,7 +175,7 @@
         }
         
         .table td {
-            padding: 10px;
+            padding: 10px 8px;
             vertical-align: middle;
             font-size: 0.85rem;
             color: #1e293b;
@@ -193,6 +193,8 @@
             border-radius: 30px;
             font-size: 0.7rem;
             font-weight: 500;
+            display: inline-block;
+            text-align: center;
         }
         
         .badge-not-working {
@@ -202,6 +204,8 @@
             border-radius: 30px;
             font-size: 0.7rem;
             font-weight: 500;
+            display: inline-block;
+            text-align: center;
         }
         
         .badge-confirm {
@@ -211,6 +215,8 @@
             border-radius: 30px;
             font-size: 0.7rem;
             font-weight: 500;
+            display: inline-block;
+            text-align: center;
         }
         
         .badge-pending {
@@ -220,6 +226,19 @@
             border-radius: 30px;
             font-size: 0.7rem;
             font-weight: 500;
+            display: inline-block;
+            text-align: center;
+        }
+        
+        .lan-pool-badge {
+            background-color: #e6f0fa;
+            color: #0f5b9c;
+            padding: 4px 10px;
+            border-radius: 30px;
+          /* font-size: 0.7rem;*/
+            font-weight: 500;
+            font-family: monospace;
+            display: inline-block;
         }
         
         .ip-link {
@@ -231,6 +250,12 @@
         
         .ip-link:hover {
             text-decoration: underline;
+        }
+        
+        .serial-cell {
+            color: #64748b;
+            font-weight: 500;
+            text-align: center;
         }
         
         .empty-cell {
@@ -300,11 +325,6 @@
             min-height: 46px;
         }
         
-        .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
-            color: #1e293b;
-            line-height: 28px;
-        }
-        
         .badge-count {
             background: white;
             color: #0f5b9c;
@@ -356,7 +376,7 @@
         <i class="bi bi-hdd-stack-fill me-3"></i>
         <div>
             <h2 class="mb-0">PC Asset & IP Inventory Report</h2>
-            <small class="opacity-75">SD‑WAN Asset Management System</small>
+            <small class="opacity-75">Treasury SD‑WAN- Onboarded Asset Details</small>
         </div>
     </div>
 
@@ -380,23 +400,26 @@
 
         <!-- tab panes -->
         <div class="tab-content">
-            <!-- pane 1: ALL Assets sorted by Treasury name -->
+            <!-- pane 1: ALL Assets with LAN Pool after IP -->
             <div class="tab-pane fade show active" id="all" role="tabpanel">
                 <div class="table-responsive">
                     <table id="assetFullTable" class="table table-hover" style="width:100%">
                         <thead>
                             <tr>
-                                <th>Treasury / Branch</th>
+                                <th>#</th>
                                 <th>District</th>
+                                <th>Treasury / Branch</th>
+                                <th>Branch Code</th>
                                 <th>Asset ID</th>
-                                <th>IP Assigned</th>
+                                <th>IP Address</th>
+                                <th>LAN Pool</th>
                                 <th>Working Status</th>
                                 <th>Confirm Status</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
-                                <td colspan="6" class="text-center py-5">
+                                <td colspan="9" class="text-center py-5">
                                     <div class="spinner-border text-primary" role="status">
                                         <span class="visually-hidden">Loading...</span>
                                     </div>
@@ -408,7 +431,7 @@
                 </div>
             </div>
 
-            <!-- pane 2: District wise view -->
+            <!-- pane 2: District wise view with LAN Pool after IP -->
             <div class="tab-pane fade" id="district" role="tabpanel">
                 <div class="filter-panel">
                     <div style="flex: 2; min-width: 300px;">
@@ -434,16 +457,20 @@
                     <table id="districtAssetTable" class="table table-hover" style="width:100%">
                         <thead>
                             <tr>
+                                <th>#</th>
+                                <th>District</th>
                                 <th>Treasury / Branch</th>
+                                <th>Branch Code</th>
                                 <th>Asset ID</th>
-                                <th>IP Assigned</th>
+                                <th>IP Address</th>
+                                <th>LAN Pool</th>
                                 <th>Working Status</th>
                                 <th>Confirm Status</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
-                                <td colspan="5" class="text-center py-5">
+                                <td colspan="9" class="text-center py-5">
                                     <i class="bi bi-arrow-up-circle fs-1 text-muted"></i>
                                     <p class="mt-2 text-muted">Select a district and click "View Assets"</p>
                                 </td>
@@ -475,7 +502,7 @@
     let allAssets = [];
 
     // ----------------------------------------------
-    // 1. LOAD SETTINGS (District mapping)
+    // 1. LOAD SETTINGS (District mapping & LAN Pool)
     // ----------------------------------------------
     async function loadSettings() {
         try {
@@ -485,7 +512,6 @@
             const rows = data.values || [];
             
             const map = {};
-            const districts = new Set();
             
             for(let i = 1; i < rows.length; i++) {
                 const row = rows[i];
@@ -495,30 +521,11 @@
                 const lanPool = row[3] ? row[3].trim() : "";
                 
                 if(branch) {
-                    map[branch] = { district, treasury, lanPool };
-                    if(district) districts.add(district);
+                    map[branch] = { district, treasury, lanPool, branchCode: branch.length >= 4 ? branch.slice(-4) : branch };
                 }
             }
             
             settingsMap = map;
-            districtList = Array.from(districts).sort((a, b) => a.localeCompare(b));
-            
-            // Populate district dropdown
-            const $select = $('#districtSelect');
-            $select.empty().append('<option value="">-- Choose a district --</option>');
-            districtList.forEach(d => {
-                $select.append(`<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`);
-            });
-            
-            $('#districtSelect').select2({
-                theme: 'bootstrap-5',
-                width: '100%',
-                placeholder: 'Type or select district',
-                allowClear: true
-            });
-            
-            $('#totalDistricts').text(districtList.length);
-            
             return map;
         } catch(e) {
             console.error("Error loading settings:", e);
@@ -547,13 +554,39 @@
                 confirm: (row[7] || "").trim() === "Yes" ? "Yes" : "No"
             }));
             
-            // If district is empty in asset, try to map from settings
+            // If district/treasury is empty in asset, try to map from settings
             allAssets.forEach(asset => {
-                if (!asset.district && asset.branch && settingsMap[asset.branch]) {
-                    asset.district = settingsMap[asset.branch].district;
-                    asset.treasury = settingsMap[asset.branch].treasury;
+                if ((!asset.district || !asset.treasury) && asset.branch && settingsMap[asset.branch]) {
+                    if (!asset.district) asset.district = settingsMap[asset.branch].district;
+                    if (!asset.treasury) asset.treasury = settingsMap[asset.branch].treasury;
                 }
             });
+            
+            // Extract unique districts from assets
+            const districtsSet = new Set();
+            allAssets.forEach(asset => {
+                if (asset.district && asset.district !== '') {
+                    districtsSet.add(asset.district);
+                }
+            });
+            districtList = Array.from(districtsSet).sort((a, b) => a.localeCompare(b));
+            
+            // Populate district dropdown
+            const $select = $('#districtSelect');
+            $select.empty().append('<option value="">-- Choose a district --</option>');
+            districtList.forEach(d => {
+                $select.append(`<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`);
+            });
+            
+            $('#districtSelect').select2({
+                theme: 'bootstrap-5',
+                width: '100%',
+                placeholder: 'Type or select district',
+                allowClear: true
+            });
+            
+            $('#totalDistricts').text(districtList.length);
+            $('#districtCount').text(allAssets.length);
             
             // Sort by treasury name
             allAssets.sort((a, b) => (a.treasury || a.branch || "").localeCompare(b.treasury || b.branch || ""));
@@ -566,7 +599,7 @@
             console.error("Error loading assets:", e);
             document.querySelector('#assetFullTable tbody').innerHTML = `
                 <tr>
-                    <td colspan="6" class="text-center py-5 text-danger">
+                    <td colspan="9" class="text-center py-5 text-danger">
                         <i class="bi bi-exclamation-triangle-fill fs-1"></i>
                         <p class="mt-2">Failed to load asset data. Please check connection.</p>
                     </td>
@@ -576,13 +609,13 @@
     }
 
     // ----------------------------------------------
-    // 3. RENDER ALL ASSETS TABLE
+    // 3. RENDER ALL ASSETS TABLE (LAN Pool after IP)
     // ----------------------------------------------
     function renderAllTable(assets) {
         const tbody = document.querySelector('#assetFullTable tbody');
         
         if (!assets || assets.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-5">No asset records found</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="9" class="text-center py-5">No asset records found</td></tr>`;
             if ($.fn.DataTable.isDataTable('#assetFullTable')) {
                 $('#assetFullTable').DataTable().destroy();
             }
@@ -590,15 +623,22 @@
         }
 
         let htmlRows = '';
+        let serialNo = 1;
+        
         assets.forEach(asset => {
-            const displayName = asset.treasury || asset.branch || '—';
             const districtName = asset.district || '—';
+            const treasuryName = asset.treasury || asset.branch || '—';
+            const branchCode = (asset.branch && asset.branch.length >= 4) ? asset.branch.slice(-4) : (asset.branch || '—');
+            const lanPool = getLanPool(asset.branch);
             
             htmlRows += `<tr>
-                <td><strong>${escapeHtml(displayName)}</strong></td>
+                <td class="serial-cell">${serialNo++}</td>
                 <td>${escapeHtml(districtName)}</td>
+                <td><strong>${escapeHtml(treasuryName)}</strong></td>
+                <td><code>${escapeHtml(branchCode)}</code></td>
                 <td><code>${escapeHtml(asset.assetId || '—')}</code></td>
                 <td>${formatIp(asset.ipAssigned)}</td>
+                <td>${getLanPoolBadge(lanPool)}</td>
                 <td>${getWorkingBadge(asset.workingStatus)}</td>
                 <td>${getConfirmBadge(asset.confirm)}</td>
             </tr>`;
@@ -627,18 +667,22 @@
                 infoFiltered: '(filtered from _MAX_ total assets)'
             },
             columnDefs: [
-                { targets: 0, width: '220px' },
+                { targets: 0, width: '50px', orderable: true },
                 { targets: 1, width: '150px' },
-                { targets: 2, width: '180px' },
-                { targets: 3, width: '140px' },
-                { targets: 4, width: '110px' },
-                { targets: 5, width: '110px' }
-            ]
+                { targets: 2, width: '200px' },
+                { targets: 3, width: '100px' },
+                { targets: 4, width: '160px' },
+                { targets: 5, width: '130px' },
+                { targets: 6, width: '120px' },
+                { targets: 7, width: '120px' },
+                { targets: 8, width: '120px' }
+            ],
+            order: [[2, 'asc']]  // Sort by Treasury/Branch column
         });
     }
 
     // ----------------------------------------------
-    // 4. DISTRICT WISE VIEW
+    // 4. DISTRICT WISE VIEW (LAN Pool after IP)
     // ----------------------------------------------
     function renderDistrictTable(selectedDistrict) {
         const $tbody = $('#districtAssetTable tbody');
@@ -652,7 +696,7 @@
         $tbody.empty();
 
         if (!selectedDistrict || !allAssets.length) {
-            $tbody.html('<tr><td colspan="5" class="text-center py-4"><span class="text-muted">No district selected or data missing</span></td></tr>');
+            $tbody.html('<tr><td colspan="9" class="text-center py-4"><span class="text-muted">No district selected or data missing</span></td></tr>');
             $info.text('0');
             return;
         }
@@ -668,7 +712,7 @@
         if (filtered.length === 0) {
             $tbody.html(`
                 <tr>
-                    <td colspan="5" class="text-center py-5">
+                    <td colspan="9" class="text-center py-5">
                         <i class="bi bi-building-slash fs-1 text-muted"></i>
                         <p class="mt-2">No assets found for district "${escapeHtml(selectedDistrict)}"</p>
                     </td>
@@ -677,16 +721,26 @@
             return;
         }
 
-        // Build rows - sorted by treasury name
+        // Sort filtered assets by treasury name
         filtered.sort((a, b) => (a.treasury || a.branch || "").localeCompare(b.treasury || b.branch || ""));
         
         let html = '';
+        let serialNo = 1;
+        
         filtered.forEach(asset => {
-            const displayName = asset.treasury || asset.branch || '—';
+            const districtName = asset.district || selectedDistrict;
+            const treasuryName = asset.treasury || asset.branch || '—';
+            const branchCode = (asset.branch && asset.branch.length >= 4) ? asset.branch.slice(-4) : (asset.branch || '—');
+            const lanPool = getLanPool(asset.branch);
+            
             html += `<tr>
-                <td><strong>${escapeHtml(displayName)}</strong></td>
+                <td class="serial-cell">${serialNo++}</td>
+                <td>${escapeHtml(districtName)}</td>
+                <td><strong>${escapeHtml(treasuryName)}</strong></td>
+                <td><code>${escapeHtml(branchCode)}</code></td>
                 <td><code>${escapeHtml(asset.assetId || '—')}</code></td>
                 <td>${formatIp(asset.ipAssigned)}</td>
+                <td>${getLanPoolBadge(lanPool)}</td>
                 <td>${getWorkingBadge(asset.workingStatus)}</td>
                 <td>${getConfirmBadge(asset.confirm)}</td>
             </tr>`;
@@ -710,18 +764,35 @@
             },
             destroy: true,
             columnDefs: [
-                { targets: 0, width: '250px' },
-                { targets: 1, width: '200px' },
-                { targets: 2, width: '150px' },
-                { targets: 3, width: '120px' },
-                { targets: 4, width: '120px' }
-            ]
+                { targets: 0, width: '50px' },
+                { targets: 1, width: '150px' },
+                { targets: 2, width: '200px' },
+                { targets: 3, width: '100px' },
+                { targets: 4, width: '160px' },
+                { targets: 5, width: '130px' },
+                { targets: 6, width: '120px' },
+                { targets: 7, width: '120px' },
+                { targets: 8, width: '120px' }
+            ],
+            order: [[2, 'asc']]
         });
     }
 
     // ----------------------------------------------
     // UTILITY FUNCTIONS
     // ----------------------------------------------
+    function getLanPool(branch) {
+        if (branch && settingsMap[branch] && settingsMap[branch].lanPool) {
+            return settingsMap[branch].lanPool;
+        }
+        return null;
+    }
+    
+    function getLanPoolBadge(lanPool) {
+        if (!lanPool) return '<span class="empty-cell">—</span>';
+        return `<span class="lan-pool-badge"><i class="bi bi-hdd-network me-1"></i>${escapeHtml(lanPool)}</span>`;
+    }
+
     function formatIp(ip) {
         if (!ip || ip === '—') return '<span class="empty-cell">—</span>';
         return `<a href="tel:${escapeHtml(ip)}" class="ip-link">${escapeHtml(ip)}</a>`;
@@ -778,7 +849,7 @@
         
         Swal.close();
         
-        // View button click
+        // View button click for district wise
         $('#viewDistrictBtn').on('click', function() {
             const selected = $('#districtSelect').val();
             if (!selected) {
