@@ -152,6 +152,32 @@
             font-size: 1.1rem;
         }
         
+        .btn-export {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            border: none;
+            padding: 12px 32px;
+            font-weight: 500;
+            border-radius: 40px;
+            color: white;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+        
+        .btn-export:hover {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            transform: translateY(-2px);
+        }
+        
+        .btn-export i {
+            font-size: 1.1rem;
+        }
+        code {
+        font-size: 1em !important;
+ 
+       }
         .table {
             margin-bottom: 0;
             border: 1px solid #e9ecef;
@@ -235,7 +261,7 @@
             color: #0f5b9c;
             padding: 4px 10px;
             border-radius: 30px;
-          /* font-size: 0.7rem;*/
+            /*font-size: 0.7rem;*/
             font-weight: 500;
             font-family: monospace;
             display: inline-block;
@@ -356,15 +382,26 @@
             color: #0f5b9c;
         }
         
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        
         @media (max-width: 768px) {
             .filter-panel {
                 flex-direction: column;
                 align-items: stretch;
             }
             
-            .btn-view {
+            .btn-view, .btn-export {
                 width: 100%;
                 justify-content: center;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+                width: 100%;
             }
         }
     </style>
@@ -431,7 +468,7 @@
                 </div>
             </div>
 
-            <!-- pane 2: District wise view with LAN Pool after IP -->
+            <!-- pane 2: District wise view with Export Button -->
             <div class="tab-pane fade" id="district" role="tabpanel">
                 <div class="filter-panel">
                     <div style="flex: 2; min-width: 300px;">
@@ -440,9 +477,12 @@
                         </label>
                         <select id="districtSelect" class="form-select" style="width: 100%;"></select>
                     </div>
-                    <div>
+                    <div class="action-buttons">
                         <button id="viewDistrictBtn" class="btn-view">
                             <i class="bi bi-search"></i> View Assets
+                        </button>
+                        <button id="exportCsvBtn" class="btn-export" style="display: none;">
+                            <i class="bi bi-filetype-csv"></i> Export to CSV
                         </button>
                     </div>
                     <div class="ms-auto">
@@ -496,8 +536,9 @@
     const RANGE_SETTINGS = 'A:D';
 
     // Data storage
-    let assetRows = [];
-    let settingsMap = {};  // branch -> { district, treasury, lanPool }
+    let currentFilteredAssets = [];  // Store currently displayed assets for export
+    let currentSelectedDistrict = '';
+    let settingsMap = {};
     let districtList = [];
     let allAssets = [];
 
@@ -677,7 +718,7 @@
                 { targets: 7, width: '120px' },
                 { targets: 8, width: '120px' }
             ],
-            order: [[2, 'asc']]  // Sort by Treasury/Branch column
+            order: [[2, 'asc']]
         });
     }
 
@@ -698,6 +739,7 @@
         if (!selectedDistrict || !allAssets.length) {
             $tbody.html('<tr><td colspan="9" class="text-center py-4"><span class="text-muted">No district selected or data missing</span></td></tr>');
             $info.text('0');
+            $('#exportCsvBtn').hide();
             return;
         }
 
@@ -707,7 +749,16 @@
             return assetDistrict.toLowerCase() === selectedDistrict.toLowerCase();
         });
 
+        currentFilteredAssets = filtered;
+        currentSelectedDistrict = selectedDistrict;
         $info.text(filtered.length);
+
+        // Show export button if there are records
+        if (filtered.length > 0) {
+            $('#exportCsvBtn').show();
+        } else {
+            $('#exportCsvBtn').hide();
+        }
 
         if (filtered.length === 0) {
             $tbody.html(`
@@ -775,6 +826,105 @@
                 { targets: 8, width: '120px' }
             ],
             order: [[2, 'asc']]
+        });
+    }
+
+    // ----------------------------------------------
+    // 5. EXPORT TO CSV
+    // ----------------------------------------------
+    function exportToCSV() {
+        if (!currentFilteredAssets.length) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'No Data',
+                text: 'No asset data available to export. Please select a district and view assets first.',
+                timer: 2000,
+                showConfirmButton: false
+            });
+            return;
+        }
+        
+        // Prepare CSV headers
+        const headers = [
+            'Sl No',
+            'District',
+            'Treasury / Branch',
+            'Branch Code',
+            'Asset ID',
+            'IP Address',
+            'LAN Pool',
+            'Working Status',
+            'Confirm Status'
+        ];
+        
+        // Prepare CSV rows
+        const rows = [];
+        let serialNo = 1;
+        
+        currentFilteredAssets.forEach(asset => {
+            const districtName = asset.district || currentSelectedDistrict;
+            const treasuryName = asset.treasury || asset.branch || '—';
+            const branchCode = (asset.branch && asset.branch.length >= 4) ? asset.branch.slice(-4) : (asset.branch || '—');
+            const lanPool = getLanPool(asset.branch) || '—';
+            const ipAddress = asset.ipAssigned || '—';
+            const workingStatus = asset.workingStatus === 'Yes' ? 'Working' : 'Not Working';
+            const confirmStatus = asset.confirm === 'Yes' ? 'Confirmed' : 'Pending';
+            
+            rows.push([
+                serialNo++,
+                districtName,
+                treasuryName,
+                branchCode,
+                asset.assetId || '—',
+                ipAddress,
+                lanPool,
+                workingStatus,
+                confirmStatus
+            ]);
+        });
+        
+        // Sort rows by Treasury/Branch name
+        rows.sort((a, b) => a[2].localeCompare(b[2]));
+        
+        // Reset serial numbers after sorting
+        rows.forEach((row, idx) => {
+            row[0] = idx + 1;
+        });
+        
+        // Combine headers and rows
+        const csvContent = [headers, ...rows];
+        
+        // Convert to CSV string
+        const csvString = csvContent.map(row => 
+            row.map(cell => {
+                // Escape quotes and wrap in quotes if contains comma or quotes
+                const cellStr = String(cell);
+                if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
+                    return `"${cellStr.replace(/"/g, '""')}"`;
+                }
+                return cellStr;
+            }).join(',')
+        ).join('\n');
+        
+        // Add BOM for UTF-8 encoding
+        const blob = new Blob(['\uFEFF' + csvString], { type: 'text/csv;charset=utf-8;' });
+        
+        // Create download link
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `asset_report_${currentSelectedDistrict.replace(/[^a-zA-Z0-9]/g, '_')}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        Swal.fire({
+            icon: 'success',
+            title: 'Export Successful!',
+            text: `${currentFilteredAssets.length} records exported for district: ${currentSelectedDistrict}`,
+            timer: 2000,
+            showConfirmButton: false
         });
     }
 
@@ -864,6 +1014,9 @@
             }
             renderDistrictTable(selected);
         });
+        
+        // Export CSV button click
+        $('#exportCsvBtn').on('click', exportToCSV);
         
         // Tab change animation - adjust columns if needed
         $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function(e) {
