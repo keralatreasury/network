@@ -1,0 +1,242 @@
+<!-- category.html - Filter posts by category -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Category - Blog Posts</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        :root { --primary: #4f46e5; --gray-bg: #f8fafc; }
+        body { background: var(--gray-bg); font-family: 'Inter', system-ui, sans-serif; }
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .category-header {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white;
+            padding: 3rem 0;
+            margin-bottom: 2rem;
+            border-radius: 0 0 2rem 2rem;
+        }
+        .card-blog {
+            border: none;
+            border-radius: 1.25rem;
+            transition: transform 0.2s;
+            background: white;
+            cursor: pointer;
+        }
+        .card-blog:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -12px rgba(0,0,0,0.12); }
+        .category-badge { background: #eef2ff; color: #4f46e5; font-size: 0.7rem; font-weight: 600; padding: 0.25rem 0.75rem; border-radius: 30px; display: inline-block; }
+        .btn-primary-custom { background: #4f46e5; color:white;border: none; border-radius: 40px; padding: 0.4rem 1rem; font-weight: 500; font-size: 0.85rem; color: white; }
+        .btn-primary-custom:hover { background: #4338ca; color: white; }
+        .load-more-trigger { text-align: center; margin: 3rem 0; }
+        footer { border-top: 1px solid #e2e8f0; background: white; margin-top: 3rem; }
+    </style>
+</head>
+<body>
+
+<header id="main-header"></header>
+
+<div class="category-header text-center">
+    <div class="container">
+        <i class="bi bi-tag-fill fs-1 mb-2 d-inline-block"></i>
+        <h1 class="display-5 fw-bold" id="categoryTitle">Loading...</h1>
+        <p class="lead opacity-75" id="postCount"></p>
+    </div>
+</div>
+
+<main class="container py-4">
+    <div class="row g-4" id="postsGrid"></div>
+    <div id="loadMoreTrigger" class="load-more-trigger">
+        <button class="btn btn-outline-primary rounded-pill px-4" id="loadMoreBtn">Load more</button>
+    </div>
+    <div id="noMoreMsg" class="text-center text-muted small d-none">✨ No more posts</div>
+</main>
+
+<footer class="py-4 mt-5">
+    <div class="container text-center text-muted small">
+        <i class="bi bi-dot"></i> Powered by IT Cell Treasury
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="config.js"></script>
+<script>
+    let allPosts = [];
+    let currentCategory = '';
+    let currentLimit = 6;
+    
+    function extractFirstImage(html) {
+        if (!html) return 'https://placehold.co/600x400/e2e8f0/64748b?text=No+Image';
+        const match = html.match(/<img[^>]+src=["']([^"']+)["']/i);
+        return match ? match[1] : 'https://placehold.co/600x400/e2e8f0/64748b?text=Blog+Image';
+    }
+    
+    function stripHtml(html) {
+        let temp = document.createElement("div");
+        temp.innerHTML = html;
+        return temp.textContent || temp.innerText || "";
+    }
+    
+    function navigateToPost(postId) {
+        localStorage.setItem('blogPostId', postId);
+        window.location.href = 'post.html';
+    }
+    
+    async function loadHeaderConfig() {
+        try {
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/configure!A:F?key=${CONFIG.API_KEY}`;
+            const resp = await fetch(url);
+            const data = await resp.json();
+            const rows = data.values || [];
+            let blogTitle = "Blog Studio", logoUrl = "";
+            let menuItems = [];
+            for(let i=1; i<rows.length; i++) {
+                let row = rows[i];
+                let item = row[0]?.trim(), configVal = row[1]?.trim(), menu = row[2]?.trim(), sub = row[3]?.trim(), linkItem = row[4]?.trim(), link = row[5]?.trim();
+                if(item === "Blog Title" && configVal) blogTitle = configVal;
+                if(item === "Blog logo(url)" && configVal) logoUrl = configVal;
+                if(menu && menu !== "Menu") {
+                    let existing = menuItems.find(m => m.name === menu);
+                    if(!existing) {
+                        existing = { name: menu, subItems: [] };
+                        menuItems.push(existing);
+                    }
+                    if(sub && sub !== "Sub Menu" && linkItem && link) {
+                        existing.subItems.push({ label: sub, url: link });
+                    } else if (linkItem && link && (!sub || sub === "Sub Menu")) {
+                        existing.subItems.push({ label: linkItem, url: link });
+                    }
+                }
+            }
+            renderHeader(blogTitle, logoUrl, menuItems);
+        } catch(e) { renderHeader("Blog Studio", "", []); }
+    }
+    
+    function renderHeader(title, logoUrl, menus) {
+        let logoHtml = logoUrl ? `<img src="${logoUrl}" height="35" alt="logo">` : `<i class="bi bi-journal-bookmark-fill fs-3" style="color:#4f46e5"></i>`;
+        let navHtml = `<nav class="navbar navbar-expand-lg bg-white border-bottom sticky-top px-3 px-md-5 py-2 shadow-sm">
+            <div class="container-fluid">
+                <a class="navbar-brand fw-bold" href="./index.html">${logoHtml} ${title}</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#blogNavbar">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="blogNavbar">
+                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0 gap-2">`;
+        menus.forEach(menu => {
+            if(menu.subItems.length) {
+                navHtml += `<li class="nav-item dropdown"><a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">${menu.name}</a><ul class="dropdown-menu">`;
+                menu.subItems.forEach(sub => { navHtml += `<li><a class="dropdown-item" href="${sub.url}">${sub.label}</a></li>`; });
+                navHtml += `</ul></li>`;
+            } else {
+                navHtml += `<li class="nav-item"><a class="nav-link" href="#">${menu.name}</a></li>`;
+            }
+        });
+        navHtml += `</ul></div></div></nav>`;
+        document.getElementById('main-header').innerHTML = navHtml;
+    }
+    
+    async function fetchPostsByCategory(category) {
+        const blogUrl = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/blog%20data!A:I?key=${CONFIG.API_KEY}`;
+        const response = await fetch(blogUrl);
+        const data = await response.json();
+        const rows = data.values || [];
+        if(rows.length < 2) return [];
+        
+        const posts = [];
+        for(let i=1; i<rows.length; i++) {
+            let row = rows[i];
+            let postCategory = row[1] || "General";
+            if(postCategory.toLowerCase() === category.toLowerCase()) {
+                posts.push({
+                    id: row[0],
+                    category: postCategory,
+                    tags: row[2] || "",
+                    author: row[3] || "Admin",
+                    publishedTime: row[4] || "",
+                    title: row[5] || "Untitled",
+                    content: row[6] || "",
+                    likeCount: parseInt(row[7]) || 0,
+                    shareCount: parseInt(row[8]) || 0,
+                    image: extractFirstImage(row[6] || "")
+                });
+            }
+        }
+        posts.sort((a,b) => parseInt(b.id) - parseInt(a.id));
+        return posts;
+    }
+    
+    function renderPosts(postsToShow) {
+        const container = document.getElementById("postsGrid");
+        container.innerHTML = postsToShow.map(p => `
+            <div class="col-md-4 col-lg-3">
+                <div class="card-blog h-100 p-3" onclick="navigateToPost('${p.id}')">
+                    <img src="${p.image}" class="card-img-top rounded-3" style="height:180px; object-fit:cover;">
+                    <div class="card-body px-0 mt-2">
+                        <span class="category-badge">${escapeHtml(p.category)}</span>
+                        <h5 class="fw-bold mt-2">${escapeHtml(p.title)}</h5>
+                        <div class="small text-muted"><i class="bi bi-person-circle"></i> ${escapeHtml(p.author)} · ${escapeHtml(p.publishedTime)}</div>
+                        <p class="mt-2 small text-secondary">${escapeHtml(stripHtml(p.content).substring(0,100))}...</p>
+                        <button class="btn btn-primary-custom mt-2 w-100">Read more →</button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    function loadMorePosts() {
+        currentLimit += 6;
+        const postsToShow = allPosts.slice(0, currentLimit);
+        renderPosts(postsToShow);
+        
+        if(currentLimit >= allPosts.length) {
+            document.getElementById("loadMoreBtn").style.display = "none";
+            document.getElementById("noMoreMsg").classList.remove("d-none");
+        }
+    }
+    
+    function escapeHtml(str) { 
+        if(!str) return ''; 
+        return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m] || m));
+    }
+    
+    async function initCategoryPage() {
+        await loadHeaderConfig();
+        currentCategory = localStorage.getItem('selectedCategory');
+        
+        if(!currentCategory) {
+            document.getElementById("categoryTitle").innerHTML = 'No Category Selected';
+            document.getElementById("postsGrid").innerHTML = `<div class="col-12 text-center p-5"><div class="alert alert-warning">No category selected. <a href="./">Go back home</a></div></div>`;
+            return;
+        }
+        
+        document.getElementById("categoryTitle").innerHTML = currentCategory;
+        allPosts = await fetchPostsByCategory(currentCategory);
+        document.getElementById("postCount").innerHTML = `${allPosts.length} post${allPosts.length !== 1 ? 's' : ''}`;
+        
+        if(allPosts.length === 0) {
+            document.getElementById("postsGrid").innerHTML = `<div class="col-12 text-center p-5"><div class="alert alert-info">No posts found in "${currentCategory}" category.</div></div>`;
+            document.getElementById("loadMoreTrigger").style.display = "none";
+            return;
+        }
+        
+        renderPosts(allPosts.slice(0, currentLimit));
+        document.getElementById("loadMoreBtn").onclick = loadMorePosts;
+        
+        if(allPosts.length <= currentLimit) {
+            document.getElementById("loadMoreBtn").style.display = "none";
+        }
+    }
+    
+    window.navigateToPost = navigateToPost;
+    initCategoryPage();
+</script>
+</body>
+</html>

@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Write New Post - Blog Editor</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- Select2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+    <!-- Quill Rich Text Editor -->
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --gray-bg: #f8fafc;
+        }
+        body {
+            background: var(--gray-bg);
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        }
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .editor-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
+        .form-card {
+            background: white;
+            border-radius: 1.5rem;
+            padding: 2rem;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+        }
+        .form-label {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+        }
+        .required:after {
+            content: " *";
+            color: #dc2626;
+        }
+        .ql-container {
+            min-height: 300px;
+            font-size: 1rem;
+        }
+        .ql-editor {
+            min-height: 300px;
+        }
+        .image-upload-preview {
+            max-width: 100%;
+            margin-top: 1rem;
+            border-radius: 0.5rem;
+        }
+        .category-tag-add {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+        }
+        .toast-custom {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #1f1f1f;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 48px;
+            z-index: 1090;
+            opacity: 0;
+            transition: opacity 0.25s;
+            pointer-events: none;
+        }
+        .btn-primary-custom {
+            background: var(--primary);
+			color:white;
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 40px;
+            font-weight: 600;
+        }
+        .btn-primary-custom:hover {
+            background: var(--primary-dark);
+        }
+        .spinner-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            visibility: hidden;
+        }
+        .spinner-overlay.active {
+            visibility: visible;
+        }
+        .spinner-box {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            text-align: center;
+        }
+        .insert-image-btn {
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+        }
+        .insert-image-btn:hover {
+            background: #e2e8f0;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Header -->
+<nav class="navbar navbar-expand-lg bg-white border-bottom sticky-top px-3 px-md-5 py-2 shadow-sm">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold" href="./">
+            <i class="bi bi-journal-bookmark-fill fs-3" style="color: #4f46e5"></i>
+            Blog Studio
+        </a>
+        <div class="ms-auto">
+            <a href="./" class="btn btn-outline-secondary btn-sm rounded-pill">
+                <i class="bi bi-house"></i> Back to Home
+            </a>
+        </div>
+    </div>
+</nav>
+
+<div class="editor-container">
+    <div class="form-card">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="fw-bold mb-0"><i class="bi bi-pencil-square"></i> Create New Post</h2>
+            <span class="text-muted" id="postIdPreview">ID: Auto</span>
+        </div>
+
+        <form id="postForm">
+            <!-- Hidden Post ID -->
+            <input type="hidden" id="postId" name="postId">
+
+            <!-- Category Field with Select2 -->
+            <div class="mb-4">
+                <label class="form-label required">Category</label>
+                <select id="categorySelect" name="category" class="form-select" style="width: 100%;" required>
+                    <option value="">Select or add category...</option>
+                </select>
+                <div class="category-tag-add">
+                    <span class="text-muted small">Don't see your category?</span>
+                    <button type="button" class="btn btn-link btn-sm p-0" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+                        <i class="bi bi-plus-circle"></i> Add New Category
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tags Field with Select2 -->
+            <div class="mb-4">
+                <label class="form-label">Tags (comma separated or select existing)</label>
+                <select id="tagsSelect" name="tags" class="form-select" style="width: 100%;" multiple="multiple">
+                </select>
+                <div class="category-tag-add">
+                    <button type="button" class="btn btn-link btn-sm p-0" data-bs-toggle="modal" data-bs-target="#addTagModal">
+                        <i class="bi bi-plus-circle"></i> Add New Tag
+                    </button>
+                </div>
+                <div class="form-text">You can type new tags directly and press Enter</div>
+            </div>
+
+            <!-- Author Name -->
+            <div class="mb-4">
+                <label class="form-label required">Author Name</label>
+                <input type="text" id="authorName" class="form-control" placeholder="Enter your name" required>
+                <div class="form-text">Your name will be saved for future posts</div>
+            </div>
+
+            <!-- Title -->
+            <div class="mb-4">
+                <label class="form-label required">Post Title</label>
+                <input type="text" id="title" class="form-control" placeholder="Enter an engaging title..." required>
+            </div>
+
+            <!-- Content (Rich Text Editor) -->
+            <div class="mb-4">
+                <label class="form-label required">Content</label>
+                <div id="insertImageToolbar" class="mb-2">
+                    <button type="button" class="insert-image-btn btn-sm" id="insertImageBtn">
+                        <i class="bi bi-image"></i> Insert Image via URL
+                    </button>
+                </div>
+                <div id="editor"></div>
+                <input type="hidden" id="contentHtml" name="contentHtml">
+                <div class="form-text mt-2">Write your post using the rich text editor. You can format text and add images via URL.</div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="d-flex gap-3 mt-4">
+                <button type="submit" class="btn btn-primary-custom px-5">
+                    <i class="bi bi-send"></i> Publish Post
+                </button>
+                <button type="reset" class="btn btn-outline-secondary rounded-pill px-4" onclick="resetForm()">
+                    <i class="bi bi-arrow-counterclockwise"></i> Reset
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Add New Category -->
+<div class="modal fade" id="addCategoryModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-tag"></i> Add New Category</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="newCategoryInput" class="form-control" placeholder="Enter category name">
+                <div class="form-text mt-1">This category will be available for future posts</div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveNewCategoryBtn">Save Category</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Add New Tag -->
+<div class="modal fade" id="addTagModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-hash"></i> Add New Tag</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="newTagInput" class="form-control" placeholder="Enter tag name">
+                <div class="form-text mt-1">Tags help organize your content</div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveNewTagBtn">Save Tag</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Spinner -->
+<div id="spinnerOverlay" class="spinner-overlay">
+    <div class="spinner-box">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-2 mb-0">Publishing post...</p>
+    </div>
+</div>
+
+<!-- Toast Message -->
+<div id="liveToast" class="toast-custom"><i class="bi bi-check-lg me-2"></i><span id="toastMsg"></span></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+<script src="config.js"></script>
+
+<script>
+    // Initialize Quill Rich Text Editor
+    let quill = new Quill('#editor', {
+        theme: 'snow',
+        placeholder: 'Write your amazing story here...',
+        modules: {
+            toolbar: [
+                [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                ['bold', 'italic', 'underline', 'strike'],
+                [{ 'list': 'ordered'}, { 'list': 'bullet' }, { 'indent': '-1'}, { 'indent': '+1' }],
+                ['link', 'image', 'video'],
+                ['blockquote', 'code-block'],
+                ['clean']
+            ]
+        }
+    });
+
+    // Image insertion helper
+    document.getElementById('insertImageBtn').addEventListener('click', function() {
+        let imageUrl = prompt('Enter image URL:', 'https://example.com/image.jpg');
+        if (imageUrl && imageUrl.trim()) {
+            let range = quill.getSelection();
+            let position = range ? range.index : 0;
+            quill.insertEmbed(position, 'image', imageUrl.trim());
+        }
+    });
+
+    // Global variables
+    let existingCategories = [];
+    let existingTags = [];
+
+    // Show toast message
+    function showToastMessage(msg, isError = false) {
+        const toastEl = document.getElementById('liveToast');
+        const span = document.getElementById('toastMsg');
+        span.innerText = msg;
+        toastEl.style.background = isError ? '#dc2626' : '#1f1f1f';
+        toastEl.style.opacity = '1';
+        setTimeout(() => { toastEl.style.opacity = '0'; }, 3000);
+    }
+
+    // Show/Hide spinner
+    function setLoading(loading) {
+        const spinner = document.getElementById('spinnerOverlay');
+        if (loading) {
+            spinner.classList.add('active');
+        } else {
+            spinner.classList.remove('active');
+        }
+    }
+
+    // Load unique categories and tags from sheet
+    async function loadCategoriesAndTags() {
+        try {
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/blog%20data!A:I?key=${CONFIG.API_KEY}`;
+            const response = await fetch(url);
+            const data = await response.json();
+            const rows = data.values || [];
+            
+            const categories = new Set();
+            const tags = new Set();
+            
+            for(let i = 1; i < rows.length; i++) {
+                const row = rows[i];
+                if(row[1] && row[1].trim()) categories.add(row[1].trim());
+                if(row[2] && row[2].trim()) {
+                    const tagList = row[2].split(',').map(t => t.trim());
+                    tagList.forEach(t => { if(t) tags.add(t); });
+                }
+            }
+            
+            existingCategories = Array.from(categories).sort();
+            existingTags = Array.from(tags).sort();
+            
+            // Populate Select2 for categories
+            const categorySelect = $('#categorySelect');
+            categorySelect.empty().append('<option value="">Select a category...</option>');
+            existingCategories.forEach(cat => {
+                categorySelect.append(`<option value="${escapeHtml(cat)}">${escapeHtml(cat)}</option>`);
+            });
+            categorySelect.select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Select a category',
+                allowClear: true
+            });
+            
+            // Populate Select2 for tags (multiple)
+            const tagsSelect = $('#tagsSelect');
+            tagsSelect.empty();
+            existingTags.forEach(tag => {
+                tagsSelect.append(`<option value="${escapeHtml(tag)}">${escapeHtml(tag)}</option>`);
+            });
+            tagsSelect.select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Select or type tags',
+                tags: true,
+                tokenSeparators: [',', ' '],
+                allowClear: true
+            });
+            
+        } catch(error) {
+            console.error('Error loading categories/tags:', error);
+        }
+    }
+
+    // Get next post ID
+    async function getNextPostId() {
+        try {
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/blog%20data!A:A?key=${CONFIG.API_KEY}`;
+            const response = await fetch(url);
+            const data = await response.json();
+            const rows = data.values || [];
+            let maxId = 0;
+            for(let i = 1; i < rows.length; i++) {
+                const id = parseInt(rows[i][0]);
+                if(!isNaN(id) && id > maxId) maxId = id;
+            }
+            return maxId + 1;
+        } catch(error) {
+            console.error('Error getting next ID:', error);
+            return 1;
+        }
+    }
+
+    // Load cached author name
+    function loadCachedAuthor() {
+        const cachedAuthor = localStorage.getItem('blogAuthorName');
+        if(cachedAuthor) {
+            document.getElementById('authorName').value = cachedAuthor;
+        }
+    }
+
+    // Save author name to cache
+    function saveAuthorName(name) {
+        if(name && name.trim()) {
+            localStorage.setItem('blogAuthorName', name.trim());
+        }
+    }
+
+    // Add new category
+    async function addNewCategory(categoryName) {
+        if(!categoryName || !categoryName.trim()) return false;
+        if(existingCategories.includes(categoryName.trim())) {
+            showToastMessage('Category already exists!', true);
+            return false;
+        }
+        existingCategories.push(categoryName.trim());
+        existingCategories.sort();
+        
+        const categorySelect = $('#categorySelect');
+        categorySelect.append(`<option value="${escapeHtml(categoryName.trim())}">${escapeHtml(categoryName.trim())}</option>`);
+        categorySelect.val(categoryName.trim()).trigger('change');
+        
+        showToastMessage(`Category "${categoryName}" added!`);
+        return true;
+    }
+
+    // Add new tag
+    async function addNewTag(tagName) {
+        if(!tagName || !tagName.trim()) return false;
+        if(existingTags.includes(tagName.trim())) {
+            showToastMessage('Tag already exists!', true);
+            return false;
+        }
+        existingTags.push(tagName.trim());
+        existingTags.sort();
+        
+        const tagsSelect = $('#tagsSelect');
+        tagsSelect.append(`<option value="${escapeHtml(tagName.trim())}">${escapeHtml(tagName.trim())}</option>`);
+        
+        const currentValues = tagsSelect.val() || [];
+        currentValues.push(tagName.trim());
+        tagsSelect.val(currentValues).trigger('change');
+        
+        showToastMessage(`Tag "${tagName}" added!`);
+        return true;
+    }
+
+    // Submit post via Apps Script
+    async function submitPost(formData) {
+        try {
+            const response = await fetch(CONFIG.APPS_SCRIPT_URL, {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+            return result;
+        } catch(error) {
+            console.error('Submit error:', error);
+            throw error;
+        }
+    }
+
+    // Handle form submission
+    document.getElementById('postForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        // Validate required fields
+        const category = $('#categorySelect').val();
+        const author = document.getElementById('authorName').value.trim();
+        const title = document.getElementById('title').value.trim();
+        const content = quill.root.innerHTML;
+        
+        if(!category) {
+            showToastMessage('Please select a category', true);
+            return;
+        }
+        if(!author) {
+            showToastMessage('Please enter author name', true);
+            return;
+        }
+        if(!title) {
+            showToastMessage('Please enter post title', true);
+            return;
+        }
+        if(!content || content === '<p><br></p>' || content.trim() === '') {
+            showToastMessage('Please write some content', true);
+            return;
+        }
+        
+        setLoading(true);
+        
+        try {
+            // Get next post ID
+            const nextId = await getNextPostId();
+            document.getElementById('postId').value = nextId;
+            
+            // Get tags as comma-separated string
+            const tagsValue = $('#tagsSelect').val();
+            const tagsString = Array.isArray(tagsValue) ? tagsValue.join(', ') : tagsValue || '';
+            
+            // Get current date and time
+            const publishedTime = new Date().toLocaleString('en-US', { 
+                year: 'numeric', 
+                month: '2-digit', 
+                day: '2-digit',
+                hour: '2-digit', 
+                minute: '2-digit'
+            });
+            
+            // Prepare form data for Apps Script
+            const submitFormData = new FormData();
+            submitFormData.append('action', 'addPost');
+            submitFormData.append('postId', nextId);
+            submitFormData.append('category', category);
+            submitFormData.append('tags', tagsString);
+            submitFormData.append('author', author);
+            submitFormData.append('publishedTime', publishedTime);
+            submitFormData.append('title', title);
+            submitFormData.append('content', content);
+            submitFormData.append('likeCount', 0);
+            submitFormData.append('shareCount', 0);
+            
+            const result = await submitPost(submitFormData);
+            
+            if(result.success) {
+                saveAuthorName(author);
+                showToastMessage('✅ Post published successfully!');
+                setTimeout(() => {
+                    window.location.href = 'post.html?id=' + nextId;
+                }, 1500);
+            } else {
+                throw new Error(result.error || 'Failed to publish');
+            }
+        } catch(error) {
+            console.error('Submit error:', error);
+            showToastMessage('Failed to publish post: ' + error.message, true);
+            setLoading(false);
+        }
+    });
+
+    // Reset form
+    window.resetForm = function() {
+        $('#categorySelect').val(null).trigger('change');
+        $('#tagsSelect').val(null).trigger('change');
+        document.getElementById('authorName').value = localStorage.getItem('blogAuthorName') || '';
+        document.getElementById('title').value = '';
+        quill.setContents([]);
+        showToastMessage('Form reset');
+    };
+
+    // Modal handlers
+    document.getElementById('saveNewCategoryBtn').addEventListener('click', async () => {
+        const newCategory = document.getElementById('newCategoryInput').value.trim();
+        if(newCategory) {
+            await addNewCategory(newCategory);
+            document.getElementById('newCategoryInput').value = '';
+            bootstrap.Modal.getInstance(document.getElementById('addCategoryModal')).hide();
+        } else {
+            showToastMessage('Please enter a category name', true);
+        }
+    });
+    
+    document.getElementById('saveNewTagBtn').addEventListener('click', async () => {
+        const newTag = document.getElementById('newTagInput').value.trim();
+        if(newTag) {
+            await addNewTag(newTag);
+            document.getElementById('newTagInput').value = '';
+            bootstrap.Modal.getInstance(document.getElementById('addTagModal')).hide();
+        } else {
+            showToastMessage('Please enter a tag name', true);
+        }
+    });
+    
+    function escapeHtml(str) {
+        if(!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if(m === '&') return '&amp;';
+            if(m === '<') return '&lt;';
+            if(m === '>') return '&gt;';
+            return m;
+        });
+    }
+    
+    // Initialize page
+    async function init() {
+        loadCachedAuthor();
+        await loadCategoriesAndTags();
+    }
+    
+    init();
+</script>
+</body>
+</html>
