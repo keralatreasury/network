@@ -276,7 +276,7 @@ a:hover {
 
 /* ---------- Post Page Styles ---------- */
 .blog-header {
-    max-width: 880px;
+    max-width: 900px;
     margin: 2rem auto 1rem;
     padding: 0 1.5rem;
 }
@@ -696,3 +696,101 @@ footer {
     border: none;
     border-radius: var(--radius-full);
 }
+.profile-header {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            padding: 3rem 0 5rem;
+            margin-bottom: -3rem;
+        }
+        .profile-card {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 1.5rem;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 20px 35px -10px rgba(0,0,0,0.1);
+            position: relative;
+            z-index: 10;
+        }
+        .profile-image {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 5px solid white;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-top: -4rem;
+            background: #e2e8f0;
+        }
+        .profile-name {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-top: 1rem;
+            color: #1e293b;
+        }
+        .profile-designation {
+            color: var(--primary);
+            font-weight: 500;
+            margin-bottom: 1rem;
+        }
+        .profile-about {
+            background: #f8fafc;
+            border-left: 4px solid var(--primary);
+            padding: 1rem 1.5rem;
+            border-radius: 1rem;
+            margin-top: 1rem;
+            font-style: italic;
+            color: #475569;
+        }
+        .card-blog {
+            border: none;
+            border-radius: 1.25rem;
+            transition: all 0.2s;
+            background: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+            cursor: pointer;
+        }
+        .card-blog:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -12px rgba(0,0,0,0.12);
+        }
+        .category-badge {
+            background: #eef2ff;
+            color: #4f46e5;
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 0.25rem 0.75rem;
+            border-radius: 30px;
+            display: inline-block;
+        }
+        .btn-primary-custom {
+            background: #4f46e5;
+            color: #fff;
+            border: none;
+            border-radius: 40px;
+            padding: 0.4rem 1rem;
+            font-weight: 500;
+            font-size: 0.85rem;
+        }
+        .btn-primary-custom:hover {
+            background: #4338ca;
+        }
+        footer {
+            border-top: 1px solid var(--card-border);
+            background: white;
+            margin-top: 3rem;
+        }
+        .load-more-trigger {
+            text-align: center;
+            margin: 2rem 0;
+        }
+        .error-box {
+            max-width: 600px;
+            margin: 3rem auto;
+            text-align: center;
+            padding: 2rem;
+        }
+        @media (max-width: 768px) {
+            .profile-card { margin: 0 1rem; }
+            .profile-name { font-size: 1.4rem; }
+        }
