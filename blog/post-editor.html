@@ -3,132 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Write New Post - Blog Editor</title>
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <!-- Select2 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
-    <!-- Quill Rich Text Editor -->
-    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
-    <style>
-        :root {
-            --primary: #4f46e5;
-            --primary-dark: #4338ca;
-            --gray-bg: #f8fafc;
-        }
-        body {
-            background: var(--gray-bg);
-            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-        }
-        .navbar-brand {
-            font-weight: 700;
-            font-size: 1.5rem;
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-        }
-        .editor-container {
-            max-width: 1200px;
-            margin: 2rem auto;
-            padding: 0 1.5rem;
-        }
-        .form-card {
-            background: white;
-            border-radius: 1.5rem;
-            padding: 2rem;
-            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
-            border: 1px solid #e2e8f0;
-        }
-        .form-label {
-            font-weight: 600;
-            color: #1e293b;
-            margin-bottom: 0.5rem;
-        }
-        .required:after {
-            content: " *";
-            color: #dc2626;
-        }
-        .ql-container {
-            min-height: 300px;
-            font-size: 1rem;
-        }
-        .ql-editor {
-            min-height: 300px;
-        }
-        .image-upload-preview {
-            max-width: 100%;
-            margin-top: 1rem;
-            border-radius: 0.5rem;
-        }
-        .category-tag-add {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-top: 0.5rem;
-            font-size: 0.85rem;
-        }
-        .toast-custom {
-            position: fixed;
-            bottom: 24px;
-            right: 24px;
-            background: #1f1f1f;
-            color: white;
-            padding: 12px 24px;
-            border-radius: 48px;
-            z-index: 1090;
-            opacity: 0;
-            transition: opacity 0.25s;
-            pointer-events: none;
-        }
-        .btn-primary-custom {
-            background: var(--primary);
-			color:white;
-            border: none;
-            padding: 0.75rem 2rem;
-            border-radius: 40px;
-            font-weight: 600;
-        }
-        .btn-primary-custom:hover {
-            background: var(--primary-dark);
-        }
-        .spinner-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.7);
-            z-index: 2000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            visibility: hidden;
-        }
-        .spinner-overlay.active {
-            visibility: visible;
-        }
-        .spinner-box {
-            background: white;
-            padding: 2rem;
-            border-radius: 1rem;
-            text-align: center;
-        }
-        .insert-image-btn {
-            background: #f1f5f9;
-            border: 1px solid #e2e8f0;
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            margin-bottom: 0.5rem;
-            cursor: pointer;
-        }
-        .insert-image-btn:hover {
-            background: #e2e8f0;
-        }
-    </style>
+    <title>Blog Editor - Add & Edit Posts</title>
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="css/select2.min.css">
+    <link rel="stylesheet" href="css/select2-bootstrap-5-theme.min.css">
+    <link rel="stylesheet" href="css/quill.snow.css">
+    <link rel="stylesheet" href="css/dataTables.bootstrap5.min.css">
+        <!-- Custom Blog CSS  -->
+    <link rel="stylesheet" href="css/blog.css">
 </head>
 <body>
 
@@ -140,7 +23,7 @@
             Blog Studio
         </a>
         <div class="ms-auto">
-            <a href="./" class="btn btn-outline-secondary btn-sm rounded-pill">
+            <a href="./index.html" class="btn btn-outline-secondary btn-sm rounded-pill">
                 <i class="bi bi-house"></i> Back to Home
             </a>
         </div>
@@ -149,78 +32,169 @@
 
 <div class="editor-container">
     <div class="form-card">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2 class="fw-bold mb-0"><i class="bi bi-pencil-square"></i> Create New Post</h2>
-            <span class="text-muted" id="postIdPreview">ID: Auto</span>
+        <!-- Tabs -->
+        <ul class="nav nav-tabs mb-4" id="blogTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="add-tab" data-bs-toggle="tab" data-bs-target="#addPost" type="button" role="tab">
+                    <i class="bi bi-plus-circle"></i> Add New Post
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="edit-tab" data-bs-toggle="tab" data-bs-target="#editPosts" type="button" role="tab">
+                    <i class="bi bi-pencil-square"></i> Edit / Delete Posts
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+            <!-- Tab 1: Add New Post -->
+            <div class="tab-pane fade show active" id="addPost" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="fw-bold mb-0"><i class="bi bi-pencil-square"></i> Create New Post</h2>
+                    <span class="text-muted" id="postIdPreview">ID: Auto</span>
+                </div>
+
+                <form id="postForm">
+                    <input type="hidden" id="postId" name="postId">
+                    <input type="hidden" id="isEditMode" name="isEditMode" value="false">
+
+                    <!-- Category Field -->
+                    <div class="mb-4">
+                        <label class="form-label required">Category</label>
+                        <select id="categorySelect" name="category" class="form-select" style="width: 100%;" required>
+                            <option value="">Select or add category...</option>
+                        </select>
+                        <div class="category-tag-add">
+                            <span class="text-muted small">Don't see your category?</span>
+                            <button type="button" class="btn btn-link btn-sm p-0" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+                                <i class="bi bi-plus-circle"></i> Add New Category
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Tags Field -->
+                    <div class="mb-4">
+                        <label class="form-label">Tags</label>
+                        <select id="tagsSelect" name="tags" class="form-select" style="width: 100%;" multiple="multiple">
+                        </select>
+                        <div class="category-tag-add">
+                            <button type="button" class="btn btn-link btn-sm p-0" data-bs-toggle="modal" data-bs-target="#addTagModal">
+                                <i class="bi bi-plus-circle"></i> Add New Tag
+                            </button>
+                        </div>
+                        <div class="form-text">Type new tags and press Enter</div>
+                    </div>
+
+                    <!-- Author Name -->
+                    <div class="mb-4">
+                        <label class="form-label required">Author Name</label>
+                        <input type="text" id="authorName" class="form-control" placeholder="Enter your name" required>
+                    </div>
+
+                    <!-- Title -->
+                    <div class="mb-4">
+                        <label class="form-label required">Post Title</label>
+                        <input type="text" id="title" class="form-control" placeholder="Enter an engaging title..." required>
+                    </div>
+
+                    <!-- Content -->
+                    <div class="mb-4">
+                        <label class="form-label required">Content</label>
+                        <div class="mb-2">
+                            <button type="button" class="insert-image-btn btn-sm" id="insertImageBtn">
+                                <i class="bi bi-image"></i> Insert Image via URL
+                            </button>
+                        </div>
+                        <div id="editor"></div>
+                        <div class="form-text mt-2">Write your post using the rich text editor.</div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="d-flex gap-3 mt-4">
+                        <button type="submit" class="btn btn-primary-custom px-5" id="submitBtn">
+                            <i class="bi bi-send"></i> Publish Post
+                        </button>
+                        <button type="reset" class="btn btn-outline-secondary rounded-pill px-4" onclick="resetAddForm()">
+                            <i class="bi bi-arrow-counterclockwise"></i> Reset
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Tab 2: Edit/Delete Posts -->
+            <div class="tab-pane fade" id="editPosts" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="fw-bold mb-0"><i class="bi bi-grid-3x3-gap"></i> Manage Posts</h2>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="loadPostsTable()">
+                        <i class="bi bi-arrow-repeat"></i> Refresh
+                    </button>
+                </div>
+                
+                <div class="table-container">
+                    <table id="postsTable" class="table table-hover" style="width:100%">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Thumbnail</th>
+                                <th>Title</th>
+                                <th>Category</th>
+                                <th>Author</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="7" class="text-center">Loading posts...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Edit Form (hidden initially) -->
+                <div id="editFormContainer" style="display: none; margin-top: 2rem; border-top: 2px solid #e2e8f0; padding-top: 1.5rem;">
+                    <h4 class="fw-bold mb-3"><i class="bi bi-pencil-square"></i> Edit Post</h4>
+                    <form id="editPostForm">
+                        <input type="hidden" id="editPostId" name="editPostId">
+                        
+                        <div class="mb-3">
+                            <label class="form-label required">Category</label>
+                            <select id="editCategorySelect" class="form-select" required>
+                                <option value="">Select category...</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Tags</label>
+                            <select id="editTagsSelect" class="form-select" multiple="multiple">
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label required">Author</label>
+                            <input type="text" id="editAuthorName" class="form-control" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label required">Title</label>
+                            <input type="text" id="editTitle" class="form-control" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label required">Content</label>
+                            <div id="editEditor"></div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary-custom">
+                                <i class="bi bi-save"></i> Update Post
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="hideEditForm()">
+                                <i class="bi bi-x-lg"></i> Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
-
-        <form id="postForm">
-            <!-- Hidden Post ID -->
-            <input type="hidden" id="postId" name="postId">
-
-            <!-- Category Field with Select2 -->
-            <div class="mb-4">
-                <label class="form-label required">Category</label>
-                <select id="categorySelect" name="category" class="form-select" style="width: 100%;" required>
-                    <option value="">Select or add category...</option>
-                </select>
-                <div class="category-tag-add">
-                    <span class="text-muted small">Don't see your category?</span>
-                    <button type="button" class="btn btn-link btn-sm p-0" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
-                        <i class="bi bi-plus-circle"></i> Add New Category
-                    </button>
-                </div>
-            </div>
-
-            <!-- Tags Field with Select2 -->
-            <div class="mb-4">
-                <label class="form-label">Tags (comma separated or select existing)</label>
-                <select id="tagsSelect" name="tags" class="form-select" style="width: 100%;" multiple="multiple">
-                </select>
-                <div class="category-tag-add">
-                    <button type="button" class="btn btn-link btn-sm p-0" data-bs-toggle="modal" data-bs-target="#addTagModal">
-                        <i class="bi bi-plus-circle"></i> Add New Tag
-                    </button>
-                </div>
-                <div class="form-text">You can type new tags directly and press Enter</div>
-            </div>
-
-            <!-- Author Name -->
-            <div class="mb-4">
-                <label class="form-label required">Author Name</label>
-                <input type="text" id="authorName" class="form-control" placeholder="Enter your name" required>
-                <div class="form-text">Your name will be saved for future posts</div>
-            </div>
-
-            <!-- Title -->
-            <div class="mb-4">
-                <label class="form-label required">Post Title</label>
-                <input type="text" id="title" class="form-control" placeholder="Enter an engaging title..." required>
-            </div>
-
-            <!-- Content (Rich Text Editor) -->
-            <div class="mb-4">
-                <label class="form-label required">Content</label>
-                <div id="insertImageToolbar" class="mb-2">
-                    <button type="button" class="insert-image-btn btn-sm" id="insertImageBtn">
-                        <i class="bi bi-image"></i> Insert Image via URL
-                    </button>
-                </div>
-                <div id="editor"></div>
-                <input type="hidden" id="contentHtml" name="contentHtml">
-                <div class="form-text mt-2">Write your post using the rich text editor. You can format text and add images via URL.</div>
-            </div>
-
-            <!-- Submit Button -->
-            <div class="d-flex gap-3 mt-4">
-                <button type="submit" class="btn btn-primary-custom px-5">
-                    <i class="bi bi-send"></i> Publish Post
-                </button>
-                <button type="reset" class="btn btn-outline-secondary rounded-pill px-4" onclick="resetForm()">
-                    <i class="bi bi-arrow-counterclockwise"></i> Reset
-                </button>
-            </div>
-        </form>
     </div>
 </div>
 
@@ -234,7 +208,6 @@
             </div>
             <div class="modal-body">
                 <input type="text" id="newCategoryInput" class="form-control" placeholder="Enter category name">
-                <div class="form-text mt-1">This category will be available for future posts</div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -254,7 +227,6 @@
             </div>
             <div class="modal-body">
                 <input type="text" id="newTagInput" class="form-control" placeholder="Enter tag name">
-                <div class="form-text mt-1">Tags help organize your content</div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -264,55 +236,66 @@
     </div>
 </div>
 
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-exclamation-triangle-fill text-danger"></i> Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the post <strong id="deletePostTitle"></strong>?</p>
+                <p class="text-danger small">This action cannot be undone. All comments will also be deleted.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete Permanently</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Loading Spinner -->
 <div id="spinnerOverlay" class="spinner-overlay">
     <div class="spinner-box">
         <div class="spinner-border text-primary" role="status"></div>
-        <p class="mt-2 mb-0">Publishing post...</p>
+        <p class="mt-2 mb-0">Processing...</p>
     </div>
 </div>
 
 <!-- Toast Message -->
 <div id="liveToast" class="toast-custom"><i class="bi bi-check-lg me-2"></i><span id="toastMsg"></span></div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-<script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+<script src="js/jquery-3.7.0.min.js"></script>
+<script src="js/bootstrap.bundle.min.js"></script>
+<script src="js/select2.min.js"></script>
+<script src="js/quill.js"></script>
+<script src="js/swiper-bundle.min.js"></script>
+<script src="js/jquery.dataTables.min.js"></script>
+<script src="js/dataTables.bootstrap5.min.js"></script>
 <script src="config.js"></script>
 
 <script>
-    // Initialize Quill Rich Text Editor
+    // Quill Editors
     let quill = new Quill('#editor', {
         theme: 'snow',
         placeholder: 'Write your amazing story here...',
-        modules: {
-            toolbar: [
-                [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-                ['bold', 'italic', 'underline', 'strike'],
-                [{ 'list': 'ordered'}, { 'list': 'bullet' }, { 'indent': '-1'}, { 'indent': '+1' }],
-                ['link', 'image', 'video'],
-                ['blockquote', 'code-block'],
-                ['clean']
-            ]
-        }
+        modules: { toolbar: [['bold', 'italic', 'underline', 'strike'], [{ 'list': 'ordered'}, { 'list': 'bullet' }], ['link', 'image'], ['clean']] }
+    });
+    
+    let editQuill = new Quill('#editEditor', {
+        theme: 'snow',
+        placeholder: 'Edit your post content...',
+        modules: { toolbar: [['bold', 'italic', 'underline', 'strike'], [{ 'list': 'ordered'}, { 'list': 'bullet' }], ['link', 'image'], ['clean']] }
     });
 
-    // Image insertion helper
-    document.getElementById('insertImageBtn').addEventListener('click', function() {
-        let imageUrl = prompt('Enter image URL:', 'https://example.com/image.jpg');
-        if (imageUrl && imageUrl.trim()) {
-            let range = quill.getSelection();
-            let position = range ? range.index : 0;
-            quill.insertEmbed(position, 'image', imageUrl.trim());
-        }
-    });
-
-    // Global variables
     let existingCategories = [];
     let existingTags = [];
+    let postsData = [];
+    let dataTable = null;
+    let pendingDeleteId = null;
 
-    // Show toast message
     function showToastMessage(msg, isError = false) {
         const toastEl = document.getElementById('liveToast');
         const span = document.getElementById('toastMsg');
@@ -322,17 +305,28 @@
         setTimeout(() => { toastEl.style.opacity = '0'; }, 3000);
     }
 
-    // Show/Hide spinner
     function setLoading(loading) {
         const spinner = document.getElementById('spinnerOverlay');
-        if (loading) {
-            spinner.classList.add('active');
-        } else {
-            spinner.classList.remove('active');
-        }
+        loading ? spinner.classList.add('active') : spinner.classList.remove('active');
     }
 
-    // Load unique categories and tags from sheet
+    function escapeHtml(str) {
+        if(!str) return '';
+        return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m] || m));
+    }
+
+    function truncate(str, len) {
+        if(!str) return '';
+        let text = str.replace(/<[^>]*>/g, '');
+        return text.length > len ? text.substring(0, len) + '...' : text;
+    }
+
+    function extractFirstImage(html) {
+        if (!html) return null;
+        const match = html.match(/<img[^>]+src=["']([^"']+)["']/i);
+        return match ? match[1] : null;
+    }
+
     async function loadCategoriesAndTags() {
         try {
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/blog%20data!A:I?key=${CONFIG.API_KEY}`;
@@ -344,41 +338,27 @@
             const tags = new Set();
             
             for(let i = 1; i < rows.length; i++) {
-                const row = rows[i];
-                if(row[1] && row[1].trim()) categories.add(row[1].trim());
-                if(row[2] && row[2].trim()) {
-                    const tagList = row[2].split(',').map(t => t.trim());
-                    tagList.forEach(t => { if(t) tags.add(t); });
+                if(rows[i][1] && rows[i][1].trim()) categories.add(rows[i][1].trim());
+                if(rows[i][2] && rows[i][2].trim()) {
+                    rows[i][2].split(',').map(t => t.trim()).forEach(t => { if(t) tags.add(t); });
                 }
             }
             
             existingCategories = Array.from(categories).sort();
             existingTags = Array.from(tags).sort();
             
-            // Populate Select2 for categories
-            const categorySelect = $('#categorySelect');
-            categorySelect.empty().append('<option value="">Select a category...</option>');
-            existingCategories.forEach(cat => {
-                categorySelect.append(`<option value="${escapeHtml(cat)}">${escapeHtml(cat)}</option>`);
-            });
-            categorySelect.select2({
-                theme: 'bootstrap-5',
-                placeholder: 'Select a category',
-                allowClear: true
+            // Populate category selects
+            [$('#categorySelect'), $('#editCategorySelect')].forEach(select => {
+                select.empty().append('<option value="">Select a category...</option>');
+                existingCategories.forEach(cat => select.append(`<option value="${escapeHtml(cat)}">${escapeHtml(cat)}</option>`));
+                select.select2({ theme: 'bootstrap-5', placeholder: 'Select a category', allowClear: true });
             });
             
-            // Populate Select2 for tags (multiple)
-            const tagsSelect = $('#tagsSelect');
-            tagsSelect.empty();
-            existingTags.forEach(tag => {
-                tagsSelect.append(`<option value="${escapeHtml(tag)}">${escapeHtml(tag)}</option>`);
-            });
-            tagsSelect.select2({
-                theme: 'bootstrap-5',
-                placeholder: 'Select or type tags',
-                tags: true,
-                tokenSeparators: [',', ' '],
-                allowClear: true
+            // Populate tags selects
+            [$('#tagsSelect'), $('#editTagsSelect')].forEach(select => {
+                select.empty();
+                existingTags.forEach(tag => select.append(`<option value="${escapeHtml(tag)}">${escapeHtml(tag)}</option>`));
+                select.select2({ theme: 'bootstrap-5', placeholder: 'Select or type tags', tags: true, tokenSeparators: [',', ' '], allowClear: true });
             });
             
         } catch(error) {
@@ -386,7 +366,6 @@
         }
     }
 
-    // Get next post ID
     async function getNextPostId() {
         try {
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/blog%20data!A:A?key=${CONFIG.API_KEY}`;
@@ -400,27 +379,20 @@
             }
             return maxId + 1;
         } catch(error) {
-            console.error('Error getting next ID:', error);
             return 1;
         }
     }
 
-    // Load cached author name
     function loadCachedAuthor() {
         const cachedAuthor = localStorage.getItem('blogAuthorName');
-        if(cachedAuthor) {
-            document.getElementById('authorName').value = cachedAuthor;
-        }
+        if(cachedAuthor) document.getElementById('authorName').value = cachedAuthor;
     }
 
-    // Save author name to cache
     function saveAuthorName(name) {
-        if(name && name.trim()) {
-            localStorage.setItem('blogAuthorName', name.trim());
-        }
+        if(name && name.trim()) localStorage.setItem('blogAuthorName', name.trim());
     }
 
-    // Add new category
+    // FIXED: Add new category and auto-select
     async function addNewCategory(categoryName) {
         if(!categoryName || !categoryName.trim()) return false;
         if(existingCategories.includes(categoryName.trim())) {
@@ -430,15 +402,18 @@
         existingCategories.push(categoryName.trim());
         existingCategories.sort();
         
-        const categorySelect = $('#categorySelect');
-        categorySelect.append(`<option value="${escapeHtml(categoryName.trim())}">${escapeHtml(categoryName.trim())}</option>`);
-        categorySelect.val(categoryName.trim()).trigger('change');
+        // Update both category selects
+        [$('#categorySelect'), $('#editCategorySelect')].forEach(select => {
+            const newOption = new Option(categoryName.trim(), categoryName.trim(), false, true);
+            select.append(newOption);
+            select.val(categoryName.trim()).trigger('change');
+        });
         
-        showToastMessage(`Category "${categoryName}" added!`);
+        showToastMessage(`Category "${categoryName}" added and selected!`);
         return true;
     }
 
-    // Add new tag
+    // FIXED: Add new tag and auto-select it
     async function addNewTag(tagName) {
         if(!tagName || !tagName.trim()) return false;
         if(existingTags.includes(tagName.trim())) {
@@ -448,121 +423,253 @@
         existingTags.push(tagName.trim());
         existingTags.sort();
         
-        const tagsSelect = $('#tagsSelect');
-        tagsSelect.append(`<option value="${escapeHtml(tagName.trim())}">${escapeHtml(tagName.trim())}</option>`);
+        // Update tags selects
+        [$('#tagsSelect'), $('#editTagsSelect')].forEach(select => {
+            const newOption = new Option(tagName.trim(), tagName.trim(), false, true);
+            select.append(newOption);
+            
+            // For main tags select, auto-select the new tag
+            if(select.attr('id') === 'tagsSelect') {
+                let currentVal = select.val() || [];
+                if(!currentVal.includes(tagName.trim())) {
+                    currentVal.push(tagName.trim());
+                    select.val(currentVal).trigger('change');
+                }
+            }
+        });
         
-        const currentValues = tagsSelect.val() || [];
-        currentValues.push(tagName.trim());
-        tagsSelect.val(currentValues).trigger('change');
-        
-        showToastMessage(`Tag "${tagName}" added!`);
+        showToastMessage(`Tag "${tagName}" added and selected!`);
         return true;
     }
 
-    // Submit post via Apps Script
-    async function submitPost(formData) {
+    // Load posts table
+    async function loadPostsTable() {
+        setLoading(true);
         try {
-            const response = await fetch(CONFIG.APPS_SCRIPT_URL, {
-                method: 'POST',
-                body: formData
-            });
-            const result = await response.json();
-            return result;
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/blog%20data!A:I?key=${CONFIG.API_KEY}`;
+            const response = await fetch(url);
+            const data = await response.json();
+            const rows = data.values || [];
+            
+            postsData = [];
+            for(let i = 1; i < rows.length; i++) {
+                if(rows[i][0]) {
+                    postsData.push({
+                        id: rows[i][0],
+                        category: rows[i][1] || '',
+                        tags: rows[i][2] || '',
+                        author: rows[i][3] || '',
+                        publishedTime: rows[i][4] || '',
+                        title: rows[i][5] || '',
+                        content: rows[i][6] || '',
+                        likeCount: rows[i][7] || '0',
+                        shareCount: rows[i][8] || '0',
+                        image: extractFirstImage(rows[i][6] || '')
+                    });
+                }
+            }
+            
+            if(dataTable) dataTable.destroy();
+            
+            $('#postsTable tbody').html(postsData.map(post => `
+                <tr>
+                    <td>${post.id}</td>
+                    <td>${post.image ? `<img src="${post.image}" class="table-thumb" onerror="this.src='https://placehold.co/60x45/e2e8f0/64748b?text=No+Img'">` : '-'}</td>
+                    <td><strong>${escapeHtml(post.title)}</strong><br><small class="text-muted">${escapeHtml(truncate(post.content, 60))}</small></td>
+                    <td>${escapeHtml(post.category)}</td>
+                    <td>${escapeHtml(post.author)}</td>
+                    <td>${escapeHtml(post.publishedTime)}</td>
+                    <td class="action-buttons">
+                        <button class="btn btn-sm btn-outline-primary edit-btn" onclick="editPost('${post.id}')"><i class="bi bi-pencil"></i> Edit</button>
+                        <button class="btn btn-sm btn-outline-danger delete-btn" onclick="confirmDelete('${post.id}', '${escapeHtml(post.title).replace(/'/g, "\\'")}')"><i class="bi bi-trash"></i> Delete</button>
+                    </td>
+                </tr>
+            `).join(''));
+            
+            dataTable = $('#postsTable').DataTable({ pageLength: 10, order: [[0, 'desc']], language: { search: "Search:" } });
+            
         } catch(error) {
-            console.error('Submit error:', error);
-            throw error;
+            showToastMessage('Error loading posts', true);
         }
+        setLoading(false);
     }
 
-    // Handle form submission
+    // Edit post
+    window.editPost = async function(postId) {
+        setLoading(true);
+        try {
+            const post = postsData.find(p => String(p.id) === String(postId));
+            if(!post) throw new Error('Post not found');
+            
+            document.getElementById('editPostId').value = post.id;
+            $('#editCategorySelect').val(post.category).trigger('change');
+            
+            const tagArray = post.tags ? post.tags.split(',').map(t => t.trim()) : [];
+            $('#editTagsSelect').val(tagArray).trigger('change');
+            
+            document.getElementById('editAuthorName').value = post.author;
+            document.getElementById('editTitle').value = post.title;
+            editQuill.root.innerHTML = post.content;
+            
+            document.getElementById('editFormContainer').style.display = 'block';
+            document.getElementById('editFormContainer').scrollIntoView({ behavior: 'smooth' });
+            
+        } catch(error) {
+            showToastMessage('Error loading post for edit', true);
+        }
+        setLoading(false);
+    };
+
+    window.hideEditForm = function() {
+        document.getElementById('editFormContainer').style.display = 'none';
+        document.getElementById('editPostForm').reset();
+        editQuill.root.innerHTML = '';
+    };
+
+    // Submit edit
+    document.getElementById('editPostForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const postId = document.getElementById('editPostId').value;
+        const category = $('#editCategorySelect').val();
+        const tagsValue = $('#editTagsSelect').val();
+        const tagsString = Array.isArray(tagsValue) ? tagsValue.join(', ') : tagsValue || '';
+        const author = document.getElementById('editAuthorName').value.trim();
+        const title = document.getElementById('editTitle').value.trim();
+        const content = editQuill.root.innerHTML;
+        
+        if(!category || !author || !title || !content || content === '<p><br></p>') {
+            showToastMessage('Please fill all required fields', true);
+            return;
+        }
+        
+        setLoading(true);
+        try {
+            const formData = new FormData();
+            formData.append('action', 'updatePost');
+            formData.append('postId', postId);
+            formData.append('category', category);
+            formData.append('tags', tagsString);
+            formData.append('author', author);
+            formData.append('title', title);
+            formData.append('content', content);
+            
+            const response = await fetch(CONFIG.APPS_SCRIPT_URL, { method: 'POST', body: formData });
+            const result = await response.json();
+            
+            if(result.success) {
+                showToastMessage('Post updated successfully!');
+                hideEditForm();
+                loadPostsTable();
+                loadCategoriesAndTags();
+            } else {
+                throw new Error(result.error);
+            }
+        } catch(error) {
+            showToastMessage('Update failed: ' + error.message, true);
+        }
+        setLoading(false);
+    });
+
+    // Delete confirmation
+    window.confirmDelete = function(postId, postTitle) {
+        pendingDeleteId = postId;
+        document.getElementById('deletePostTitle').innerText = postTitle;
+        new bootstrap.Modal(document.getElementById('deleteConfirmModal')).show();
+    };
+
+    document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
+        if(!pendingDeleteId) return;
+        setLoading(true);
+        try {
+            const formData = new FormData();
+            formData.append('action', 'deletePost');
+            formData.append('postId', pendingDeleteId);
+            
+            const response = await fetch(CONFIG.APPS_SCRIPT_URL, { method: 'POST', body: formData });
+            const result = await response.json();
+            
+            if(result.success) {
+                showToastMessage('Post deleted successfully!');
+                bootstrap.Modal.getInstance(document.getElementById('deleteConfirmModal')).hide();
+                loadPostsTable();
+                loadCategoriesAndTags();
+                pendingDeleteId = null;
+            } else {
+                throw new Error(result.error);
+            }
+        } catch(error) {
+            showToastMessage('Delete failed: ' + error.message, true);
+        }
+        setLoading(false);
+    });
+
+    // Add Post Submit
     document.getElementById('postForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-        
-        // Validate required fields
         const category = $('#categorySelect').val();
         const author = document.getElementById('authorName').value.trim();
         const title = document.getElementById('title').value.trim();
         const content = quill.root.innerHTML;
         
-        if(!category) {
-            showToastMessage('Please select a category', true);
-            return;
-        }
-        if(!author) {
-            showToastMessage('Please enter author name', true);
-            return;
-        }
-        if(!title) {
-            showToastMessage('Please enter post title', true);
-            return;
-        }
-        if(!content || content === '<p><br></p>' || content.trim() === '') {
-            showToastMessage('Please write some content', true);
+        if(!category || !author || !title || !content || content === '<p><br></p>') {
+            showToastMessage('Please fill all required fields', true);
             return;
         }
         
         setLoading(true);
-        
         try {
-            // Get next post ID
             const nextId = await getNextPostId();
-            document.getElementById('postId').value = nextId;
-            
-            // Get tags as comma-separated string
             const tagsValue = $('#tagsSelect').val();
             const tagsString = Array.isArray(tagsValue) ? tagsValue.join(', ') : tagsValue || '';
+            const publishedTime = new Date().toLocaleString();
             
-            // Get current date and time
-            const publishedTime = new Date().toLocaleString('en-US', { 
-                year: 'numeric', 
-                month: '2-digit', 
-                day: '2-digit',
-                hour: '2-digit', 
-                minute: '2-digit'
-            });
+            const formData = new FormData();
+            formData.append('action', 'addPost');
+            formData.append('postId', nextId);
+            formData.append('category', category);
+            formData.append('tags', tagsString);
+            formData.append('author', author);
+            formData.append('publishedTime', publishedTime);
+            formData.append('title', title);
+            formData.append('content', content);
+            formData.append('likeCount', 0);
+            formData.append('shareCount', 0);
             
-            // Prepare form data for Apps Script
-            const submitFormData = new FormData();
-            submitFormData.append('action', 'addPost');
-            submitFormData.append('postId', nextId);
-            submitFormData.append('category', category);
-            submitFormData.append('tags', tagsString);
-            submitFormData.append('author', author);
-            submitFormData.append('publishedTime', publishedTime);
-            submitFormData.append('title', title);
-            submitFormData.append('content', content);
-            submitFormData.append('likeCount', 0);
-            submitFormData.append('shareCount', 0);
+            const response = await fetch(CONFIG.APPS_SCRIPT_URL, { method: 'POST', body: formData });
+            const jsonResult = await response.json();
             
-            const result = await submitPost(submitFormData);
-            
-            if(result.success) {
+            if(jsonResult.success) {
                 saveAuthorName(author);
-                showToastMessage('✅ Post published successfully!');
-                setTimeout(() => {
-                    window.location.href = 'post.html?id=' + nextId;
-                }, 1500);
+                showToastMessage('Post published successfully!');
+                resetAddForm();
+                loadPostsTable();
+                loadCategoriesAndTags();
             } else {
-                throw new Error(result.error || 'Failed to publish');
+                throw new Error(jsonResult.error);
             }
         } catch(error) {
-            console.error('Submit error:', error);
-            showToastMessage('Failed to publish post: ' + error.message, true);
-            setLoading(false);
+            showToastMessage('Failed to publish: ' + error.message, true);
         }
+        setLoading(false);
     });
 
-    // Reset form
-    window.resetForm = function() {
+    window.resetAddForm = function() {
         $('#categorySelect').val(null).trigger('change');
         $('#tagsSelect').val(null).trigger('change');
         document.getElementById('authorName').value = localStorage.getItem('blogAuthorName') || '';
         document.getElementById('title').value = '';
         quill.setContents([]);
-        showToastMessage('Form reset');
     };
 
-    // Modal handlers
+    document.getElementById('insertImageBtn').addEventListener('click', () => {
+        let imageUrl = prompt('Enter image URL:', 'https://example.com/image.jpg');
+        if(imageUrl && imageUrl.trim()) {
+            let range = quill.getSelection();
+            quill.insertEmbed(range ? range.index : 0, 'image', imageUrl.trim());
+        }
+    });
+
+    // FIXED: Save new category and auto-select
     document.getElementById('saveNewCategoryBtn').addEventListener('click', async () => {
         const newCategory = document.getElementById('newCategoryInput').value.trim();
         if(newCategory) {
@@ -574,6 +681,7 @@
         }
     });
     
+    // FIXED: Save new tag and auto-select
     document.getElementById('saveNewTagBtn').addEventListener('click', async () => {
         const newTag = document.getElementById('newTagInput').value.trim();
         if(newTag) {
@@ -584,18 +692,12 @@
             showToastMessage('Please enter a tag name', true);
         }
     });
-    
-    function escapeHtml(str) {
-        if(!str) return '';
-        return str.replace(/[&<>]/g, function(m) {
-            if(m === '&') return '&amp;';
-            if(m === '<') return '&lt;';
-            if(m === '>') return '&gt;';
-            return m;
-        });
-    }
-    
-    // Initialize page
+
+    // Refresh table when edit tab is clicked
+    document.getElementById('edit-tab').addEventListener('click', () => {
+        if($('#postsTable tbody tr').length <= 1) loadPostsTable();
+    });
+
     async function init() {
         loadCachedAuthor();
         await loadCategoriesAndTags();
