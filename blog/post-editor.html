@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="css/select2-bootstrap-5-theme.min.css">
     <link rel="stylesheet" href="css/quill.snow.css">
     <link rel="stylesheet" href="css/dataTables.bootstrap5.min.css">
-        <!-- Custom Blog CSS  -->
+    <!-- Custom Blog CSS -->
     <link rel="stylesheet" href="css/blog.css">
 </head>
 <body>
@@ -56,7 +56,6 @@
 
                 <form id="postForm">
                     <input type="hidden" id="postId" name="postId">
-                    <input type="hidden" id="isEditMode" name="isEditMode" value="false">
 
                     <!-- Category Field -->
                     <div class="mb-4">
@@ -89,6 +88,7 @@
                     <div class="mb-4">
                         <label class="form-label required">Author Name</label>
                         <input type="text" id="authorName" class="form-control" placeholder="Enter your name" required>
+                        <div class="form-text">Your name will be saved for future posts</div>
                     </div>
 
                     <!-- Title -->
@@ -97,21 +97,22 @@
                         <input type="text" id="title" class="form-control" placeholder="Enter an engaging title..." required>
                     </div>
 
-                    <!-- Content -->
+                    <!-- Content (Rich Text Editor) -->
                     <div class="mb-4">
                         <label class="form-label required">Content</label>
+                        <!-- Insert Image Button -->
                         <div class="mb-2">
                             <button type="button" class="insert-image-btn btn-sm" id="insertImageBtn">
                                 <i class="bi bi-image"></i> Insert Image via URL
                             </button>
                         </div>
                         <div id="editor"></div>
-                        <div class="form-text mt-2">Write your post using the rich text editor.</div>
+                        <div class="form-text mt-2">Use the toolbar to format text, or click the button above to add images via URL.</div>
                     </div>
 
                     <!-- Submit Button -->
                     <div class="d-flex gap-3 mt-4">
-                        <button type="submit" class="btn btn-primary-custom px-5" id="submitBtn">
+                        <button type="submit" class="btn btn-primary-custom px-5">
                             <i class="bi bi-send"></i> Publish Post
                         </button>
                         <button type="reset" class="btn btn-outline-secondary rounded-pill px-4" onclick="resetAddForm()">
@@ -150,7 +151,7 @@
                 </div>
 
                 <!-- Edit Form (hidden initially) -->
-                <div id="editFormContainer" style="display: none; margin-top: 2rem; border-top: 2px solid #e2e8f0; padding-top: 1.5rem;">
+                <div id="editFormContainer" class="edit-form-container" style="display: none;">
                     <h4 class="fw-bold mb-3"><i class="bi bi-pencil-square"></i> Edit Post</h4>
                     <form id="editPostForm">
                         <input type="hidden" id="editPostId" name="editPostId">
@@ -180,6 +181,12 @@
 
                         <div class="mb-3">
                             <label class="form-label required">Content</label>
+                            <!-- Insert Image Button for Edit Editor -->
+                            <div class="mb-2">
+                                <button type="button" class="insert-image-btn btn-sm" id="editInsertImageBtn">
+                                    <i class="bi bi-image"></i> Insert Image via URL
+                                </button>
+                            </div>
                             <div id="editEditor"></div>
                         </div>
 
@@ -187,7 +194,7 @@
                             <button type="submit" class="btn btn-primary-custom">
                                 <i class="bi bi-save"></i> Update Post
                             </button>
-                            <button type="button" class="btn btn-outline-secondary" onclick="hideEditForm()">
+                            <button type="button" class="btn btn-outline-secondary rounded-pill" onclick="hideEditForm()">
                                 <i class="bi bi-x-lg"></i> Cancel
                             </button>
                         </div>
@@ -271,25 +278,40 @@
 <script src="js/bootstrap.bundle.min.js"></script>
 <script src="js/select2.min.js"></script>
 <script src="js/quill.js"></script>
-<script src="js/swiper-bundle.min.js"></script>
 <script src="js/jquery.dataTables.min.js"></script>
 <script src="js/dataTables.bootstrap5.min.js"></script>
 <script src="config.js"></script>
 
 <script>
-    // Quill Editors
+    // ==================== Full Quill Editor Configuration ====================
+    const quillToolbarOptions = [
+        [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+        ['bold', 'italic', 'underline', 'strike'],
+        [{ 'color': [] }, { 'background': [] }],
+        [{ 'script': 'sub'}, { 'script': 'super' }],
+        [{ 'list': 'ordered'}, { 'list': 'bullet' }, { 'list': 'check' }],
+        [{ 'indent': '-1'}, { 'indent': '+1' }],
+        [{ 'align': [] }],
+        ['blockquote', 'code-block'],
+        ['link', 'image', 'video'],
+        ['clean']
+    ];
+
+    // Main Editor
     let quill = new Quill('#editor', {
         theme: 'snow',
         placeholder: 'Write your amazing story here...',
-        modules: { toolbar: [['bold', 'italic', 'underline', 'strike'], [{ 'list': 'ordered'}, { 'list': 'bullet' }], ['link', 'image'], ['clean']] }
+        modules: { toolbar: quillToolbarOptions }
     });
-    
+
+    // Edit Editor
     let editQuill = new Quill('#editEditor', {
         theme: 'snow',
         placeholder: 'Edit your post content...',
-        modules: { toolbar: [['bold', 'italic', 'underline', 'strike'], [{ 'list': 'ordered'}, { 'list': 'bullet' }], ['link', 'image'], ['clean']] }
+        modules: { toolbar: quillToolbarOptions }
     });
 
+    // Global variables
     let existingCategories = [];
     let existingTags = [];
     let postsData = [];
@@ -315,18 +337,23 @@
         return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m] || m));
     }
 
-    function truncate(str, len) {
-        if(!str) return '';
-        let text = str.replace(/<[^>]*>/g, '');
-        return text.length > len ? text.substring(0, len) + '...' : text;
-    }
-
     function extractFirstImage(html) {
         if (!html) return null;
         const match = html.match(/<img[^>]+src=["']([^"']+)["']/i);
         return match ? match[1] : null;
     }
 
+    // Image insertion helper for main editor
+    function insertImageToEditor(editor) {
+        let imageUrl = prompt('Enter image URL:', 'https://example.com/image.jpg');
+        if (imageUrl && imageUrl.trim()) {
+            let range = editor.getSelection();
+            let position = range ? range.index : 0;
+            editor.insertEmbed(position, 'image', imageUrl.trim());
+        }
+    }
+
+    // Load categories and tags
     async function loadCategoriesAndTags() {
         try {
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/blog%20data!A:I?key=${CONFIG.API_KEY}`;
@@ -366,6 +393,7 @@
         }
     }
 
+    // Get next post ID
     async function getNextPostId() {
         try {
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/blog%20data!A:A?key=${CONFIG.API_KEY}`;
@@ -392,7 +420,7 @@
         if(name && name.trim()) localStorage.setItem('blogAuthorName', name.trim());
     }
 
-    // FIXED: Add new category and auto-select
+    // Add new category
     async function addNewCategory(categoryName) {
         if(!categoryName || !categoryName.trim()) return false;
         if(existingCategories.includes(categoryName.trim())) {
@@ -402,10 +430,8 @@
         existingCategories.push(categoryName.trim());
         existingCategories.sort();
         
-        // Update both category selects
         [$('#categorySelect'), $('#editCategorySelect')].forEach(select => {
-            const newOption = new Option(categoryName.trim(), categoryName.trim(), false, true);
-            select.append(newOption);
+            select.append(`<option value="${escapeHtml(categoryName.trim())}">${escapeHtml(categoryName.trim())}</option>`);
             select.val(categoryName.trim()).trigger('change');
         });
         
@@ -413,7 +439,7 @@
         return true;
     }
 
-    // FIXED: Add new tag and auto-select it
+    // Add new tag
     async function addNewTag(tagName) {
         if(!tagName || !tagName.trim()) return false;
         if(existingTags.includes(tagName.trim())) {
@@ -423,20 +449,17 @@
         existingTags.push(tagName.trim());
         existingTags.sort();
         
-        // Update tags selects
         [$('#tagsSelect'), $('#editTagsSelect')].forEach(select => {
-            const newOption = new Option(tagName.trim(), tagName.trim(), false, true);
-            select.append(newOption);
-            
-            // For main tags select, auto-select the new tag
-            if(select.attr('id') === 'tagsSelect') {
-                let currentVal = select.val() || [];
-                if(!currentVal.includes(tagName.trim())) {
-                    currentVal.push(tagName.trim());
-                    select.val(currentVal).trigger('change');
-                }
-            }
+            select.append(`<option value="${escapeHtml(tagName.trim())}">${escapeHtml(tagName.trim())}</option>`);
         });
+        
+        // Auto-select for main tags
+        const mainTags = $('#tagsSelect');
+        let currentVal = mainTags.val() || [];
+        if(!currentVal.includes(tagName.trim())) {
+            currentVal.push(tagName.trim());
+            mainTags.val(currentVal).trigger('change');
+        }
         
         showToastMessage(`Tag "${tagName}" added and selected!`);
         return true;
@@ -475,7 +498,7 @@
                 <tr>
                     <td>${post.id}</td>
                     <td>${post.image ? `<img src="${post.image}" class="table-thumb" onerror="this.src='https://placehold.co/60x45/e2e8f0/64748b?text=No+Img'">` : '-'}</td>
-                    <td><strong>${escapeHtml(post.title)}</strong><br><small class="text-muted">${escapeHtml(truncate(post.content, 60))}</small></td>
+                    <td><strong>${escapeHtml(post.title)}</strong><br><small class="text-muted">${escapeHtml(post.content.replace(/<[^>]*>/g, '').substring(0, 60))}...</small></td>
                     <td>${escapeHtml(post.category)}</td>
                     <td>${escapeHtml(post.author)}</td>
                     <td>${escapeHtml(post.publishedTime)}</td>
@@ -640,17 +663,20 @@
             
             if(jsonResult.success) {
                 saveAuthorName(author);
-                showToastMessage('Post published successfully!');
+                showToastMessage('✅ Post published successfully!');
                 resetAddForm();
                 loadPostsTable();
                 loadCategoriesAndTags();
+                setTimeout(() => {
+                    window.location.href = 'post.html?id=' + nextId;
+                }, 1500);
             } else {
                 throw new Error(jsonResult.error);
             }
         } catch(error) {
             showToastMessage('Failed to publish: ' + error.message, true);
+            setLoading(false);
         }
-        setLoading(false);
     });
 
     window.resetAddForm = function() {
@@ -661,15 +687,16 @@
         quill.setContents([]);
     };
 
+    // Image insertion handlers
     document.getElementById('insertImageBtn').addEventListener('click', () => {
-        let imageUrl = prompt('Enter image URL:', 'https://example.com/image.jpg');
-        if(imageUrl && imageUrl.trim()) {
-            let range = quill.getSelection();
-            quill.insertEmbed(range ? range.index : 0, 'image', imageUrl.trim());
-        }
+        insertImageToEditor(quill);
     });
 
-    // FIXED: Save new category and auto-select
+    document.getElementById('editInsertImageBtn').addEventListener('click', () => {
+        insertImageToEditor(editQuill);
+    });
+
+    // Modal handlers
     document.getElementById('saveNewCategoryBtn').addEventListener('click', async () => {
         const newCategory = document.getElementById('newCategoryInput').value.trim();
         if(newCategory) {
@@ -681,7 +708,6 @@
         }
     });
     
-    // FIXED: Save new tag and auto-select
     document.getElementById('saveNewTagBtn').addEventListener('click', async () => {
         const newTag = document.getElementById('newTagInput').value.trim();
         if(newTag) {

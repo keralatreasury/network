@@ -1,4 +1,4 @@
-<!-- post.html - Fixed: No image duplication -->
+<!-- post.html - Updated with Category and Author Links -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="css/bootstrap.min.css">
     <link rel="stylesheet" href="css/bootstrap-icons.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap" rel="stylesheet">
-    <!-- Custom Blog CSS  -->
+     <!-- Custom Blog CSS  -->
     <link rel="stylesheet" href="css/blog.css">
 </head>
 <body>
@@ -32,7 +32,6 @@
 </footer>
 
 <div id="liveToast" class="toast-custom"><i class="bi bi-check-lg me-2"></i><span id="toastMsg"></span></div>
-
 <script src="js/bootstrap.bundle.min.js"></script>
 <script src="config.js"></script>
 <script>
@@ -47,6 +46,19 @@
         toastEl.style.background = isError ? '#d32f2f' : '#1f1f1f';
         toastEl.style.opacity = '1';
         setTimeout(() => { toastEl.style.opacity = '0'; }, 2500);
+    }
+    
+    // Navigate to category
+    function navigateToCategory(category) {
+        localStorage.setItem('selectedCategory', category);
+        window.location.href = 'category.html';
+    }
+    
+    // Navigate to author profile
+    function navigateToAuthor(authorName, authorDesignation) {
+        sessionStorage.setItem('profileAuthorName', authorName);
+        sessionStorage.setItem('profileAuthorDesignation', authorDesignation || '');
+        window.location.href = 'profile.html';
     }
     
     // Submit like to Apps Script
@@ -191,6 +203,25 @@
         return { post: foundPost, comments };
     }
     
+    // Fetch author designation from profiles sheet
+    async function fetchAuthorDesignation(authorName) {
+        try {
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/profiles!A:D?key=${CONFIG.API_KEY}`;
+            const response = await fetch(url);
+            const data = await response.json();
+            const rows = data.values || [];
+            for(let i=1; i<rows.length; i++) {
+                if(rows[i][0] && rows[i][0].trim().toLowerCase() === authorName.toLowerCase()) {
+                    return rows[i][1] || ''; // Designation column
+                }
+            }
+            return '';
+        } catch(error) {
+            console.error('Error fetching author designation:', error);
+            return '';
+        }
+    }
+    
     // Extract first image URL from HTML content
     function extractFirstImage(html) {
         if (!html) return null;
@@ -201,11 +232,10 @@
     // Remove the first image from HTML content to avoid duplication
     function removeFirstImageFromContent(html) {
         if (!html) return html;
-        // Replace the first img tag with empty string
         return html.replace(/<img[^>]+>/i, '');
     }
     
-    function renderPostPage(post, comments) {
+    async function renderPostPage(post, comments) {
         allComments = comments;
         document.getElementById("loadingSpinner").style.display = "none";
         document.getElementById("postContentWrapper").style.display = "block";
@@ -213,6 +243,7 @@
         
         const avatarLetter = (post.author.charAt(0) || 'A').toUpperCase();
         const featuredImg = extractFirstImage(post.content);
+        const authorDesignation = await fetchAuthorDesignation(post.author);
         
         // Remove the first image from content to avoid duplication
         let contentWithoutFirstImage = post.content;
@@ -221,18 +252,29 @@
         }
         
         let contentHtml = `<div class="blog-header">
-            <div class="text-muted small mb-2">${escapeHtml(post.category)}</div>
+            <div class="text-muted small mb-2">
+                <span class="category-link" data-category="${escapeHtml(post.category)}" style="cursor: pointer; color: #1a73e8;">
+                    <i class="bi bi-folder"></i> ${escapeHtml(post.category)}
+                </span>
+            </div>
             <h1 class="blog-title">${escapeHtml(post.title)}</h1>
             <div class="blog-meta">
                 <div class="d-flex align-items-center gap-2">
-                    <span class="avatar d-inline-flex">${avatarLetter}</span> 
-                    <strong>${escapeHtml(post.author)}</strong>
+                    <div class="avatar d-inline-flex author-link" data-author="${escapeHtml(post.author)}" data-designation="${escapeHtml(authorDesignation)}">
+                        ${avatarLetter}
+                    </div>
+                    <div>
+                        <div class="author-link fw-bold" data-author="${escapeHtml(post.author)}" data-designation="${escapeHtml(authorDesignation)}" style="cursor: pointer;">
+                            ${escapeHtml(post.author)}
+                        </div>
+                        ${authorDesignation ? `<div class="small text-muted">${escapeHtml(authorDesignation)}</div>` : ''}
+                    </div>
                 </div>
                 <span><i class="bi bi-calendar3"></i> ${escapeHtml(post.publishedTime)}</span>
                 <span><i class="bi bi-tag"></i> ${escapeHtml(post.tags) || 'general'}</span>
             </div>`;
         
-        // Show featured image only if exists (this is the main blog image)
+        // Show featured image only if exists
         if(featuredImg) {
             contentHtml += `<img src="${featuredImg}" class="post-featured-img" alt="Featured image for ${escapeHtml(post.title)}">`;
         }
@@ -247,6 +289,20 @@
         
         document.getElementById("postContentWrapper").innerHTML = contentHtml;
         renderCommentsSection();
+        
+        // Add event listeners for category and author links
+        document.querySelector('.category-link')?.addEventListener('click', (e) => {
+            const category = e.currentTarget.getAttribute('data-category');
+            navigateToCategory(category);
+        });
+        
+        document.querySelectorAll('.author-link').forEach(el => {
+            el.addEventListener('click', (e) => {
+                const authorName = el.getAttribute('data-author');
+                const authorDesignation = el.getAttribute('data-designation');
+                navigateToAuthor(authorName, authorDesignation);
+            });
+        });
         
         document.getElementById("likeButton").addEventListener("click", async () => {
             const newCount = await submitLike(post.id);
