@@ -12,19 +12,54 @@
     <link rel="stylesheet" href="css/dataTables.bootstrap5.min.css">
     <!-- Custom Blog CSS -->
     <link rel="stylesheet" href="css/blog.css">
+    <style>
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .user-avatar-small {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .user-name {
+            font-weight: 500;
+            color: #1e293b;
+        }
+        .logout-btn {
+            color: #ef4444;
+        }
+        .logout-btn:hover {
+            color: #dc2626;
+        }
+        .author-display {
+            background-color: #f1f5f9;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+        }
+    </style>
 </head>
 <body>
 
 <!-- Header -->
 <nav class="navbar navbar-expand-lg bg-white border-bottom sticky-top px-3 px-md-5 py-2 shadow-sm">
     <div class="container-fluid">
-        <a class="navbar-brand fw-bold" href="./">
+        <a class="navbar-brand fw-bold" href="./post-editor.html">
             <i class="bi bi-journal-bookmark-fill fs-3" style="color: #4f46e5"></i>
-            Blog Studio
-        </a>
-        <div class="ms-auto">
+            /blog        </a>
+        <div class="ms-auto d-flex align-items-center gap-3">
+            <div class="user-info" id="userInfo">
+                <span id="userAvatar"></span>
+                <span class="user-name" id="userNameDisplay"></span>
+            </div>
+            <a href="login.html" class="btn btn-outline-danger btn-sm rounded-pill logout-btn" id="logoutBtn">
+                <i class="bi bi-box-arrow-right"></i> Logout
+            </a>
             <a href="./index.html" class="btn btn-outline-secondary btn-sm rounded-pill">
-                <i class="bi bi-house"></i> Back to Home
+                <i class="bi bi-house"></i> Home
             </a>
         </div>
     </div>
@@ -56,6 +91,7 @@
 
                 <form id="postForm">
                     <input type="hidden" id="postId" name="postId">
+                    <input type="hidden" id="authorName" name="authorName">
 
                     <!-- Category Field -->
                     <div class="mb-4">
@@ -84,11 +120,13 @@
                         <div class="form-text">Type new tags and press Enter</div>
                     </div>
 
-                    <!-- Author Name -->
+                    <!-- Author Name - Display Only (Hidden field stores value) -->
                     <div class="mb-4">
                         <label class="form-label required">Author Name</label>
-                        <input type="text" id="authorName" class="form-control" placeholder="Enter your name" required>
-                        <div class="form-text">Your name will be saved for future posts</div>
+                        <div class="author-display" id="authorNameDisplay">
+                            <i class="bi bi-person-circle me-2"></i> <span id="loggedInAuthor"></span>
+                        </div>
+                        <div class="form-text">You are posting as the logged-in user</div>
                     </div>
 
                     <!-- Title -->
@@ -100,7 +138,6 @@
                     <!-- Content (Rich Text Editor) -->
                     <div class="mb-4">
                         <label class="form-label required">Content</label>
-                        <!-- Insert Image Button -->
                         <div class="mb-2">
                             <button type="button" class="insert-image-btn btn-sm" id="insertImageBtn">
                                 <i class="bi bi-image"></i> Insert Image via URL
@@ -122,13 +159,17 @@
                 </form>
             </div>
 
-            <!-- Tab 2: Edit/Delete Posts -->
+            <!-- Tab 2: Edit/Delete Posts (Filtered by logged-in author) -->
             <div class="tab-pane fade" id="editPosts" role="tabpanel">
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h2 class="fw-bold mb-0"><i class="bi bi-grid-3x3-gap"></i> Manage Posts</h2>
+                    <h2 class="fw-bold mb-0"><i class="bi bi-grid-3x3-gap"></i> Manage Your Posts</h2>
                     <button class="btn btn-sm btn-outline-secondary" onclick="loadPostsTable()">
                         <i class="bi bi-arrow-repeat"></i> Refresh
                     </button>
+                </div>
+                
+                <div class="alert alert-info mb-3">
+                    <i class="bi bi-info-circle"></i> Showing only posts authored by <strong id="filterAuthorName"></strong>
                 </div>
                 
                 <div class="table-container">
@@ -139,22 +180,22 @@
                                 <th>Thumbnail</th>
                                 <th>Title</th>
                                 <th>Category</th>
-                                <th>Author</th>
                                 <th>Date</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr><td colspan="7" class="text-center">Loading posts...</td></tr>
+                            <tr><td colspan="6" class="text-center">Loading your posts...</td>\n</tr>
                         </tbody>
                     </table>
                 </div>
 
-                <!-- Edit Form (hidden initially) -->
+                <!-- Edit Form (hidden initially) - NOW WITH AUTHOR FIELD -->
                 <div id="editFormContainer" class="edit-form-container" style="display: none;">
                     <h4 class="fw-bold mb-3"><i class="bi bi-pencil-square"></i> Edit Post</h4>
                     <form id="editPostForm">
                         <input type="hidden" id="editPostId" name="editPostId">
+                        <input type="hidden" id="editAuthorName" name="editAuthorName">
                         
                         <div class="mb-3">
                             <label class="form-label required">Category</label>
@@ -169,9 +210,13 @@
                             </select>
                         </div>
 
+                        <!-- Author Name - Read-only display for edit form -->
                         <div class="mb-3">
-                            <label class="form-label required">Author</label>
-                            <input type="text" id="editAuthorName" class="form-control" required>
+                            <label class="form-label required">Author Name</label>
+                            <div class="author-display" id="editAuthorNameDisplay">
+                                <i class="bi bi-person-circle me-2"></i> <span id="editLoggedInAuthor"></span>
+                            </div>
+                            <div class="form-text">Author name cannot be changed</div>
                         </div>
 
                         <div class="mb-3">
@@ -181,7 +226,6 @@
 
                         <div class="mb-3">
                             <label class="form-label required">Content</label>
-                            <!-- Insert Image Button for Edit Editor -->
                             <div class="mb-2">
                                 <button type="button" class="insert-image-btn btn-sm" id="editInsertImageBtn">
                                     <i class="bi bi-image"></i> Insert Image via URL
@@ -283,6 +327,60 @@
 <script src="config.js"></script>
 
 <script>
+    // ==================== Session Check ====================
+    let currentLoggedInAuthor = '';
+    let currentLoggedInImage = '';
+    
+    function checkSession() {
+        const isLoggedIn = sessionStorage.getItem('blogLoggedIn');
+        const authorName = sessionStorage.getItem('blogAuthorName');
+        const authorImage = sessionStorage.getItem('blogAuthorImage');
+        
+        if (!isLoggedIn || isLoggedIn !== 'true' || !authorName) {
+            window.location.href = 'login.html';
+            return false;
+        }
+        
+        currentLoggedInAuthor = authorName;
+        currentLoggedInImage = authorImage;
+        return true;
+    }
+
+    function displayUserInfo() {
+        const authorName = sessionStorage.getItem('blogAuthorName');
+        const authorImage = sessionStorage.getItem('blogAuthorImage');
+        const authorDesignation = sessionStorage.getItem('blogAuthorDesignation') || '';
+        
+        if (authorName) {
+            document.getElementById('userNameDisplay').innerHTML = `${authorName} ${authorDesignation ? `<span class="text-muted small">(${authorDesignation})</span>` : ''}`;
+            document.getElementById('loggedInAuthor').innerText = authorName;
+            document.getElementById('editLoggedInAuthor').innerText = authorName;
+            document.getElementById('authorName').value = authorName;
+            document.getElementById('filterAuthorName').innerText = authorName;
+            
+            if (authorImage && authorImage !== 'null' && authorImage !== '') {
+                document.getElementById('userAvatar').innerHTML = `<img src="${authorImage}" class="user-avatar-small" alt="${authorName}" onerror="this.src='https://placehold.co/35x35/4f46e5/white?text=${authorName.charAt(0)}'">`;
+            } else {
+                document.getElementById('userAvatar').innerHTML = `<div class="user-avatar-small d-flex align-items-center justify-content-center bg-primary text-white rounded-circle" style="width:35px;height:35px;">${authorName.charAt(0).toUpperCase()}</div>`;
+            }
+        }
+    }
+
+    function setupLogout() {
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                sessionStorage.clear();
+                window.location.href = 'login.html';
+            });
+        }
+    }
+
+    if (!checkSession()) {
+        throw new Error('Session check failed');
+    }
+
     // ==================== Full Quill Editor Configuration ====================
     const quillToolbarOptions = [
         [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
@@ -297,21 +395,18 @@
         ['clean']
     ];
 
-    // Main Editor
     let quill = new Quill('#editor', {
         theme: 'snow',
         placeholder: 'Write your amazing story here...',
         modules: { toolbar: quillToolbarOptions }
     });
 
-    // Edit Editor
     let editQuill = new Quill('#editEditor', {
         theme: 'snow',
         placeholder: 'Edit your post content...',
         modules: { toolbar: quillToolbarOptions }
     });
 
-    // Global variables
     let existingCategories = [];
     let existingTags = [];
     let postsData = [];
@@ -343,7 +438,6 @@
         return match ? match[1] : null;
     }
 
-    // Image insertion helper for main editor
     function insertImageToEditor(editor) {
         let imageUrl = prompt('Enter image URL:', 'https://example.com/image.jpg');
         if (imageUrl && imageUrl.trim()) {
@@ -353,35 +447,24 @@
         }
     }
 
-    // Load categories and tags
     async function loadCategoriesAndTags() {
         try {
-            const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/blog%20data!A:I?key=${CONFIG.API_KEY}`;
-            const response = await fetch(url);
-            const data = await response.json();
-            const rows = data.values || [];
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/master_categories!A:A?key=${CONFIG.API_KEY}`;
+            const tagsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/master_tags!A:A?key=${CONFIG.API_KEY}`;
             
-            const categories = new Set();
-            const tags = new Set();
+            const [catRes, tagRes] = await Promise.all([fetch(url), fetch(tagsUrl)]);
+            const catData = await catRes.json();
+            const tagData = await tagRes.json();
             
-            for(let i = 1; i < rows.length; i++) {
-                if(rows[i][1] && rows[i][1].trim()) categories.add(rows[i][1].trim());
-                if(rows[i][2] && rows[i][2].trim()) {
-                    rows[i][2].split(',').map(t => t.trim()).forEach(t => { if(t) tags.add(t); });
-                }
-            }
+            existingCategories = (catData.values || []).slice(1).map(row => row[0]).filter(c => c && c.trim()).sort();
+            existingTags = (tagData.values || []).slice(1).map(row => row[0]).filter(t => t && t.trim()).sort();
             
-            existingCategories = Array.from(categories).sort();
-            existingTags = Array.from(tags).sort();
-            
-            // Populate category selects
             [$('#categorySelect'), $('#editCategorySelect')].forEach(select => {
                 select.empty().append('<option value="">Select a category...</option>');
                 existingCategories.forEach(cat => select.append(`<option value="${escapeHtml(cat)}">${escapeHtml(cat)}</option>`));
                 select.select2({ theme: 'bootstrap-5', placeholder: 'Select a category', allowClear: true });
             });
             
-            // Populate tags selects
             [$('#tagsSelect'), $('#editTagsSelect')].forEach(select => {
                 select.empty();
                 existingTags.forEach(tag => select.append(`<option value="${escapeHtml(tag)}">${escapeHtml(tag)}</option>`));
@@ -393,7 +476,6 @@
         }
     }
 
-    // Get next post ID
     async function getNextPostId() {
         try {
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/blog%20data!A:A?key=${CONFIG.API_KEY}`;
@@ -411,16 +493,6 @@
         }
     }
 
-    function loadCachedAuthor() {
-        const cachedAuthor = localStorage.getItem('blogAuthorName');
-        if(cachedAuthor) document.getElementById('authorName').value = cachedAuthor;
-    }
-
-    function saveAuthorName(name) {
-        if(name && name.trim()) localStorage.setItem('blogAuthorName', name.trim());
-    }
-
-    // Add new category
     async function addNewCategory(categoryName) {
         if(!categoryName || !categoryName.trim()) return false;
         if(existingCategories.includes(categoryName.trim())) {
@@ -439,7 +511,6 @@
         return true;
     }
 
-    // Add new tag
     async function addNewTag(tagName) {
         if(!tagName || !tagName.trim()) return false;
         if(existingTags.includes(tagName.trim())) {
@@ -453,7 +524,6 @@
             select.append(`<option value="${escapeHtml(tagName.trim())}">${escapeHtml(tagName.trim())}</option>`);
         });
         
-        // Auto-select for main tags
         const mainTags = $('#tagsSelect');
         let currentVal = mainTags.val() || [];
         if(!currentVal.includes(tagName.trim())) {
@@ -465,7 +535,6 @@
         return true;
     }
 
-    // Load posts table
     async function loadPostsTable() {
         setLoading(true);
         try {
@@ -476,12 +545,13 @@
             
             postsData = [];
             for(let i = 1; i < rows.length; i++) {
-                if(rows[i][0]) {
+                const postAuthor = rows[i][3] || '';
+                if(rows[i][0] && postAuthor.toLowerCase() === currentLoggedInAuthor.toLowerCase()) {
                     postsData.push({
                         id: rows[i][0],
                         category: rows[i][1] || '',
                         tags: rows[i][2] || '',
-                        author: rows[i][3] || '',
+                        author: postAuthor,
                         publishedTime: rows[i][4] || '',
                         title: rows[i][5] || '',
                         content: rows[i][6] || '',
@@ -494,22 +564,26 @@
             
             if(dataTable) dataTable.destroy();
             
-            $('#postsTable tbody').html(postsData.map(post => `
-                <tr>
-                    <td>${post.id}</td>
-                    <td>${post.image ? `<img src="${post.image}" class="table-thumb" onerror="this.src='https://placehold.co/60x45/e2e8f0/64748b?text=No+Img'">` : '-'}</td>
-                    <td><strong>${escapeHtml(post.title)}</strong><br><small class="text-muted">${escapeHtml(post.content.replace(/<[^>]*>/g, '').substring(0, 60))}...</small></td>
-                    <td>${escapeHtml(post.category)}</td>
-                    <td>${escapeHtml(post.author)}</td>
-                    <td>${escapeHtml(post.publishedTime)}</td>
-                    <td class="action-buttons">
-                        <button class="btn btn-sm btn-outline-primary edit-btn" onclick="editPost('${post.id}')"><i class="bi bi-pencil"></i> Edit</button>
-                        <button class="btn btn-sm btn-outline-danger delete-btn" onclick="confirmDelete('${post.id}', '${escapeHtml(post.title).replace(/'/g, "\\'")}')"><i class="bi bi-trash"></i> Delete</button>
-                    </td>
-                </tr>
-            `).join(''));
-            
-            dataTable = $('#postsTable').DataTable({ pageLength: 10, order: [[0, 'desc']], language: { search: "Search:" } });
+            if (postsData.length === 0) {
+                $('#postsTable tbody').html('<tr><td colspan="6" class="text-center">No posts found. Create your first post in the "Add New Post" tab.</td></tr>');
+                dataTable = $('#postsTable').DataTable({ pageLength: 10, order: [[0, 'desc']], language: { search: "Search:" } });
+            } else {
+                $('#postsTable tbody').html(postsData.map(post => `
+                    <tr>
+                        <td>${post.id}</td>
+                        <td>${post.image ? `<img src="${post.image}" class="table-thumb" onerror="this.src='https://placehold.co/60x45/e2e8f0/64748b?text=No+Img'">` : '-'}</td>
+                        <td><strong>${escapeHtml(post.title)}</strong><br><small class="text-muted">${escapeHtml(post.content.replace(/<[^>]*>/g, '').substring(0, 60))}...</small></td>
+                        <td>${escapeHtml(post.category)}</td>
+                        <td>${escapeHtml(post.publishedTime)}</td>
+                        <td class="action-buttons">
+                            <button class="btn btn-sm btn-outline-primary edit-btn" onclick="editPost('${post.id}')"><i class="bi bi-pencil"></i> Edit</button>
+                            <button class="btn btn-sm btn-outline-danger delete-btn" onclick="confirmDelete('${post.id}', '${escapeHtml(post.title).replace(/'/g, "\\'")}')"><i class="bi bi-trash"></i> Delete</button>
+                        </td>
+                    </tr>
+                `).join(''));
+                
+                dataTable = $('#postsTable').DataTable({ pageLength: 10, order: [[0, 'desc']], language: { search: "Search:" } });
+            }
             
         } catch(error) {
             showToastMessage('Error loading posts', true);
@@ -517,7 +591,7 @@
         setLoading(false);
     }
 
-    // Edit post
+    // Edit post - FIXED: Also set the author hidden field
     window.editPost = async function(postId) {
         setLoading(true);
         try {
@@ -525,12 +599,13 @@
             if(!post) throw new Error('Post not found');
             
             document.getElementById('editPostId').value = post.id;
+            document.getElementById('editAuthorName').value = post.author; // Set author hidden field
+            
             $('#editCategorySelect').val(post.category).trigger('change');
             
             const tagArray = post.tags ? post.tags.split(',').map(t => t.trim()) : [];
             $('#editTagsSelect').val(tagArray).trigger('change');
             
-            document.getElementById('editAuthorName').value = post.author;
             document.getElementById('editTitle').value = post.title;
             editQuill.root.innerHTML = post.content;
             
@@ -538,7 +613,7 @@
             document.getElementById('editFormContainer').scrollIntoView({ behavior: 'smooth' });
             
         } catch(error) {
-            showToastMessage('Error loading post for edit', true);
+            showToastMessage('Error loading post for edit: ' + error.message, true);
         }
         setLoading(false);
     };
@@ -549,16 +624,18 @@
         editQuill.root.innerHTML = '';
     };
 
-    // Submit edit
+    // Submit edit - FIXED: Include author name in the update
     document.getElementById('editPostForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const postId = document.getElementById('editPostId').value;
+        const author = document.getElementById('editAuthorName').value; // Get author from hidden field
         const category = $('#editCategorySelect').val();
         const tagsValue = $('#editTagsSelect').val();
         const tagsString = Array.isArray(tagsValue) ? tagsValue.join(', ') : tagsValue || '';
-        const author = document.getElementById('editAuthorName').value.trim();
         const title = document.getElementById('editTitle').value.trim();
         const content = editQuill.root.innerHTML;
+        
+        console.log('Updating post:', { postId, author, category, title });
         
         if(!category || !author || !title || !content || content === '<p><br></p>') {
             showToastMessage('Please fill all required fields', true);
@@ -572,7 +649,7 @@
             formData.append('postId', postId);
             formData.append('category', category);
             formData.append('tags', tagsString);
-            formData.append('author', author);
+            formData.append('author', author);  // Now sending author name!
             formData.append('title', title);
             formData.append('content', content);
             
@@ -580,20 +657,20 @@
             const result = await response.json();
             
             if(result.success) {
-                showToastMessage('Post updated successfully!');
+                showToastMessage('✅ Post updated successfully!');
                 hideEditForm();
-                loadPostsTable();
-                loadCategoriesAndTags();
+                await loadPostsTable();
+                await loadCategoriesAndTags();
             } else {
                 throw new Error(result.error);
             }
         } catch(error) {
+            console.error('Update error:', error);
             showToastMessage('Update failed: ' + error.message, true);
         }
         setLoading(false);
     });
 
-    // Delete confirmation
     window.confirmDelete = function(postId, postTitle) {
         pendingDeleteId = postId;
         document.getElementById('deletePostTitle').innerText = postTitle;
@@ -614,8 +691,8 @@
             if(result.success) {
                 showToastMessage('Post deleted successfully!');
                 bootstrap.Modal.getInstance(document.getElementById('deleteConfirmModal')).hide();
-                loadPostsTable();
-                loadCategoriesAndTags();
+                await loadPostsTable();
+                await loadCategoriesAndTags();
                 pendingDeleteId = null;
             } else {
                 throw new Error(result.error);
@@ -626,11 +703,10 @@
         setLoading(false);
     });
 
-    // Add Post Submit
     document.getElementById('postForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const category = $('#categorySelect').val();
-        const author = document.getElementById('authorName').value.trim();
+        const author = currentLoggedInAuthor;
         const title = document.getElementById('title').value.trim();
         const content = quill.root.innerHTML;
         
@@ -662,11 +738,10 @@
             const jsonResult = await response.json();
             
             if(jsonResult.success) {
-                saveAuthorName(author);
                 showToastMessage('✅ Post published successfully!');
                 resetAddForm();
-                loadPostsTable();
-                loadCategoriesAndTags();
+                await loadPostsTable();
+                await loadCategoriesAndTags();
                 setTimeout(() => {
                     window.location.href = 'post.html?id=' + nextId;
                 }, 1500);
@@ -682,12 +757,10 @@
     window.resetAddForm = function() {
         $('#categorySelect').val(null).trigger('change');
         $('#tagsSelect').val(null).trigger('change');
-        document.getElementById('authorName').value = localStorage.getItem('blogAuthorName') || '';
         document.getElementById('title').value = '';
         quill.setContents([]);
     };
 
-    // Image insertion handlers
     document.getElementById('insertImageBtn').addEventListener('click', () => {
         insertImageToEditor(quill);
     });
@@ -696,7 +769,6 @@
         insertImageToEditor(editQuill);
     });
 
-    // Modal handlers
     document.getElementById('saveNewCategoryBtn').addEventListener('click', async () => {
         const newCategory = document.getElementById('newCategoryInput').value.trim();
         if(newCategory) {
@@ -719,14 +791,15 @@
         }
     });
 
-    // Refresh table when edit tab is clicked
     document.getElementById('edit-tab').addEventListener('click', () => {
         if($('#postsTable tbody tr').length <= 1) loadPostsTable();
     });
 
     async function init() {
-        loadCachedAuthor();
+        displayUserInfo();
+        setupLogout();
         await loadCategoriesAndTags();
+        await loadPostsTable();
     }
     
     init();
