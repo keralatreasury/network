@@ -1,4 +1,4 @@
-<!-- post.html - Updated with Category and Author Links -->
+<!-- post.html - Updated with URL Parameter Support -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="css/bootstrap.min.css">
     <link rel="stylesheet" href="css/bootstrap-icons.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap" rel="stylesheet">
-     <!-- Custom Blog CSS  -->
+    <!-- Custom Blog CSS -->
     <link rel="stylesheet" href="css/blog.css">
 </head>
 <body>
@@ -32,12 +32,14 @@
 </footer>
 
 <div id="liveToast" class="toast-custom"><i class="bi bi-check-lg me-2"></i><span id="toastMsg"></span></div>
+
 <script src="js/bootstrap.bundle.min.js"></script>
 <script src="config.js"></script>
 <script>
     let currentPost = null;
     let allComments = [];
     let commenterName = localStorage.getItem('commenterName') || '';
+    let currentPostId = null;
     
     function showToastMessage(msg, isError = false) {
         const toastEl = document.getElementById('liveToast');
@@ -46,6 +48,31 @@
         toastEl.style.background = isError ? '#d32f2f' : '#1f1f1f';
         toastEl.style.opacity = '1';
         setTimeout(() => { toastEl.style.opacity = '0'; }, 2500);
+    }
+    
+    // Get the current page URL with post ID
+    function getCurrentPageUrl(postId) {
+        // Get the base URL without query parameters
+        const baseUrl = window.location.href.split('?')[0];
+        // Return URL with id parameter
+        return `${baseUrl}?id=${postId}`;
+    }
+    
+    // Update browser URL without reloading the page
+    function updateBrowserUrl(postId) {
+        const newUrl = getCurrentPageUrl(postId);
+        window.history.pushState({ postId: postId }, '', newUrl);
+        console.log('URL updated to:', newUrl);
+    }
+    
+    // Extract post ID from URL parameters
+    function getPostIdFromUrl() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlId = urlParams.get('id');
+        if (urlId && !isNaN(parseInt(urlId))) {
+            return urlId;
+        }
+        return null;
     }
     
     // Navigate to category
@@ -241,6 +268,9 @@
         document.getElementById("postContentWrapper").style.display = "block";
         document.title = `${post.title} | Blog Studio`;
         
+        // Update browser URL with post ID
+        updateBrowserUrl(post.id);
+        
         const avatarLetter = (post.author.charAt(0) || 'A').toUpperCase();
         const featuredImg = extractFirstImage(post.content);
         const authorDesignation = await fetchAuthorDesignation(post.author);
@@ -311,9 +341,13 @@
             }
         });
         
+        // Updated share button to copy URL with post ID
         document.getElementById("shareButton").addEventListener("click", () => {
-            navigator.clipboard.writeText(window.location.href).then(() => {
-                showToastMessage("📋 Blog URL copied!");
+            const shareUrl = getCurrentPageUrl(post.id);
+            navigator.clipboard.writeText(shareUrl).then(() => {
+                showToastMessage("📋 Blog URL copied! (Includes post ID)");
+            }).catch(() => {
+                showToastMessage("Failed to copy URL", true);
             });
         });
     }
@@ -367,13 +401,24 @@
     
     async function initPostPage() {
         await loadHeaderConfig();
-        let storedId = localStorage.getItem('blogPostId');
-        const urlParams = new URLSearchParams(window.location.search);
-        const urlId = urlParams.get('id');
-        const postId = storedId || urlId;
+        
+        // Priority 1: Check URL parameters for post ID
+        let postId = getPostIdFromUrl();
+        
+        // Priority 2: If no ID in URL, check localStorage
+        if (!postId) {
+            postId = localStorage.getItem('blogPostId');
+        }
+        
+        // Store the current post ID for later use
+        currentPostId = postId;
         
         if(!postId) {
-            document.getElementById("loadingSpinner").innerHTML = `<div class="error-box alert alert-danger">No post ID found. <a href="./index.html">Back to Home</a></div>`;
+            document.getElementById("loadingSpinner").innerHTML = `<div class="error-box alert alert-danger">
+                <i class="bi bi-exclamation-triangle-fill"></i><br>
+                <strong>No post ID found!</strong><br>
+                Please go back to the <a href="./index.html">homepage</a> and select a post.
+            </div>`;
             return;
         }
         
@@ -382,9 +427,24 @@
             currentPost = post;
             renderPostPage(post, comments);
         } catch(err) {
-            document.getElementById("loadingSpinner").innerHTML = `<div class="error-box alert alert-danger">Error: ${err.message}<br><a href="./index.html">← Back to Home</a></div>`;
+            console.error('Init error:', err);
+            document.getElementById("loadingSpinner").innerHTML = `<div class="error-box alert alert-danger">
+                <strong>Error loading post:</strong><br>
+                ${err.message}<br>
+                <a href="./index.html">← Back to Home</a>
+            </div>`;
         }
     }
+    
+    // Handle browser back/forward buttons
+    window.addEventListener('popstate', function(event) {
+        const postId = getPostIdFromUrl();
+        if (postId && postId !== currentPostId) {
+            // Reload the page with the new post ID
+            window.location.reload();
+        }
+    });
+    
     initPostPage();
 </script>
 </body>
