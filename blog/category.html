@@ -1,13 +1,13 @@
-<!-- category.html - Filter posts by category -->
+<!-- category.html - Filter posts by category with URL Parameter Support -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Category - Blog Posts</title>
-        <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/bootstrap.min.css">
     <link rel="stylesheet" href="css/bootstrap-icons.min.css">
-    <!-- Custom Blog CSS  -->
+    <!-- Custom Blog CSS -->
     <link rel="stylesheet" href="css/blog.css">
 </head>
 <body>
@@ -55,9 +55,37 @@
         return temp.textContent || temp.innerText || "";
     }
     
+    // Get the current page URL with category parameter
+    function getCurrentPageUrl(category) {
+        const baseUrl = window.location.href.split('?')[0];
+        return `${baseUrl}?category=${encodeURIComponent(category)}`;
+    }
+    
+    // Update browser URL without reloading the page
+    function updateBrowserUrl(category) {
+        const newUrl = getCurrentPageUrl(category);
+        window.history.pushState({ category: category }, '', newUrl);
+        console.log('Category URL updated to:', newUrl);
+    }
+    
+    // Extract category from URL parameters
+    function getCategoryFromUrl() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlCategory = urlParams.get('category');
+        if (urlCategory && urlCategory.trim()) {
+            return decodeURIComponent(urlCategory);
+        }
+        return null;
+    }
+    
     function navigateToPost(postId) {
-        localStorage.setItem('blogPostId', postId);
-        window.location.href = 'post.html';
+        // Store post ID and navigate to post.html with URL parameter
+        window.location.href = `post.html?id=${postId}`;
+    }
+    
+    // Navigate back to homepage
+    function navigateToHome() {
+        window.location.href = 'index.html';
     }
     
     async function loadHeaderConfig() {
@@ -145,10 +173,22 @@
     
     function renderPosts(postsToShow) {
         const container = document.getElementById("postsGrid");
+        if (!container) return;
+        
+        if (postsToShow.length === 0) {
+            container.innerHTML = `<div class="col-12 text-center p-5">
+                <div class="alert alert-info">No posts found in "${escapeHtml(currentCategory)}" category.</div>
+                <button class="btn btn-primary-custom mt-2" onclick="navigateToHome()">
+                    <i class="bi bi-house"></i> Back to Home
+                </button>
+            </div>`;
+            return;
+        }
+        
         container.innerHTML = postsToShow.map(p => `
             <div class="col-md-4 col-lg-3">
                 <div class="card-blog h-100 p-3" onclick="navigateToPost('${p.id}')">
-                    <img src="${p.image}" class="card-img-top rounded-3" style="height:180px; object-fit:cover;">
+                    <img src="${p.image}" class="card-img-top rounded-3" style="height:180px; object-fit:cover;" onerror="this.src='https://placehold.co/600x400/e2e8f0/64748b?text=No+Image'">
                     <div class="card-body px-0 mt-2">
                         <span class="category-badge">${escapeHtml(p.category)}</span>
                         <h5 class="fw-bold mt-2">${escapeHtml(p.title)}</h5>
@@ -167,8 +207,10 @@
         renderPosts(postsToShow);
         
         if(currentLimit >= allPosts.length) {
-            document.getElementById("loadMoreBtn").style.display = "none";
-            document.getElementById("noMoreMsg").classList.remove("d-none");
+            const loadMoreBtn = document.getElementById("loadMoreBtn");
+            const noMoreMsg = document.getElementById("noMoreMsg");
+            if (loadMoreBtn) loadMoreBtn.style.display = "none";
+            if (noMoreMsg) noMoreMsg.classList.remove("d-none");
         }
     }
     
@@ -179,33 +221,79 @@
     
     async function initCategoryPage() {
         await loadHeaderConfig();
-        currentCategory = localStorage.getItem('selectedCategory');
+        
+        // Priority 1: Check URL parameters for category
+        let category = getCategoryFromUrl();
+        
+        // Priority 2: If no category in URL, check localStorage
+        if (!category) {
+            category = localStorage.getItem('selectedCategory');
+        }
+        
+        currentCategory = category;
         
         if(!currentCategory) {
             document.getElementById("categoryTitle").innerHTML = 'No Category Selected';
-            document.getElementById("postsGrid").innerHTML = `<div class="col-12 text-center p-5"><div class="alert alert-warning">No category selected. <a href="./">Go back home</a></div></div>`;
-            return;
-        }
-        
-        document.getElementById("categoryTitle").innerHTML = currentCategory;
-        allPosts = await fetchPostsByCategory(currentCategory);
-        document.getElementById("postCount").innerHTML = `${allPosts.length} post${allPosts.length !== 1 ? 's' : ''}`;
-        
-        if(allPosts.length === 0) {
-            document.getElementById("postsGrid").innerHTML = `<div class="col-12 text-center p-5"><div class="alert alert-info">No posts found in "${currentCategory}" category.</div></div>`;
+            document.getElementById("postsGrid").innerHTML = `<div class="col-12 text-center p-5">
+                <div class="alert alert-warning">No category selected.</div>
+                <button class="btn btn-primary-custom mt-2" onclick="navigateToHome()">
+                    <i class="bi bi-house"></i> Go back home
+                </button>
+            </div>`;
             document.getElementById("loadMoreTrigger").style.display = "none";
             return;
         }
         
-        renderPosts(allPosts.slice(0, currentLimit));
-        document.getElementById("loadMoreBtn").onclick = loadMorePosts;
+        // Update URL with category parameter
+        updateBrowserUrl(currentCategory);
         
+        // Update page title and header
+        document.title = `${currentCategory} | Blog Studio`;
+        document.getElementById("categoryTitle").innerHTML = escapeHtml(currentCategory);
+        
+        // Fetch posts for this category
+        allPosts = await fetchPostsByCategory(currentCategory);
+        document.getElementById("postCount").innerHTML = `${allPosts.length} post${allPosts.length !== 1 ? 's' : ''}`;
+        
+        if(allPosts.length === 0) {
+            renderPosts([]);
+            document.getElementById("loadMoreTrigger").style.display = "none";
+            return;
+        }
+        
+        // Render initial posts
+        renderPosts(allPosts.slice(0, currentLimit));
+        
+        // Setup load more button
+        const loadMoreBtn = document.getElementById("loadMoreBtn");
+        if (loadMoreBtn) {
+            loadMoreBtn.onclick = loadMorePosts;
+        }
+        
+        // Hide load more button if all posts are shown
         if(allPosts.length <= currentLimit) {
-            document.getElementById("loadMoreBtn").style.display = "none";
+            if (loadMoreBtn) loadMoreBtn.style.display = "none";
+            const noMoreMsg = document.getElementById("noMoreMsg");
+            if (noMoreMsg) noMoreMsg.classList.remove("d-none");
         }
     }
     
+    // Make functions global for onclick handlers
     window.navigateToPost = navigateToPost;
+    window.navigateToHome = navigateToHome;
+    
+    // Handle browser back/forward buttons
+    window.addEventListener('popstate', function(event) {
+        const category = getCategoryFromUrl();
+        if (category && category !== currentCategory) {
+            // Reload the page with the new category
+            window.location.reload();
+        } else if (!category) {
+            // No category in URL, go back to home
+            navigateToHome();
+        }
+    });
+    
     initCategoryPage();
 </script>
 </body>
