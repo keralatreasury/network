@@ -1,4 +1,4 @@
-<!-- post.html - Updated with URL Parameter Support -->
+<!-- post.html - Updated with Author Image Support -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,6 +10,35 @@
     <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap" rel="stylesheet">
     <!-- Custom Blog CSS -->
     <link rel="stylesheet" href="css/blog.css">
+    <style>
+        /* Additional style for author image */
+        .author-avatar-img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .author-avatar-img:hover {
+            transform: scale(1.05);
+        }
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #1a73e8;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .avatar:hover {
+            transform: scale(1.05);
+        }
+    </style>
 </head>
 <body>
 
@@ -52,9 +81,7 @@
     
     // Get the current page URL with post ID
     function getCurrentPageUrl(postId) {
-        // Get the base URL without query parameters
         const baseUrl = window.location.href.split('?')[0];
-        // Return URL with id parameter
         return `${baseUrl}?id=${postId}`;
     }
     
@@ -230,8 +257,8 @@
         return { post: foundPost, comments };
     }
     
-    // Fetch author designation from profiles sheet
-    async function fetchAuthorDesignation(authorName) {
+    // Fetch complete author profile from profiles sheet (including image)
+    async function fetchAuthorProfile(authorName) {
         try {
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/profiles!A:D?key=${CONFIG.API_KEY}`;
             const response = await fetch(url);
@@ -239,13 +266,28 @@
             const rows = data.values || [];
             for(let i=1; i<rows.length; i++) {
                 if(rows[i][0] && rows[i][0].trim().toLowerCase() === authorName.toLowerCase()) {
-                    return rows[i][1] || ''; // Designation column
+                    return {
+                        name: rows[i][0],
+                        designation: rows[i][1] || '',
+                        about: rows[i][2] || '',
+                        imageUrl: rows[i][3] || null
+                    };
                 }
             }
-            return '';
+            return {
+                name: authorName,
+                designation: '',
+                about: '',
+                imageUrl: null
+            };
         } catch(error) {
-            console.error('Error fetching author designation:', error);
-            return '';
+            console.error('Error fetching author profile:', error);
+            return {
+                name: authorName,
+                designation: '',
+                about: '',
+                imageUrl: null
+            };
         }
     }
     
@@ -273,12 +315,30 @@
         
         const avatarLetter = (post.author.charAt(0) || 'A').toUpperCase();
         const featuredImg = extractFirstImage(post.content);
-        const authorDesignation = await fetchAuthorDesignation(post.author);
+        
+        // Fetch complete author profile (including image)
+        const authorProfile = await fetchAuthorProfile(post.author);
         
         // Remove the first image from content to avoid duplication
         let contentWithoutFirstImage = post.content;
         if (featuredImg) {
             contentWithoutFirstImage = removeFirstImageFromContent(post.content);
+        }
+        
+        // Generate author avatar HTML (image if available, otherwise initials)
+        let authorAvatarHtml = '';
+        if (authorProfile.imageUrl) {
+            authorAvatarHtml = `<img src="${authorProfile.imageUrl}" class="author-avatar-img author-link" 
+                                data-author="${escapeHtml(post.author)}" 
+                                data-designation="${escapeHtml(authorProfile.designation)}"
+                                alt="${escapeHtml(post.author)}"
+                                onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'avatar d-inline-flex author-link\' data-author=\'${escapeHtml(post.author)}\' data-designation=\'${escapeHtml(authorProfile.designation)}\'>${avatarLetter}</div>';">`;
+        } else {
+            authorAvatarHtml = `<div class="avatar d-inline-flex author-link" 
+                                 data-author="${escapeHtml(post.author)}" 
+                                 data-designation="${escapeHtml(authorProfile.designation)}">
+                                 ${avatarLetter}
+                               </div>`;
         }
         
         let contentHtml = `<div class="blog-header">
@@ -290,14 +350,12 @@
             <h1 class="blog-title">${escapeHtml(post.title)}</h1>
             <div class="blog-meta">
                 <div class="d-flex align-items-center gap-2">
-                    <div class="avatar d-inline-flex author-link" data-author="${escapeHtml(post.author)}" data-designation="${escapeHtml(authorDesignation)}">
-                        ${avatarLetter}
-                    </div>
+                    ${authorAvatarHtml}
                     <div>
-                        <div class="author-link fw-bold" data-author="${escapeHtml(post.author)}" data-designation="${escapeHtml(authorDesignation)}" style="cursor: pointer;">
+                        <div class="author-link fw-bold" data-author="${escapeHtml(post.author)}" data-designation="${escapeHtml(authorProfile.designation)}" style="cursor: pointer;">
                             ${escapeHtml(post.author)}
                         </div>
-                        ${authorDesignation ? `<div class="small text-muted">${escapeHtml(authorDesignation)}</div>` : ''}
+                        ${authorProfile.designation ? `<div class="small text-muted">${escapeHtml(authorProfile.designation)}</div>` : ''}
                     </div>
                 </div>
                 <span><i class="bi bi-calendar3"></i> ${escapeHtml(post.publishedTime)}</span>
@@ -326,6 +384,7 @@
             navigateToCategory(category);
         });
         
+        // Add event listeners for all author link elements (both image and text)
         document.querySelectorAll('.author-link').forEach(el => {
             el.addEventListener('click', (e) => {
                 const authorName = el.getAttribute('data-author');
@@ -440,7 +499,6 @@
     window.addEventListener('popstate', function(event) {
         const postId = getPostIdFromUrl();
         if (postId && postId !== currentPostId) {
-            // Reload the page with the new post ID
             window.location.reload();
         }
     });
