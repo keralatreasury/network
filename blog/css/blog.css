@@ -349,7 +349,7 @@ a:hover {
     max-width: 780px;
     margin: 2rem auto;
     padding: 1.2rem 1.5rem;
-    background: #f8f9fa;
+    background: #fff;
     border-radius: var(--radius-full);
     display: flex;
     justify-content: space-between;
