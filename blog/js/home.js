@@ -1,4 +1,4 @@
-    // Global variables
+// Global variables
     let allPostsMaster = [];    // Master copy of all posts
     let allPostsDisplay = [];   // Current display posts (filtered or all)
     let allComments = [];
@@ -425,20 +425,31 @@
         return { posts, comments };
     }
 
+    // ============================================================
+    // UPDATED renderHero() - Image FIRST column (left), Text SECOND column (right)
+    // Category badge and button have proper sizing
+    // ============================================================
     function renderHero(post) {
         if(!post) return;
         let excerpt = stripHtml(post.content).substring(0,150);
         document.getElementById("heroPostContainer").innerHTML = `
             <div class="hero-card row g-0 align-items-stretch shadow-sm border rounded-4 overflow-hidden bg-white">
-                <div class="col-md-6 p-3 p-md-4 d-flex flex-column justify-content-center order-2 order-md-1">
-                    <span class="category-badge w-auto mb-2" data-category="${escapeHtml(post.category)}">${escapeHtml(post.category)}</span>
-                    <h2 class="fw-bold">${escapeHtml(post.title)}</h2>
-                    <div class="text-muted small mb-2"><i class="bi bi-person-circle"></i> ${escapeHtml(post.author)} · <i class="bi bi-calendar"></i> ${escapeHtml(post.publishedTime)}</div>
-                    <p class="text-secondary">${escapeHtml(excerpt)}...</p>
-                    <button class="btn btn-primary-custom hero-read-btn" data-id="${post.id}">Read full article →</button>
+                <!-- IMAGE COLUMN - FIRST on desktop (left side) -->
+                <div class="col-md-6 hero-image-col p-0">
+                    <img src="${post.image}" class="hero-image w-100 h-100 object-fit-cover" style="min-height:280px; max-height:100%; object-fit:cover;" alt="hero" onerror="this.src='https://placehold.co/600x400/e2e8f0/64748b?text=Hero+Image'">
                 </div>
-                <div class="col-md-6 order-1 order-md-2">
-                    <img src="${post.image}" class="img-fluid w-100 h-100 object-fit-cover" style="min-height:240px; object-fit:cover;" alt="hero" onerror="this.src='https://placehold.co/600x400/e2e8f0/64748b?text=Hero+Image'">
+                <!-- TEXT COLUMN - SECOND on desktop (right side) -->
+                <div class="col-md-6 hero-content-col d-flex flex-column justify-content-center p-4 p-md-5">
+                    <span class="category-badge w-auto mb-3" data-category="${escapeHtml(post.category)}">${escapeHtml(post.category)}</span>
+                    <h2 class="hero-title fw-bold mb-3">${escapeHtml(post.title)}</h2>
+                    <div class="hero-meta mb-3">
+                        <span><i class="bi bi-person-circle"></i> ${escapeHtml(post.author)}</span>
+                        <span><i class="bi bi-calendar"></i> ${escapeHtml(post.publishedTime)}</span>
+                    </div>
+                    <p class="hero-excerpt text-secondary mb-4">${escapeHtml(excerpt)}...</p>
+                    <button class="btn-read-article hero-read-btn" data-id="${post.id}">
+                        Read full article <i class="bi bi-arrow-right"></i>
+                    </button>
                 </div>
             </div>`;
         
@@ -470,7 +481,7 @@
                         <span class="category-badge" data-category="${escapeHtml(p.category)}">${escapeHtml(p.category)}</span>
                         <h5 class="card-title mt-2">${escapeHtml(p.title)}</h5>
                         <div class="small text-muted">${escapeHtml(p.author)} · ${escapeHtml(p.publishedTime)}</div>
-                        <button class="btn btn-sm btn-outline-primary rounded-pill mt-2 related-read-btn" data-id="${p.id}">Read more</button>
+                        <button class="btn btn-sm btn-outline-custom mt-2 related-read-btn" data-id="${p.id}">Read more →</button>
                     </div>
                 </div>
             </div>
@@ -550,7 +561,7 @@
     }
     
     async function initHome() {
-        document.getElementById("heroPostContainer").innerHTML = `<div class="text-center p-5"><div class="spinner-border text-primary"></div><p class="mt-2">Loading amazing stories...</p></div>`;
+        document.getElementById("heroPostContainer").innerHTML = `<div class="text-center p-5"><div class="spinner-border text-primary"></div><p class="mt-2"></p></div>`;
         await loadHeaderConfig();
         
         try {
