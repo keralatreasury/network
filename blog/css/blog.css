@@ -1232,7 +1232,7 @@ a:hover {
 #loadMoreTrigger,
 footer {
     /*visibility: hidden;*/
-    opacity: 0;
+    /*opacity: 0;*/
     transition: visibility 0.25s ease, opacity 0.25s ease;
 }
 
