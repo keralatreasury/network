@@ -8,7 +8,7 @@ const CONFIG = {
     
     // Apps Script Web App URL (for writes - likes/comments)
     // DEPLOY THIS FIRST: Go to Extensions > Apps Script, paste code.gs, Deploy > New deployment > Web App
-    APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwTro39ZWxNsl1s6TMBmImlZJXnxN56LBQWaaPeVirXmmh-8hD8FsvnqcbXhSPyQuko_w/exec',
+    APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycby7BLcDT2cqpoQqQZanZfR41yICaEgfHDUYWT872BBT7onQkOZ4zHSUsfPZ4LAv-JbG/exec',
     
     // Sheet names
    
