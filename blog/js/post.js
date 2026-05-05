@@ -634,8 +634,9 @@ async function renderPostPage(post, comments) {
     </div>
     <div class="action-bar">
         <button id="likeButton" class="action-btn like-btn"><i class="bi bi-hand-thumbs-up"></i> <span id="likeCountSpan">${post.likeCount}</span> likes</button>
-        <button id="shareButton" class="action-btn share-btn"><i class="bi bi-share-fill"></i> Share</button>
+       
         <span><i class="bi bi-chat-dots"></i> ${comments.length} comments</span>
+ <button id="shareButton" class="action-btn share-btn"><i class="bi bi-share-fill"></i> Share</button>
     </div>`;
     
     document.getElementById("postContentWrapper").innerHTML = contentHtml;
@@ -690,7 +691,7 @@ async function renderPostPage(post, comments) {
                 isLikePending = true;
                 
                 // Show instant feedback toast
-                showToastMessage('❤️ Liked! (Syncing...)');
+                showToastMessage('❤️ Liked!');
                 
                 // Start background sync
                 try {
