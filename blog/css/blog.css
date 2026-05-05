@@ -1231,7 +1231,7 @@ a:hover {
 #relatedSection,
 #loadMoreTrigger,
 footer {
-    visibility: hidden;
+    /*visibility: hidden;*/
     opacity: 0;
     transition: visibility 0.25s ease, opacity 0.25s ease;
 }
