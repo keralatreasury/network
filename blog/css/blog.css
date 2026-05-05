@@ -448,6 +448,7 @@ a:hover {
 }
 
 .blog-content {
+   background-color: #fff;
     max-width: 780px;
     margin: 0 auto;
     padding: 0 1.5rem;
