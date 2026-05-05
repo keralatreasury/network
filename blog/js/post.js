@@ -1,7 +1,17 @@
+
+
 let currentPost = null;
 let allComments = [];
 let commenterName = localStorage.getItem('commenterName') || '';
 let currentPostId = null;
+
+// Track pending operations to prevent double submissions
+let isLikePending = false;
+let isCommentPending = false;
+
+// Store original like count for potential rollback
+let originalLikeCount = 0;
+let optimisticLikeApplied = false;
 
 function showToastMessage(msg, isError = false) {
     const toastEl = document.getElementById('liveToast');
@@ -138,8 +148,8 @@ function openShareModal(url, title, imageUrl) {
     if (shareModal) shareModal.classList.add('active');
 }
 
-// Submit like to Apps Script
-async function submitLike(postId) {
+// Submit like to Apps Script (background sync)
+async function submitLikeToServer(postId) {
     try {
         const formData = new FormData();
         formData.append('action', 'like');
@@ -152,20 +162,77 @@ async function submitLike(postId) {
         const result = await response.json();
         
         if(result.success) {
-            showToastMessage('❤️ You liked this post!');
+            console.log('Like synced successfully:', result.newLikes);
+            // Update the UI with the actual server count if different
+            const likeSpan = document.getElementById("likeCountSpan");
+            if (likeSpan) {
+                const currentDisplay = parseInt(likeSpan.innerText) || 0;
+                if (result.newLikes !== currentDisplay) {
+                    likeSpan.innerText = result.newLikes;
+                }
+            }
             return result.newLikes;
         } else {
             throw new Error(result.error);
         }
     } catch(error) {
-        console.error('Like error:', error);
-        showToastMessage('Failed to submit like. Please try again.', true);
+        console.error('Like sync error:', error);
+        showToastMessage('Failed to sync like. Please try again.', true);
+        // Revert the optimistic update on failure
+        revertLikeCount();
         return null;
+    } finally {
+        isLikePending = false;
+        // Re-enable like button
+        const likeButton = document.getElementById("likeButton");
+        if (likeButton) {
+            likeButton.disabled = false;
+            likeButton.style.opacity = '1';
+            likeButton.style.cursor = 'pointer';
+        }
     }
 }
 
-// Submit comment to Apps Script
-async function submitComment(postId, userName, commentText) {
+function revertLikeCount() {
+    if (optimisticLikeApplied) {
+        const likeSpan = document.getElementById("likeCountSpan");
+        if (likeSpan) {
+            likeSpan.innerText = originalLikeCount;
+        }
+        optimisticLikeApplied = false;
+    }
+}
+
+// Optimistic like update - updates UI instantly
+function optimisticLikeUpdate() {
+    const likeSpan = document.getElementById("likeCountSpan");
+    if (likeSpan && !isLikePending) {
+        // Store original value before optimistic update
+        originalLikeCount = parseInt(likeSpan.innerText) || 0;
+        likeSpan.innerText = originalLikeCount + 1;
+        optimisticLikeApplied = true;
+        
+        // Disable like button temporarily to prevent multiple clicks
+        const likeButton = document.getElementById("likeButton");
+        if (likeButton) {
+            likeButton.disabled = true;
+            likeButton.style.opacity = '0.6';
+            likeButton.style.cursor = 'wait';
+        }
+        
+        // Show instant feedback toast
+        showToastMessage('❤️ Liked! (Syncing...)');
+        
+        // Start background sync
+        submitLikeToServer(currentPost.id);
+        
+        return true;
+    }
+    return false;
+}
+
+// Submit comment to Apps Script (background sync)
+async function submitCommentToServer(postId, userName, commentText, tempCommentId) {
     try {
         const formData = new FormData();
         formData.append('action', 'comment');
@@ -180,15 +247,176 @@ async function submitComment(postId, userName, commentText) {
         const result = await response.json();
         
         if(result.success) {
+            console.log('Comment synced successfully');
+            // Update the timestamp of the optimistic comment
+            const commentElement = document.querySelector(`.comment-card[data-temp-id="${tempCommentId}"]`);
+            if (commentElement) {
+                const dateSpan = commentElement.querySelector('.comment-date');
+                if (dateSpan && result.timestamp) {
+                    dateSpan.innerText = result.timestamp;
+                }
+                // Remove the temp-id attribute after sync
+                commentElement.removeAttribute('data-temp-id');
+            }
             showToastMessage('💬 Comment posted!');
             return { success: true, timestamp: result.timestamp };
         } else {
             throw new Error(result.error);
         }
     } catch(error) {
-        console.error('Comment error:', error);
+        console.error('Comment sync error:', error);
+        // Remove the optimistic comment on failure
+        const commentElement = document.querySelector(`.comment-card[data-temp-id="${tempCommentId}"]`);
+        if (commentElement) {
+            commentElement.remove();
+            // Update the comment count display
+            const commentsCountSpan = document.getElementById('commentsCountSpan');
+            if (commentsCountSpan) {
+                const currentCount = parseInt(commentsCountSpan.innerText) || allComments.length;
+                commentsCountSpan.innerText = currentCount - 1;
+            }
+            const actionBarSpan = document.querySelector('.action-bar span i.bi-chat-dots')?.parentElement;
+            if (actionBarSpan) {
+                const currentCount = parseInt(actionBarSpan.innerText) || allComments.length;
+                actionBarSpan.innerText = currentCount - 1;
+            }
+        }
         showToastMessage('Failed to post comment. Please try again.', true);
         return { success: false };
+    } finally {
+        isCommentPending = false;
+    }
+}
+
+// Optimistic comment update - adds comment to UI instantly
+function optimisticCommentUpdate(userName, commentText) {
+    if (isCommentPending) {
+        showToastMessage('Please wait, posting your previous comment...', true);
+        return false;
+    }
+    
+    const timestamp = new Date().toLocaleString();
+    const tempId = 'temp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+    
+    // Create optimistic comment object
+    const optimisticComment = {
+        user: userName,
+        date: timestamp + ' (Syncing...)',
+        text: commentText,
+        isOptimistic: true,
+        tempId: tempId
+    };
+    
+    // Add to local comments array
+    allComments.push(optimisticComment);
+    
+    // Update UI instantly
+    addCommentToUI(optimisticComment, tempId);
+    
+    // Clear the textarea
+    const commentInput = document.getElementById("commentTextInput");
+    if (commentInput) commentInput.value = "";
+    
+    // Show instant feedback
+    showToastMessage('💬 Comment posted! (Syncing...)');
+    
+    // Start background sync
+    isCommentPending = true;
+    submitCommentToServer(currentPost.id, userName, commentText, tempId);
+    
+    return true;
+}
+
+// Helper function to add a single comment to UI
+function addCommentToUI(comment, tempId) {
+    const commentsContainer = document.getElementById('commentsContainer');
+    if (!commentsContainer) return;
+    
+    // Remove "no comments" message if present
+    const noCommentsMsg = commentsContainer.querySelector('.no-comments-msg');
+    if (noCommentsMsg) noCommentsMsg.remove();
+    
+    const commentHtml = `
+        <div class="comment-card" data-temp-id="${tempId || ''}">
+            <div>
+                <span class="comment-user">${escapeHtml(comment.user)}</span>
+                <span class="comment-date">${escapeHtml(comment.date)}</span>
+            </div>
+            <p class="mt-2 mb-0">${escapeHtml(comment.text)}</p>
+        </div>
+    `;
+    
+    commentsContainer.insertAdjacentHTML('beforeend', commentHtml);
+    
+    // Update comments count in both places
+    const commentsCountSpan = document.getElementById('commentsCountSpan');
+    if (commentsCountSpan) {
+        commentsCountSpan.innerText = allComments.length;
+    }
+    
+    const actionBarSpan = document.querySelector('.action-bar span i.bi-chat-dots')?.parentElement;
+    if (actionBarSpan) {
+        actionBarSpan.innerText = allComments.length;
+    }
+}
+
+// Full comments section render with container for dynamic updates
+function renderCommentsSection() {
+    const wrapper = document.getElementById("postContentWrapper");
+    let existingDiv = document.getElementById("commentsArea");
+    if(existingDiv) existingDiv.remove();
+    
+    const commentsDiv = document.createElement("div");
+    commentsDiv.id = "commentsArea";
+    commentsDiv.className = "comment-section";
+    
+    let commentsHtml = `<h5 class="fw-bold mb-3"><i class="bi bi-chat-left-text"></i> Comments (<span id="commentsCountSpan">${allComments.length}</span>)</h5>`;
+    commentsHtml += `<div id="commentsContainer">`;
+    
+    if(allComments.length === 0) {
+        commentsHtml += `<p class="text-muted no-comments-msg">Be the first to comment.</p>`;
+    } else {
+        allComments.forEach((c, index) => {
+            commentsHtml += `<div class="comment-card" data-temp-id="${c.tempId || ''}">
+                <div>
+                    <span class="comment-user">${escapeHtml(c.user)}</span>
+                    <span class="comment-date">${escapeHtml(c.date)}</span>
+                </div>
+                <p class="mt-2 mb-0">${escapeHtml(c.text)}</p>
+            </div>`;
+        });
+    }
+    
+    commentsHtml += `</div>`;
+    commentsHtml += `<div class="new-comment-form mt-4"><label class="fw-semibold">Add a comment</label>
+        <textarea id="commentTextInput" class="form-control my-2" rows="2" placeholder="Write your thoughts..."></textarea>
+        <div><button id="submitCommentBtn" class="btn btn-primary rounded-pill px-4 mt-2"><i class="bi bi-send"></i> Post comment</button></div></div>`;
+    
+    commentsDiv.innerHTML = commentsHtml;
+    wrapper.appendChild(commentsDiv);
+    
+    // Add event listener for comment submission with optimistic update
+    const submitBtn = document.getElementById("submitCommentBtn");
+    if (submitBtn) {
+        // Remove any existing listener to avoid duplicates
+        const newSubmitBtn = submitBtn.cloneNode(true);
+        submitBtn.parentNode.replaceChild(newSubmitBtn, submitBtn);
+        
+        newSubmitBtn.addEventListener("click", async () => {
+            let commentText = document.getElementById("commentTextInput").value.trim();
+            if(!commentText) { showToastMessage("Please write a comment", true); return; }
+            
+            let userName = commenterName;
+            if(!userName) {
+                userName = prompt("Enter your name:");
+                if(!userName) return;
+                localStorage.setItem('commenterName', userName);
+                commenterName = userName;
+            }
+            
+            // Use optimistic update instead of waiting for server
+            optimisticCommentUpdate(userName, commentText);
+        });
     }
 }
 
@@ -367,6 +595,9 @@ async function renderPostPage(post, comments) {
     // Get full page URL for sharing
     const shareUrl = getCurrentPageUrl(post.id);
     
+    // Store current like count for optimistic updates
+    originalLikeCount = post.likeCount;
+    
     // Start building content
     let contentHtml = `<div class="blog-header">
         <div class="text-muted small mb-2">
@@ -408,6 +639,7 @@ async function renderPostPage(post, comments) {
     </div>`;
     
     document.getElementById("postContentWrapper").innerHTML = contentHtml;
+    
     renderCommentsSection();
     
     // Add event listeners for category link - using URL parameter
@@ -425,58 +657,86 @@ async function renderPostPage(post, comments) {
         });
     });
     
-    document.getElementById("likeButton").addEventListener("click", async () => {
-        const newCount = await submitLike(post.id);
-        if(newCount !== null) {
-            document.getElementById("likeCountSpan").innerText = newCount;
-        }
-    });
+    // Optimistic like button handler - DIRECT INSTANT UPDATE
+    const likeButton = document.getElementById("likeButton");
+    if (likeButton) {
+        // Remove any existing listeners
+        const newLikeButton = likeButton.cloneNode(true);
+        likeButton.parentNode.replaceChild(newLikeButton, likeButton);
+        
+        newLikeButton.addEventListener("click", async (e) => {
+            e.preventDefault();
+            
+            if (isLikePending) {
+                showToastMessage("Please wait, your like is being processed...", true);
+                return;
+            }
+            
+            // INSTANT UI UPDATE - increment the like count immediately
+            const likeSpan = document.getElementById("likeCountSpan");
+            if (likeSpan && !isLikePending) {
+                // Store original value before optimistic update
+                const currentLikeCount = parseInt(likeSpan.innerText) || 0;
+                likeSpan.innerText = currentLikeCount + 1;
+                
+                // Disable like button temporarily to prevent multiple clicks
+                const btn = document.getElementById("likeButton");
+                if (btn) {
+                    btn.disabled = true;
+                    btn.style.opacity = '0.6';
+                    btn.style.cursor = 'wait';
+                }
+                
+                isLikePending = true;
+                
+                // Show instant feedback toast
+                showToastMessage('❤️ Liked! (Syncing...)');
+                
+                // Start background sync
+                try {
+                    const formData = new FormData();
+                    formData.append('action', 'like');
+                    formData.append('postId', currentPost.id);
+                    
+                    const response = await fetch(CONFIG.APPS_SCRIPT_URL, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const result = await response.json();
+                    
+                    if(result.success) {
+                        console.log('Like synced successfully:', result.newLikes);
+                        // Update the UI with the actual server count if different
+                        if (likeSpan && result.newLikes !== parseInt(likeSpan.innerText)) {
+                            likeSpan.innerText = result.newLikes;
+                        }
+                    } else {
+                        throw new Error(result.error);
+                    }
+                } catch(error) {
+                    console.error('Like sync error:', error);
+                    showToastMessage('Failed to sync like. Please try again.', true);
+                    // Revert the optimistic update on failure
+                    if (likeSpan) {
+                        likeSpan.innerText = currentLikeCount;
+                    }
+                } finally {
+                    isLikePending = false;
+                    // Re-enable like button
+                    const btn = document.getElementById("likeButton");
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.style.opacity = '1';
+                        btn.style.cursor = 'pointer';
+                    }
+                }
+            }
+        });
+    }
     
     // Updated share button to open social share modal
     document.getElementById("shareButton").addEventListener("click", () => {
         openShareModal(shareUrl, post.title, featuredImg);
-    });
-}
-
-function renderCommentsSection() {
-    const wrapper = document.getElementById("postContentWrapper");
-    let existingDiv = document.getElementById("commentsArea");
-    if(existingDiv) existingDiv.remove();
-    
-    const commentsDiv = document.createElement("div");
-    commentsDiv.id = "commentsArea";
-    commentsDiv.className = "comment-section";
-    
-    let commentsHtml = `<h5 class="fw-bold mb-3"><i class="bi bi-chat-left-text"></i> Comments (${allComments.length})</h5>`;
-    if(allComments.length === 0) commentsHtml += `<p class="text-muted">Be the first to comment.</p>`;
-    allComments.forEach(c => {
-        commentsHtml += `<div class="comment-card"><div><span class="comment-user">${escapeHtml(c.user)}</span> <span class="comment-date">${escapeHtml(c.date)}</span></div><p class="mt-2 mb-0">${escapeHtml(c.text)}</p></div>`;
-    });
-    commentsHtml += `<div class="new-comment-form mt-4"><label class="fw-semibold">Add a comment</label>
-        <textarea id="commentTextInput" class="form-control my-2" rows="2" placeholder="Write your thoughts..."></textarea>
-        <div><button id="submitCommentBtn" class="btn btn-primary rounded-pill px-4 mt-2"><i class="bi bi-send"></i> Post comment</button></div></div>`;
-    
-    commentsDiv.innerHTML = commentsHtml;
-    wrapper.appendChild(commentsDiv);
-    
-    document.getElementById("submitCommentBtn").addEventListener("click", async () => {
-        let commentText = document.getElementById("commentTextInput").value.trim();
-        if(!commentText) { showToastMessage("Please write a comment", true); return; }
-        
-        let userName = commenterName;
-        if(!userName) {
-            userName = prompt("Enter your name:");
-            if(!userName) return;
-            localStorage.setItem('commenterName', userName);
-            commenterName = userName;
-        }
-        
-        const result = await submitComment(currentPost.id, userName, commentText);
-        if(result.success) {
-            allComments.push({ user: userName, date: result.timestamp || new Date().toLocaleString(), text: commentText });
-            renderCommentsSection();
-            document.getElementById("commentTextInput").value = "";
-        }
     });
 }
 
