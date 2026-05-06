@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Branch Communication Hub | NOC Chat</title>
     
-  <!-- Bootstrap 5.3 + icons -->
+    <!-- Bootstrap 5.3 + icons -->
     <link rel="stylesheet" href="./css/bootstrap.min.css">
     <link rel="stylesheet" href="./css/bootstrap-icons.min.css">
     
@@ -17,119 +17,187 @@
         }
         
         body {
-            background: #e5ddd5;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f2f5;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             height: 100vh;
             overflow: hidden;
         }
         
         .chat-container {
-            max-width: 1400px;
+            max-width: 100%;
             margin: 0 auto;
             height: 100vh;
-            background: white;
+            background: #ffffff;
             display: flex;
             flex-direction: column;
+            box-shadow: none;
         }
         
+        /* WhatsApp iPhone Style Header */
         .chat-header {
-            background: #075e54;
-            color: white;
-            padding: 12px 20px;
+            background: #ffffff;
+            color: #1f2c34;
+            padding: 12px 16px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
             gap: 10px;
+            border-bottom: 0.5px solid #e9edef;
+            position: sticky;
+            top: 0;
+            z-index: 10;
         }
         
         .branch-info {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 12px;
             flex-wrap: wrap;
         }
         
+        .branch-info h6 {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin: 0;
+            color: #1f2c34;
+        }
+        
         .branch-badge {
-            background: rgba(255,255,255,0.2);
-            padding: 5px 15px;
+            background: #f0f2f5;
+            padding: 6px 14px;
             border-radius: 20px;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             display: flex;
             align-items: center;
             gap: 8px;
         }
         
+        .branch-badge i {
+            color: #25d366;
+            font-size: 0.9rem;
+        }
+        
         .branch-input {
-            background: rgba(255,255,255,0.2);
+            background: transparent;
             border: none;
-            padding: 5px 10px;
-            border-radius: 20px;
-            color: white;
+            padding: 4px 8px;
+            border-radius: 16px;
+            color: #1f2c34;
             width: 100px;
+            font-size: 0.85rem;
+            font-weight: 500;
         }
         
         .branch-input::placeholder {
-            color: rgba(255,255,255,0.7);
+            color: #8696a0;
+            font-weight: normal;
         }
         
         .branch-input:focus {
             outline: none;
-            background: rgba(255,255,255,0.3);
+            background: #e9edef;
         }
         
         .online-status {
             display: inline-flex;
             align-items: center;
-            gap: 5px;
-            font-size: 0.8rem;
+            gap: 6px;
+            font-size: 0.75rem;
+            color: #25d366;
+            background: #f0f2f5;
+            padding: 4px 12px;
+            border-radius: 20px;
         }
         
         .online-dot {
-            width: 10px;
-            height: 10px;
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
-            background-color: #4ade80;
-            animation: pulse 2s infinite;
+            background-color: #25d366;
+            animation: pulse 1.5s infinite;
         }
         
         @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7); }
-            70% { box-shadow: 0 0 0 6px rgba(74, 222, 128, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); }
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+            100% { opacity: 1; transform: scale(1); }
         }
         
         .refresh-control {
             display: flex;
             align-items: center;
-            gap: 8px;
-            background: rgba(255,255,255,0.15);
-            padding: 5px 12px;
-            border-radius: 25px;
+            gap: 6px;
+            background: #f0f2f5;
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+        
+        .refresh-control i {
+            font-size: 0.8rem;
+            color: #54656f;
         }
         
         .refresh-control input {
-            width: 60px;
-            background: rgba(255,255,255,0.2);
+            width: 50px;
+            background: transparent;
             border: none;
             border-radius: 15px;
-            padding: 3px 8px;
-            color: white;
+            padding: 2px 6px;
+            color: #1f2c34;
             text-align: center;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .refresh-control input:focus {
+            outline: none;
         }
         
         .refresh-control label {
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             margin: 0;
+            color: #8696a0;
+        }
+        
+        .notification-toggle {
+            background: #f0f2f5;
+            border: none;
+            color: #54656f;
+            cursor: pointer;
+            opacity: 0.8;
+            padding: 6px 10px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        
+        .notification-toggle:hover {
+            background: #e9edef;
+            opacity: 1;
         }
         
         .chat-messages {
             flex: 1;
             overflow-y: auto;
-            padding: 15px;
-            background: #e5ddd5;
-            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" opacity="0.03"><path d="M0,0h1000v1000H0V0z M500,500L500,500 L500,500L500,500z" fill="none"/><path d="M100,100 L900,100 L900,900 L100,900 Z" fill="none" stroke="%23333" stroke-width="2"/></svg>');
-            background-size: 60px;
+            padding: 12px 16px;
+            background: #efeae2;
+            background-image: radial-gradient(circle at 10% 20%, rgba(0,0,0,0.02) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        
+        /* Custom scrollbar */
+        .chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .chat-messages::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
         }
         
         .message {
@@ -141,7 +209,7 @@
         @keyframes fadeInUp {
             from {
                 opacity: 0;
-                transform: translateY(10px);
+                transform: translateY(8px);
             }
             to {
                 opacity: 1;
@@ -158,40 +226,44 @@
         }
         
         .message-bubble {
-            max-width: 65%;
+            max-width: 70%;
             padding: 8px 12px;
-            border-radius: 12px;
+            border-radius: 18px;
             position: relative;
-            box-shadow: 0 1px 0.5px rgba(0,0,0,0.13);
+            word-wrap: break-word;
+            box-shadow: 0 1px 0.5px rgba(0,0,0,0.05);
         }
         
+        /* WhatsApp iPhone style - own messages (green) */
         .message-own .message-bubble {
             background: #dcf8c5;
-            color: #111;
+            color: #111b21;
             border-bottom-right-radius: 4px;
         }
         
+        /* WhatsApp iPhone style - other messages (light gray) */
         .message-other .message-bubble {
-            background: white;
-            color: #111;
+            background: #ffffff;
+            color: #111b21;
             border-bottom-left-radius: 4px;
         }
         
+        /* Admin message highlight */
         .admin-message .message-bubble {
             background: #fff3e0;
             border-left: 3px solid #ff9800;
         }
         
         .message-branch {
-            font-size: 0.7rem;
+            font-size: 0.68rem;
             font-weight: 600;
             margin-bottom: 4px;
-            color: #075e54;
+            color: #54656f;
             display: flex;
             align-items: center;
             justify-content: space-between;
             flex-wrap: wrap;
-            gap: 5px;
+            gap: 6px;
         }
         
         .admin-branch {
@@ -237,46 +309,48 @@
         }
         
         .reply-indicator {
-            background: #f0f2f5;
-            padding: 6px 10px;
-            border-radius: 8px;
-            margin-bottom: 6px;
-            font-size: 0.75rem;
-            border-left: 3px solid #075e54;
+            background: rgba(0,0,0,0.04);
+            padding: 5px 8px;
+            border-radius: 10px;
+            margin-bottom: 5px;
+            font-size: 0.7rem;
+            border-left: 3px solid #25d366;
             color: #667781;
         }
         
         .reply-btn {
             background: none;
             border: none;
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             cursor: pointer;
             opacity: 0.6;
             transition: opacity 0.2s;
             padding: 2px 6px;
             border-radius: 12px;
+            color: #25d366;
         }
         
         .reply-btn:hover {
             opacity: 1;
-            background: rgba(0,0,0,0.05);
+            background: rgba(0,0,0,0.04);
         }
         
         .chat-input-area {
-            padding: 12px 20px;
+            padding: 10px 16px;
             background: #f0f2f5;
-            border-top: 1px solid #e0e0e0;
+            border-top: 0.5px solid #e9edef;
         }
         
         .reply-preview {
-            background: white;
+            background: #ffffff;
             padding: 8px 12px;
-            border-radius: 12px;
+            border-radius: 16px;
             margin-bottom: 8px;
             display: none;
             font-size: 0.8rem;
             position: relative;
-            border-left: 4px solid #075e54;
+            border-left: 4px solid #25d366;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
         
         .reply-preview.active {
@@ -285,47 +359,69 @@
         
         .cancel-reply {
             position: absolute;
-            right: 10px;
-            top: 8px;
+            right: 12px;
+            top: 10px;
             cursor: pointer;
-            color: #999;
+            color: #8696a0;
             font-weight: bold;
+            font-size: 1rem;
         }
         
         .input-group {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             align-items: flex-end;
         }
         
         .form-control {
-            border-radius: 25px;
-            border: 1px solid #e0e0e0;
+            border-radius: 24px;
+            border: none;
             resize: none;
             font-size: 0.9rem;
-            padding: 10px 15px;
+            padding: 10px 16px;
+            background: #ffffff;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
         
         .form-control:focus {
-            border-color: #075e54;
-            box-shadow: none;
+            border: none;
+            box-shadow: 0 0 0 2px rgba(37, 211, 102, 0.2);
             outline: none;
         }
         
+        /* WhatsApp iPhone style send button */
         .send-btn {
             border-radius: 50%;
-            width: 42px;
-            height: 42px;
+            width: 44px;
+            height: 44px;
             padding: 0;
-            background: #075e54;
+            background: #25d366;
             border: none;
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .send-btn i {
+            font-size: 1.2rem;
+            color: #ffffff;
         }
         
         .send-btn:hover {
-            background: #054a44;
+            background: #20b859;
+            transform: scale(1.02);
+        }
+        
+        .send-btn:active {
+            transform: scale(0.98);
+        }
+        
+        .send-btn:disabled {
+            background: #b2dfc5;
+            cursor: not-allowed;
+            transform: none;
         }
         
         .status-badge {
@@ -333,7 +429,7 @@
             color: white;
             padding: 2px 8px;
             border-radius: 12px;
-            font-size: 0.65rem;
+            font-size: 0.6rem;
         }
         
         .replied-badge {
@@ -344,32 +440,30 @@
             background: #ff9800;
         }
         
-        .admin-badge {
-            background: #ff9800;
-        }
-        
         .loading-spinner {
             text-align: center;
             padding: 40px;
         }
         
         .active-users-panel {
-            background: white;
-            border-bottom: 1px solid #e0e0e0;
-            padding: 6px 20px;
-            font-size: 0.75rem;
+            background: #ffffff;
+            border-bottom: 0.5px solid #e9edef;
+            padding: 8px 16px;
+            font-size: 0.7rem;
             overflow-x: auto;
             white-space: nowrap;
+            color: #54656f;
         }
         
         .active-user {
             display: inline-flex;
             align-items: center;
             background: #f0f2f5;
-            padding: 3px 10px;
+            padding: 4px 12px;
             border-radius: 20px;
-            margin: 2px;
+            margin: 2px 4px;
             font-size: 0.7rem;
+            color: #1f2c34;
         }
         
         .active-user.admin {
@@ -381,15 +475,15 @@
             height: 6px;
             border-radius: 50%;
             background-color: #25d366;
-            margin-right: 5px;
+            margin-right: 6px;
             animation: pulse 1.5s infinite;
         }
         
         .mention-suggestion {
             position: absolute;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             max-height: 150px;
             overflow-y: auto;
             z-index: 1000;
@@ -397,9 +491,10 @@
         }
         
         .mention-suggestion-item {
-            padding: 6px 15px;
+            padding: 8px 16px;
             cursor: pointer;
             font-size: 0.8rem;
+            transition: background 0.2s;
         }
         
         .mention-suggestion-item:hover {
@@ -410,66 +505,92 @@
             .message-bubble {
                 max-width: 85%;
             }
-            .refresh-control input {
-                width: 50px;
+            .chat-header {
+                padding: 10px 12px;
+            }
+            .branch-info h6 {
+                font-size: 1rem;
             }
         }
         
         .connection-status {
             position: fixed;
-            bottom: 80px;
+           /* bottom: 80px;*/
             right: 10px;
             z-index: 9999;
-            padding: 3px 8px;
+            padding: 4px 10px;
             border-radius: 20px;
             font-size: 0.65rem;
             background: #25d366;
             color: white;
-        }
-        
-        .notification-toggle {
-            background: none;
-            border: none;
-            color: white;
-            cursor: pointer;
-            opacity: 0.8;
-            padding: 0 5px;
-        }
-        
-        .notification-toggle:hover {
-            opacity: 1;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
         }
         
         .message-id {
-            font-size: 0.6rem;
-            color: #667781;
-            margin-right: 8px;
+            font-size: 0.55rem;
+            color: #8696a0;
+            margin-right: 6px;
         }
         
         .quick-actions {
             display: flex;
-            gap: 5px;
+            gap: 6px;
             margin-top: 8px;
         }
         
         .quick-btn {
-            font-size: 0.7rem;
-            padding: 3px 8px;
-            border-radius: 15px;
-            background: #e9ecef;
+            font-size: 0.65rem;
+            padding: 4px 10px;
+            border-radius: 16px;
+            background: #f0f2f5;
             border: none;
             color: #075e54;
+            transition: all 0.2s;
         }
         
         .quick-btn:hover {
-            background: #075e54;
-            color: white;
+            background: #e9edef;
+            color: #054a44;
         }
         
         .cache-info {
             font-size: 0.6rem;
-            opacity: 0.7;
-            margin-left: 5px;
+            opacity: 0.6;
+            margin-left: 4px;
+        }
+        
+        #countdownDisplay {
+            font-size: 0.7rem;
+            color: #54656f;
+            margin-left: 4px;
+        }
+        
+        /* Typing indicator style */
+        .typing-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            padding: 4px 8px;
+            background: #e9edef;
+            border-radius: 16px;
+            font-size: 0.7rem;
+            color: #54656f;
+        }
+        
+        .typing-dot {
+            width: 5px;
+            height: 5px;
+            background: #54656f;
+            border-radius: 50%;
+            animation: typingPulse 1.4s infinite;
+        }
+        
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        
+        @keyframes typingPulse {
+            0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
+            30% { opacity: 1; transform: translateY(-3px); }
         }
     </style>
 </head>
@@ -477,7 +598,7 @@
 <div class="chat-container">
     <div class="chat-header">
         <div class="branch-info">
-            <h6 class="mb-0"><i class="bi bi-chat-dots-fill"></i> NOC Chat</h6>
+            <h6 class="mb-0"><i class="bi bi-chat-dots-fill" style="color: #25d366;"></i> NOC Chat</h6>
             <div class="branch-badge">
                 <i class="bi bi-building"></i> 
                 <input type="text" id="branchCodeInput" class="branch-input" placeholder="BR1001" maxlength="10">
@@ -491,10 +612,12 @@
                 <i class="bi bi-volume-up-fill"></i>
             </button>
         </div>
+		<div id="connectionStatus" class="connection-status">🟢 Online</div>
         <div class="refresh-control">
             <i class="bi bi-arrow-repeat"></i>
             <input type="number" id="refreshIntervalInput" value="8" min="1" max="59" step="1">
             <label>sec</label>
+            <span id="countdownDisplay"></span>
         </div>
     </div>
     
@@ -505,39 +628,38 @@
     
     <div class="chat-messages" id="chatMessages">
         <div class="loading-spinner" id="initialLoading">
-            <div class="spinner-border text-success" role="status">
+            <div class="spinner-border text-success" role="status" style="width: 30px; height: 30px;">
                 <span class="visually-hidden">Loading...</span>
             </div>
-            <p class="mt-2">Loading messages...</p>
+            <p class="mt-2 text-muted small">Loading messages...</p>
         </div>
     </div>
     
     <div class="chat-input-area">
         <div class="reply-preview" id="replyPreview">
-            <i class="bi bi-reply-fill"></i> Replying to: <strong><span id="replyToBranch"></span></strong>
+            <i class="bi bi-reply-fill" style="color: #25d366;"></i> Replying to: <strong><span id="replyToBranch"></span></strong>
             <br><small id="replyToMessage"></small>
             <span class="cancel-reply" onclick="cancelReply()">✕</span>
         </div>
         
         <div class="input-group">
-            <textarea class="form-control" id="messageInput" rows="1" placeholder="Type message... @mention branch or Admin"></textarea>
-            <button class="btn btn-primary send-btn" id="sendBtn">
-                <i class="bi bi-send-fill"></i>
+            <textarea class="form-control" id="messageInput" rows="1" placeholder="Type a message"></textarea>
+            <button class="btn send-btn" id="sendBtn">
+              <i class="bi bi-arrow-right"></i>
             </button>
         </div>
         <div class="quick-actions">
-            <button class="quick-btn" onclick="quickMention('Admin')">@Admin</button>
+            <button class="quick-btn" onclick="quickMention('Admin')"><i class="bi bi-star-fill"></i> @Admin</button>
         </div>
         <div id="mentionSuggestions" class="mention-suggestion"></div>
     </div>
 </div>
 
-<div id="connectionStatus" class="connection-status">🟢 Online</div>
+
 
 <script src="./js/jquery.min.js"></script>
 <script src="./js/bootstrap.bundle.min.js"></script>
 <script src="./js/sweetalert2.min.js"></script>
-<script src="./js/sweetalert2.all.min.js"></script>
 
 <script>
     // ======================== CONFIGURATION ========================
@@ -558,7 +680,7 @@
     let lastMessageIds = new Set();
     let notificationSound = null;
     let soundEnabled = true;
-    let currentRefreshInterval = 8; // Changed to 8 seconds default
+    let currentRefreshInterval = 8;
     let isLoading = false;
     let initialLoadDone = false;
     
@@ -569,7 +691,7 @@
             notificationSound.volume = 0.3;
             notificationSound.load();
         } catch(e) {
-            console.log("Audio not supported, using beep fallback");
+            console.log("Audio not supported");
             notificationSound = null;
         }
     }
@@ -580,23 +702,7 @@
         try {
             if (notificationSound) {
                 notificationSound.currentTime = 0;
-                notificationSound.play().catch(e => {
-                    try {
-                        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                        const oscillator = audioCtx.createOscillator();
-                        const gainNode = audioCtx.createGain();
-                        oscillator.connect(gainNode);
-                        gainNode.connect(audioCtx.destination);
-                        oscillator.frequency.value = 880;
-                        gainNode.gain.value = 0.1;
-                        oscillator.start();
-                        gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.5);
-                        oscillator.stop(audioCtx.currentTime + 0.5);
-                        audioCtx.resume();
-                    } catch(e2) {
-                        console.log("Cannot play sound");
-                    }
-                });
+                notificationSound.play().catch(() => {});
             }
         } catch(e) {
             console.log("Sound play error:", e);
@@ -610,11 +716,9 @@
         return /^BR\d{4}$/i.test(code) || code === "ADMIN";
     }
     
-    // Enhanced branch cache retrieval - checks multiple storage locations
     function getBranchFromStorage() {
         console.log("Fetching branch from cache...");
         
-        // Priority 1: Check branchCode in localStorage
         let branch = localStorage.getItem('branchCode');
         if (branch && isValidBranch(branch)) {
             console.log("Branch found in localStorage:", branch);
@@ -622,7 +726,6 @@
             return branch.toUpperCase();
         }
         
-        // Priority 2: Check selectedBranch in localStorage
         branch = localStorage.getItem('selectedBranch');
         if (branch && isValidBranch(branch)) {
             console.log("Branch found in selectedBranch:", branch);
@@ -631,7 +734,6 @@
             return branch.toUpperCase();
         }
         
-        // Priority 3: Check sessionStorage for currentUser
         const sessionUser = sessionStorage.getItem('currentUser');
         if (sessionUser) {
             try {
@@ -648,7 +750,6 @@
             }
         }
         
-        // Priority 4: Check localStorage for currentUser
         const localUser = localStorage.getItem('currentUser');
         if (localUser) {
             try {
@@ -712,7 +813,7 @@
             const data = await response.json();
             
             const now = new Date();
-            const activeThreshold = 10000;
+            const activeThreshold = 12000;
             
             if (data.values && data.values.length > 1) {
                 activeBranches.clear();
@@ -940,7 +1041,7 @@
             Swal.fire('Error', 'Unable to send message', 'error');
             return false;
         } finally {
-            sendBtn.prop('disabled', false).html('<i class="bi bi-send-fill"></i>');
+            sendBtn.prop('disabled', false).html('<i class="bi bi-arrow-right"></i>');
         }
     }
     
@@ -978,7 +1079,7 @@
         const container = $('#chatMessages');
         
         if (!messages || messages.length === 0) {
-            container.html(`<div class="text-center text-muted" style="padding: 50px;"><i class="bi bi-chat-square-text" style="font-size: 48px;"></i><h6>No messages yet</h6><small>Be the first to start a conversation!</small></div>`);
+            container.html(`<div class="text-center text-muted" style="padding: 50px;"><i class="bi bi-chat-square-text" style="font-size: 48px; color: #cbd5e1;"></i><h6 class="mt-3" style="color: #8696a0;">No messages yet</h6><small style="color: #8696a0;">Be the first to start a conversation!</small></div>`);
             return;
         }
         
@@ -1152,9 +1253,6 @@
         const intervalSeconds = currentRefreshInterval;
         let countdown = intervalSeconds;
         
-        // Display countdown in the refresh control
-        $('.refresh-control i.bi-arrow-repeat').after(`<span class="ms-1" id="countdownDisplay">${countdown}s</span>`);
-        
         refreshTimer = setInterval(async () => {
             await loadMessages();
             countdown = intervalSeconds;
@@ -1168,6 +1266,8 @@
             }
             if (countdown <= 0) countdown = intervalSeconds;
         }, 1000);
+        
+        $('#countdownDisplay').text(`${countdown}s`);
     }
     
     function updateRefreshInterval() {
@@ -1193,7 +1293,6 @@
             Notification.requestPermission();
         }
         
-        // Load saved refresh interval (default 8 seconds)
         const savedInterval = localStorage.getItem('refreshInterval');
         if (savedInterval) {
             currentRefreshInterval = parseInt(savedInterval);
@@ -1203,7 +1302,6 @@
             $('#refreshIntervalInput').val(8);
         }
         
-        // Load saved branch from cache (Priority: localStorage > sessionStorage > currentUser)
         const savedBranch = getBranchFromStorage();
         if (savedBranch) {
             branchCode = savedBranch;
@@ -1213,9 +1311,9 @@
             console.log("No cached branch found, waiting for user input");
             $('#chatMessages').html(`
                 <div class="text-center text-muted" style="padding: 50px;">
-                    <i class="bi bi-building" style="font-size: 48px;"></i>
-                    <h5 class="mt-3">Welcome to NOC Chat</h5>
-                    <p>Please enter your branch code above to start chatting.</p>
+                    <i class="bi bi-building" style="font-size: 48px; color: #cbd5e1;"></i>
+                    <h5 class="mt-3" style="color: #1f2c34;">Welcome to NOC Chat</h5>
+                    <p style="color: #8696a0;">Please enter your branch code above to start chatting.</p>
                     <small class="text-success">Format: BR1001 or ADMIN</small>
                 </div>
             `);
@@ -1223,7 +1321,6 @@
             initialLoadDone = true;
         }
         
-        // Branch input handling with cache
         $('#branchCodeInput').on('change', function() {
             const newBranch = $(this).val().toUpperCase().trim();
             if (isValidBranch(newBranch)) {
