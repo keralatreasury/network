@@ -443,7 +443,6 @@
             margin-right: 8px;
         }
         
-        /* Quick send buttons */
         .quick-actions {
             display: flex;
             gap: 5px;
@@ -469,10 +468,10 @@
 <div class="chat-container">
     <div class="chat-header">
         <div class="branch-info">
-            <h6 class="mb-0"><i class="bi bi-chat-dots-fill"></i> Branch Chat</h6>
+            <h6 class="mb-0"><i class="bi bi-chat-dots-fill"></i> NOC Chat</h6>
             <div class="branch-badge">
                 <i class="bi bi-building"></i> 
-                <input type="text" id="branchCodeInput" class="branch-input" placeholder="BR0000 or Admin" maxlength="10">
+                <input type="text" id="branchCodeInput" class="branch-input" placeholder="BR1001" maxlength="10">
             </div>
             <div class="online-status">
                 <span class="online-dot"></span>
@@ -484,7 +483,7 @@
         </div>
         <div class="refresh-control">
             <i class="bi bi-arrow-repeat"></i>
-            <input type="number" id="refreshIntervalInput" value="3" min="1" max="30" step="1">
+            <input type="number" id="refreshIntervalInput" value="7" min="1" max="59" step="1">
             <label>sec</label>
         </div>
     </div>
@@ -556,7 +555,6 @@
     // ======================== NOTIFICATION SOUND ========================
     function initNotificationSound() {
         try {
-            // Using Web Audio API for better compatibility
             notificationSound = new Audio('https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3');
             notificationSound.volume = 0.3;
             notificationSound.load();
@@ -573,7 +571,6 @@
             if (notificationSound) {
                 notificationSound.currentTime = 0;
                 notificationSound.play().catch(e => {
-                    // Fallback: try to create a simple beep
                     try {
                         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                         const oscillator = audioCtx.createOscillator();
@@ -600,7 +597,6 @@
     function isValidBranch(code) {
         if (!code) return false;
         code = code.toString().toUpperCase().trim();
-        // Allow BR0000 format OR "ADMIN"
         return /^BR\d{4}$/i.test(code) || code === "ADMIN";
     }
     
@@ -702,19 +698,26 @@
             const allMessages = [];
             const newMessageIds = new Set();
             
-            // Get the maximum existing ID to ensure proper sequential IDs
-            let maxId = 0;
-            
             for (let i = 0; i < rows.length; i++) {
                 const row = rows[i];
                 if (row.length >= 1 && row[0]) {
                     const id = parseInt(row[0]);
                     if (!isNaN(id)) {
-                        maxId = Math.max(maxId, id);
+                        let messageText = row[2] || "";
+                        
+                        // Clean up the message text - remove the "[REPLY TO #X] " prefix for display
+                        // But keep the original for storage
+                        let displayMessage = messageText;
+                        const replyPrefixMatch = messageText.match(/^\[REPLY TO #\d+\]\s*/i);
+                        if (replyPrefixMatch) {
+                            displayMessage = messageText.substring(replyPrefixMatch[0].length);
+                        }
+                        
                         const msg = {
                             id: id,
                             branchCode: (row[1] || "").toUpperCase(),
-                            message: row[2] || "",
+                            originalMessage: messageText,
+                            message: displayMessage,  // Cleaned message without prefix
                             timestamp: row[3] || "",
                             replyToId: row[4] ? parseInt(row[4]) : 0,
                             replyMessage: row[5] || "",
@@ -746,7 +749,7 @@
             
             lastMessageIds = newMessageIds;
             
-            // Sort by ID (which is chronological)
+            // Sort by ID (chronological)
             allMessages.sort((a, b) => a.id - b.id);
             
             // Filter messages for current branch
@@ -757,7 +760,6 @@
                 const isReplyToMe = isReply && originalMsg && originalMsg.branchCode === branchCode;
                 const isNewFromOther = !isOwn && msg.replyToId === 0 && msg.status !== "Replied";
                 const isMentioned = !isOwn && msg.message.toLowerCase().includes(`@${branchCode.toLowerCase()}`);
-                // Admin can see all messages
                 const isAdmin = branchCode === 'ADMIN';
                 
                 return isOwn || isReplyToMe || isNewFromOther || isMentioned || isAdmin;
@@ -848,6 +850,9 @@
         }
         
         const action = replyToId ? "REPLY_MESSAGE" : "SEND_MESSAGE";
+        
+        // For reply messages, we'll let the Apps Script add the prefix
+        // We send the clean message, the script will add "[REPLY TO #X] " prefix
         const payload = {
             action: action,
             branchCode: branchCode,
@@ -935,6 +940,7 @@
                 if (originalMsg) originalMessageText = originalMsg.message;
             }
             
+            // Use the cleaned message (without [REPLY TO #X] prefix)
             const highlightedMessage = highlightMentions(message.message, branchCode);
             const branchDisplay = message.branchCode === 'ADMIN' ? '<span class="admin-branch"><i class="bi bi-star-fill"></i> ADMIN</span>' : escapeHtml(message.branchCode);
             
@@ -973,7 +979,6 @@
             if (lastWord.startsWith('@')) {
                 const searchTerm = lastWord.substring(1).toLowerCase();
                 const allBranches = [...activeBranches.keys()];
-                // Add ADMIN to suggestions if not already in list
                 if (!allBranches.includes('ADMIN')) allBranches.push('ADMIN');
                 
                 const suggestions = allBranches
@@ -981,9 +986,7 @@
                     .slice(0, 8);
                 
                 if (suggestions.length > 0) {
-                    const inputPos = $(this).get(0).selectionStart;
                     const inputRect = $(this).get(0).getBoundingClientRect();
-                    const messagesRect = $('#chatMessages').get(0).getBoundingClientRect();
                     
                     $('#mentionSuggestions').html(suggestions.map(s => 
                         `<div class="mention-suggestion-item" data-branch="${s}">@${s} ${s === 'ADMIN' ? '⭐' : ''}</div>`
@@ -1128,21 +1131,18 @@
             Notification.requestPermission();
         }
         
-        // Load saved refresh interval
         const savedInterval = localStorage.getItem('refreshInterval');
         if (savedInterval) {
             currentRefreshInterval = parseInt(savedInterval);
             $('#refreshIntervalInput').val(currentRefreshInterval);
         }
         
-        // Load saved branch
         const savedBranch = getBranchFromStorage();
         if (savedBranch) {
             branchCode = savedBranch;
             $('#branchCodeInput').val(branchCode);
         }
         
-        // Branch input handling
         $('#branchCodeInput').on('change', function() {
             const newBranch = $(this).val().toUpperCase().trim();
             if (isValidBranch(newBranch)) {
@@ -1158,10 +1158,8 @@
             }
         });
         
-        // Refresh interval change
         $('#refreshIntervalInput').on('change', updateRefreshInterval);
         
-        // Initial load
         await loadMessages();
         startAutoRefresh();
         startHeartbeat();
@@ -1191,7 +1189,6 @@
             Swal.fire('Notification', soundEnabled ? 'Sound enabled' : 'Sound disabled', 'info', { toast: true, timer: 1500, showConfirmButton: false });
         });
         
-        // Load sound preference
         const savedSound = localStorage.getItem('soundEnabled');
         if (savedSound !== null) {
             soundEnabled = savedSound === 'true';
@@ -1220,7 +1217,6 @@
     window.cancelReply = cancelReply;
     window.quickMention = quickMention;
     
-    // Start the application
     $(document).ready(init);
 </script>
 </body>
