@@ -6,8 +6,8 @@
     <title>Branch Communication Hub | Team Chat</title>
     
     <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link href="./css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="./css/bootstrap-icons.css">
     
     <style>
         * {
@@ -17,7 +17,7 @@
         }
         
         body {
-            background: #fff;
+            background: #e5ddd5;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             height: 100vh;
             overflow: hidden;
@@ -25,21 +25,29 @@
         
         .chat-container {
             max-width: 1400px;
-            margin: 20px auto;
-            height: calc(100vh - 40px);
+            margin: 0 auto;
+            height: 100vh;
             background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            overflow: hidden;
             display: flex;
             flex-direction: column;
         }
         
         .chat-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #075e54;
             color: white;
-            padding: 20px 30px;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .branch-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
         }
         
         .branch-badge {
@@ -47,13 +55,30 @@
             padding: 5px 15px;
             border-radius: 20px;
             font-size: 0.9rem;
-            display: inline-block;
+        }
+        
+        .branch-input {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            padding: 5px 10px;
+            border-radius: 20px;
+            color: white;
+            width: 100px;
+        }
+        
+        .branch-input::placeholder {
+            color: rgba(255,255,255,0.7);
+        }
+        
+        .branch-input:focus {
+            outline: none;
+            background: rgba(255,255,255,0.3);
         }
         
         .online-status {
             display: inline-flex;
             align-items: center;
-            margin-left: 15px;
+            gap: 5px;
             font-size: 0.8rem;
         }
         
@@ -62,39 +87,58 @@
             height: 10px;
             border-radius: 50%;
             background-color: #4ade80;
-            margin-right: 5px;
             animation: pulse 2s infinite;
         }
         
         @keyframes pulse {
-            0% {
-                box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7);
-            }
-            70% {
-                box-shadow: 0 0 0 6px rgba(74, 222, 128, 0);
-            }
-            100% {
-                box-shadow: 0 0 0 0 rgba(74, 222, 128, 0);
-            }
+            0% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7); }
+            70% { box-shadow: 0 0 0 6px rgba(74, 222, 128, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); }
+        }
+        
+        .refresh-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255,255,255,0.15);
+            padding: 5px 12px;
+            border-radius: 25px;
+        }
+        
+        .refresh-control input {
+            width: 60px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            border-radius: 15px;
+            padding: 3px 8px;
+            color: white;
+            text-align: center;
+        }
+        
+        .refresh-control label {
+            font-size: 0.7rem;
+            margin: 0;
         }
         
         .chat-messages {
             flex: 1;
             overflow-y: auto;
-            padding: 20px;
-            background: #f8f9fa;
+            padding: 15px;
+            background: #e5ddd5;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" opacity="0.03"><path d="M0,0h1000v1000H0V0z M500,500L500,500 L500,500L500,500z" fill="none"/><path d="M100,100 L900,100 L900,900 L100,900 Z" fill="none" stroke="%23333" stroke-width="2"/></svg>');
+            background-size: 60px;
         }
         
         .message {
-            margin-bottom: 20px;
+            margin-bottom: 12px;
             display: flex;
-            animation: fadeInUp 0.3s ease;
+            animation: fadeInUp 0.2s ease;
         }
         
         @keyframes fadeInUp {
             from {
                 opacity: 0;
-                transform: translateY(20px);
+                transform: translateY(10px);
             }
             to {
                 opacity: 1;
@@ -102,112 +146,134 @@
             }
         }
         
-        /* Messages sent by current branch - right side */
         .message-own {
             justify-content: flex-end;
         }
         
-        /* Messages from other branches - left side */
         .message-other {
             justify-content: flex-start;
         }
         
         .message-bubble {
-            max-width: 60%;
-            padding: 12px 18px;
-            border-radius: 18px;
+            max-width: 65%;
+            padding: 8px 12px;
+            border-radius: 12px;
             position: relative;
+            box-shadow: 0 1px 0.5px rgba(0,0,0,0.13);
         }
         
-        /* Own messages - gradient background */
         .message-own .message-bubble {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: #dcf8c5;
+            color: #111;
             border-bottom-right-radius: 4px;
         }
         
-        /* Other messages - white background */
         .message-other .message-bubble {
             background: white;
-            border: 1px solid #e0e0e0;
+            color: #111;
             border-bottom-left-radius: 4px;
         }
         
+        .admin-message .message-bubble {
+            background: #fff3e0;
+            border-left: 3px solid #ff9800;
+        }
+        
         .message-branch {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             font-weight: 600;
-            margin-bottom: 5px;
-            opacity: 0.8;
+            margin-bottom: 4px;
+            color: #075e54;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        
+        .admin-branch {
+            color: #ff9800;
         }
         
         .message-text {
-            font-size: 0.95rem;
-            word-wrap: break-word;
+            font-size: 0.9rem;
+            line-height: 1.4;
         }
         
         .message-footer {
             display: flex;
             justify-content: flex-end;
             align-items: center;
-            gap: 5px;
-            margin-top: 5px;
-            font-size: 0.7rem;
-            opacity: 0.7;
+            gap: 4px;
+            margin-top: 4px;
+            font-size: 0.65rem;
+            color: #667781;
+        }
+        
+        .mention-highlight {
+            background: #ffe6b3;
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-weight: bold;
         }
         
         .tick-mark {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
         }
         
-        .tick-sent { color: #9ca3af; }
-        .tick-delivered { color: #9ca3af; }
-        .tick-read { color: #60a5fa; }
+        .tick-read {
+            color: #34b7f1;
+        }
+        
+        .tick-delivered {
+            color: #8696a0;
+        }
+        
+        .tick-sent {
+            color: #8696a0;
+        }
         
         .reply-indicator {
-            background: rgba(0,0,0,0.05);
-            padding: 8px 12px;
+            background: #f0f2f5;
+            padding: 6px 10px;
             border-radius: 8px;
-            margin-bottom: 8px;
-            font-size: 0.8rem;
-            border-left: 3px solid #667eea;
+            margin-bottom: 6px;
+            font-size: 0.75rem;
+            border-left: 3px solid #075e54;
+            color: #667781;
         }
         
         .reply-btn {
             background: none;
             border: none;
             font-size: 0.7rem;
-            margin-top: 5px;
             cursor: pointer;
             opacity: 0.6;
-            transition: opacity 0.3s;
+            transition: opacity 0.2s;
+            padding: 2px 6px;
+            border-radius: 12px;
         }
         
         .reply-btn:hover {
             opacity: 1;
-        }
-        
-        .message-other .reply-btn {
-            color: #667eea;
-        }
-        
-        .message-own .reply-btn {
-            color: white;
+            background: rgba(0,0,0,0.05);
         }
         
         .chat-input-area {
-            padding: 20px;
-            background: white;
+            padding: 12px 20px;
+            background: #f0f2f5;
             border-top: 1px solid #e0e0e0;
         }
         
         .reply-preview {
-            background: #f0f0f0;
-            padding: 10px 15px;
-            border-radius: 10px;
-            margin-bottom: 10px;
+            background: white;
+            padding: 8px 12px;
+            border-radius: 12px;
+            margin-bottom: 8px;
             display: none;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             position: relative;
+            border-left: 4px solid #075e54;
         }
         
         .reply-preview.active {
@@ -217,125 +283,184 @@
         .cancel-reply {
             position: absolute;
             right: 10px;
-            top: 10px;
+            top: 8px;
             cursor: pointer;
             color: #999;
+            font-weight: bold;
         }
         
         .input-group {
+            display: flex;
             gap: 10px;
+            align-items: flex-end;
         }
         
         .form-control {
             border-radius: 25px;
-            border: 2px solid #e0e0e0;
+            border: 1px solid #e0e0e0;
             resize: none;
+            font-size: 0.9rem;
+            padding: 10px 15px;
         }
         
         .form-control:focus {
-            border-color: #667eea;
+            border-color: #075e54;
             box-shadow: none;
+            outline: none;
         }
         
         .send-btn {
-            border-radius: 25px;
-            padding: 10px 25px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            width: 42px;
+            height: 42px;
+            padding: 0;
+            background: #075e54;
             border: none;
-            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
         .send-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102,126,234,0.4);
+            background: #054a44;
         }
         
         .status-badge {
-            background: #28a745;
+            background: #25d366;
             color: white;
             padding: 2px 8px;
             border-radius: 12px;
-            font-size: 0.7rem;
-            margin-left: 10px;
+            font-size: 0.65rem;
         }
         
         .replied-badge {
-            background: #6c757d;
+            background: #8696a0;
         }
         
         .new-badge {
-            background: #ffc107;
-            color: #000;
+            background: #ff9800;
+        }
+        
+        .admin-badge {
+            background: #ff9800;
         }
         
         .loading-spinner {
             text-align: center;
-            padding: 20px;
+            padding: 40px;
         }
         
         .active-users-panel {
             background: white;
             border-bottom: 1px solid #e0e0e0;
-            padding: 10px 20px;
-            font-size: 0.85rem;
+            padding: 6px 20px;
+            font-size: 0.75rem;
+            overflow-x: auto;
+            white-space: nowrap;
         }
         
         .active-user {
             display: inline-flex;
             align-items: center;
-            background: #f0f0f0;
-            padding: 5px 12px;
+            background: #f0f2f5;
+            padding: 3px 10px;
             border-radius: 20px;
-            margin: 5px;
+            margin: 2px;
+            font-size: 0.7rem;
+        }
+        
+        .active-user.admin {
+            background: #fff3e0;
         }
         
         .active-dot {
-            width: 8px;
-            height: 8px;
+            width: 6px;
+            height: 6px;
             border-radius: 50%;
-            background-color: #4ade80;
-            margin-right: 6px;
+            background-color: #25d366;
+            margin-right: 5px;
+            animation: pulse 1.5s infinite;
+        }
+        
+        .mention-suggestion {
+            position: absolute;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-height: 150px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .mention-suggestion-item {
+            padding: 6px 15px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        
+        .mention-suggestion-item:hover {
+            background: #f0f2f5;
         }
         
         @media (max-width: 768px) {
-            .chat-container {
-                margin: 0;
-                height: 100vh;
-                border-radius: 0;
-            }
-            
             .message-bubble {
-                max-width: 80%;
+                max-width: 85%;
             }
-            
-            .chat-header {
-                padding: 15px 20px;
+            .refresh-control input {
+                width: 50px;
             }
-        }
-        
-        .auto-refresh-indicator {
-            font-size: 0.7rem;
-            color: rgba(255,255,255,0.8);
-            margin-left: 10px;
         }
         
         .connection-status {
             position: fixed;
-            top: 10px;
+            bottom: 80px;
             right: 10px;
             z-index: 9999;
-            padding: 5px 10px;
+            padding: 3px 8px;
             border-radius: 20px;
-            font-size: 0.75rem;
-        }
-        
-        .status-online {
-            background: #28a745;
+            font-size: 0.65rem;
+            background: #25d366;
             color: white;
         }
         
-        .status-offline {
-            background: #dc3545;
+        .notification-toggle {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            opacity: 0.8;
+            padding: 0 5px;
+        }
+        
+        .notification-toggle:hover {
+            opacity: 1;
+        }
+        
+        .message-id {
+            font-size: 0.6rem;
+            color: #667781;
+            margin-right: 8px;
+        }
+        
+        /* Quick send buttons */
+        .quick-actions {
+            display: flex;
+            gap: 5px;
+            margin-top: 8px;
+        }
+        
+        .quick-btn {
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            border-radius: 15px;
+            background: #e9ecef;
+            border: none;
+            color: #075e54;
+        }
+        
+        .quick-btn:hover {
+            background: #075e54;
             color: white;
         }
     </style>
@@ -343,34 +468,36 @@
 <body>
 <div class="chat-container">
     <div class="chat-header">
-        <div class="d-flex justify-content-between align-items-center">
-            <div>
-                <h4 class="mb-1"><i class="bi bi-chat-dots-fill"></i> Branch Communication Hub</h4>
-                <div class="branch-badge">
-                    <i class="bi bi-building"></i> Branch: <span id="branchCodeDisplay">Loading...</span>
-                </div>
-                <div class="online-status">
-                    <span class="online-dot"></span>
-                    <span id="onlineStatusText">Online</span>
-                </div>
+        <div class="branch-info">
+            <h6 class="mb-0"><i class="bi bi-chat-dots-fill"></i> Branch Chat</h6>
+            <div class="branch-badge">
+                <i class="bi bi-building"></i> 
+                <input type="text" id="branchCodeInput" class="branch-input" placeholder="BR0000 or Admin" maxlength="10">
             </div>
-            <div>
-                <span class="auto-refresh-indicator">
-                    <i class="bi bi-arrow-repeat"></i> Auto-refresh: <span id="countdown">30</span>s
-                </span>
+            <div class="online-status">
+                <span class="online-dot"></span>
+                <span id="onlineStatusText">Online</span>
             </div>
+            <button class="notification-toggle" id="toggleToneBtn" title="Toggle Sound">
+                <i class="bi bi-volume-up-fill"></i>
+            </button>
+        </div>
+        <div class="refresh-control">
+            <i class="bi bi-arrow-repeat"></i>
+            <input type="number" id="refreshIntervalInput" value="3" min="1" max="30" step="1">
+            <label>sec</label>
         </div>
     </div>
     
     <div class="active-users-panel" id="activeUsersPanel">
-        <small><i class="bi bi-people-fill"></i> Active branches: <span id="activeCount">0</span></small>
-        <div id="activeUsersList"></div>
+        <i class="bi bi-people-fill"></i> Active: <span id="activeCount">0</span>
+        <span id="activeUsersList"></span>
     </div>
     
     <div class="chat-messages" id="chatMessages">
-        <div class="loading-spinner">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Loading messages...</span>
+        <div class="loading-spinner" id="initialLoading">
+            <div class="spinner-border text-success" role="status">
+                <span class="visually-hidden">Loading...</span>
             </div>
             <p class="mt-2">Loading messages...</p>
         </div>
@@ -378,34 +505,37 @@
     
     <div class="chat-input-area">
         <div class="reply-preview" id="replyPreview">
-            <i class="bi bi-reply-fill"></i> Replying to: <span id="replyToBranch"></span>
+            <i class="bi bi-reply-fill"></i> Replying to: <strong><span id="replyToBranch"></span></strong>
             <br><small id="replyToMessage"></small>
             <span class="cancel-reply" onclick="cancelReply()">✕</span>
         </div>
         
         <div class="input-group">
-            <textarea class="form-control" id="messageInput" rows="2" placeholder="Type your message here... (Press Enter to send)"></textarea>
+            <textarea class="form-control" id="messageInput" rows="1" placeholder="Type message... @mention branch or Admin"></textarea>
             <button class="btn btn-primary send-btn" id="sendBtn">
-                <i class="bi bi-send-fill"></i> Send
+                <i class="bi bi-send-fill"></i>
             </button>
         </div>
+        <div class="quick-actions">
+            <button class="quick-btn" onclick="quickMention('Admin')">@Admin</button>
+        </div>
+        <div id="mentionSuggestions" class="mention-suggestion"></div>
     </div>
 </div>
 
-<div id="connectionStatus" class="connection-status status-online">🟢 Online</div>
+<div id="connectionStatus" class="connection-status">🟢 Online</div>
 
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="./js/jquery.min.js"></script>
+<script src="./js/bootstrap.bundle.min.js"></script>
+<script src="./js/sweetalert2.min.js"></script>
+<script src="./js/sweetalert2.all.min.js"></script>
 
 <script>
     // ======================== CONFIGURATION ========================
-    const SPREADSHEET_ID = "1fkiFo1i60NxA_ujl1GhPmNnSLKI6seb3YiMVhPxZjgM"; // Replace with your Google Sheet ID
-    const SHEET_NAME = "Chats"; // Your sheet name
+    const SPREADSHEET_ID = "1fkiFo1i60NxA_ujl1GhPmNnSLKI6seb3YiMVhPxZjgM";
+    const SHEET_NAME = "Chats";
     const API_KEY = "AIzaSyBAuS3Brpsw5JOJnjNJii1UlFa7ClXf8d4";
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwDg9KYO7JjoWNUVZAPMvwTTmYWW9q4rQZy0_DOtryBwfGA5o72-YWiiNY6sByBZwzv1w/exec"; // Replace with your Apps Script URL
-    const REFRESH_INTERVAL = 30000; // 30 seconds
-    const HEARTBEAT_INTERVAL = 5000; // 5 seconds - update online status
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwDg9KYO7JjoWNUVZAPMvwTTmYWW9q4rQZy0_DOtryBwfGA5o72-YWiiNY6sByBZwzv1w/exec";
     
     // Global variables
     let branchCode = null;
@@ -414,88 +544,113 @@
     let countdownInterval = null;
     let heartbeatTimer = null;
     let replyingTo = null;
-    let lastMessageCount = 0;
-    let activeBranches = new Map(); // Store active branches and their last seen time
+    let activeBranches = new Map();
     let isWindowActive = true;
+    let lastMessageIds = new Set();
+    let notificationSound = null;
+    let soundEnabled = true;
+    let currentRefreshInterval = 3;
+    let isLoading = false;
+    let initialLoadDone = false;
     
-    // ======================== GET BRANCH FROM STORAGE ========================
-    function getBranchFromStorage() {
-        let branch = null;
-        
-        const sessionUser = sessionStorage.getItem('currentUser');
-        if (sessionUser) {
-            try {
-                const userData = JSON.parse(sessionUser);
-                branch = userData.username || userData.branch || userData.branchCode;
-                console.log("Branch from sessionStorage:", branch);
-            } catch (e) {
-                console.error('Error parsing session user:', e);
-            }
+    // ======================== NOTIFICATION SOUND ========================
+    function initNotificationSound() {
+        try {
+            // Using Web Audio API for better compatibility
+            notificationSound = new Audio('https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3');
+            notificationSound.volume = 0.3;
+            notificationSound.load();
+        } catch(e) {
+            console.log("Audio not supported, using beep fallback");
+            notificationSound = null;
         }
-        
-        if (!branch) {
-            const localUser = localStorage.getItem('currentUser');
-            if (localUser) {
-                try {
-                    const userData = JSON.parse(localUser);
-                    branch = userData.username || userData.branch || userData.branchCode;
-                    console.log("Branch from localStorage:", branch);
-                } catch (e) {
-                    console.error('Error parsing local user:', e);
-                }
-            }
-        }
-        
-        if (!branch) {
-            branch = localStorage.getItem('selectedBranch');
-            console.log("Branch from selectedBranch:", branch);
-        }
-        
-        if (!branch || branch === 'null' || branch === 'undefined') {
-            branch = prompt("Please enter your branch code (e.g., BR001):", "BR001");
-            if (branch) {
-                localStorage.setItem('selectedBranch', branch);
-            }
-        }
-        
-        return branch;
     }
     
-    // ======================== UPDATE ONLINE STATUS (HEARTBEAT) ========================
+    function playNotificationSound() {
+        if (!soundEnabled) return;
+        
+        try {
+            if (notificationSound) {
+                notificationSound.currentTime = 0;
+                notificationSound.play().catch(e => {
+                    // Fallback: try to create a simple beep
+                    try {
+                        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                        const oscillator = audioCtx.createOscillator();
+                        const gainNode = audioCtx.createGain();
+                        oscillator.connect(gainNode);
+                        gainNode.connect(audioCtx.destination);
+                        oscillator.frequency.value = 880;
+                        gainNode.gain.value = 0.1;
+                        oscillator.start();
+                        gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.5);
+                        oscillator.stop(audioCtx.currentTime + 0.5);
+                        audioCtx.resume();
+                    } catch(e2) {
+                        console.log("Cannot play sound");
+                    }
+                });
+            }
+        } catch(e) {
+            console.log("Sound play error:", e);
+        }
+    }
+    
+    // ======================== BRANCH MANAGEMENT ========================
+    function isValidBranch(code) {
+        if (!code) return false;
+        code = code.toString().toUpperCase().trim();
+        // Allow BR0000 format OR "ADMIN"
+        return /^BR\d{4}$/i.test(code) || code === "ADMIN";
+    }
+    
+    function getBranchFromStorage() {
+        let branch = localStorage.getItem('branchCode');
+        if (branch && isValidBranch(branch)) {
+            return branch.toUpperCase();
+        }
+        return null;
+    }
+    
+    function saveBranchToStorage(branch) {
+        if (branch && isValidBranch(branch)) {
+            localStorage.setItem('branchCode', branch.toUpperCase());
+            return branch.toUpperCase();
+        }
+        return null;
+    }
+    
+    // ======================== HEARTBEAT ========================
     async function updateHeartbeat() {
         if (!branchCode) return;
         
         try {
-            const payload = {
-                action: "HEARTBEAT",
-                branchCode: branchCode,
-                timestamp: new Date().toISOString(),
-                isActive: isWindowActive
-            };
-            
             await fetch(APPS_SCRIPT_URL, {
                 method: "POST",
                 mode: "no-cors",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
+                body: JSON.stringify({
+                    action: "HEARTBEAT",
+                    branchCode: branchCode,
+                    timestamp: new Date().toISOString(),
+                    isActive: isWindowActive
+                })
             });
-            
-            console.log("Heartbeat sent for branch:", branchCode);
         } catch (error) {
-            console.error("Error sending heartbeat:", error);
+            console.error("Heartbeat error:", error);
         }
     }
     
     // ======================== GET ACTIVE BRANCHES ========================
     async function getActiveBranches() {
         try {
-            const range = `${SHEET_NAME}!H:I`; // Store active status in columns H and I
+            const range = `ActiveBranches!A:C`;
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?key=${API_KEY}`;
             const response = await fetch(url);
             const data = await response.json();
             
             const now = new Date();
-            const activeThreshold = 30000; // 30 seconds threshold for active status
+            const activeThreshold = 10000;
             
             if (data.values && data.values.length > 1) {
                 activeBranches.clear();
@@ -503,17 +658,12 @@
                     const row = data.values[i];
                     if (row.length >= 2) {
                         const lastSeen = new Date(row[1]);
-                        const timeDiff = now - lastSeen;
-                        if (timeDiff < activeThreshold) {
-                            activeBranches.set(row[0], {
-                                lastSeen: lastSeen,
-                                isActive: true
-                            });
+                        if (now - lastSeen < activeThreshold) {
+                            activeBranches.set(row[0], { lastSeen: lastSeen });
                         }
                     }
                 }
             }
-            
             updateActiveUsersDisplay();
         } catch (error) {
             console.error("Error getting active branches:", error);
@@ -524,84 +674,98 @@
         const activeList = $('#activeUsersList');
         const activeCount = $('#activeCount');
         
-        activeCount.text(activeBranches.size);
-        
-        if (activeBranches.size === 0) {
-            activeList.html('<small class="text-muted">No other branches active</small>');
-        } else {
-            let html = '';
-            for (let [branch, data] of activeBranches) {
-                if (branch !== branchCode) {
-                    html += `
-                        <div class="active-user">
-                            <span class="active-dot"></span>
-                            ${escapeHtml(branch)}
-                        </div>
-                    `;
-                }
+        let activeListArray = [];
+        for (let branch of activeBranches.keys()) {
+            if (branch !== branchCode) {
+                const isAdmin = branch === 'ADMIN';
+                activeListArray.push(`<span class="active-user ${isAdmin ? 'admin' : ''}"><span class="active-dot"></span>${escapeHtml(branch)}</span>`);
             }
-            if (html === '') {
-                html = '<small class="text-muted">Only you are active</small>';
-            }
-            activeList.html(html);
         }
+        
+        activeCount.text(activeListArray.length);
+        activeList.html(activeListArray.join(' '));
     }
     
-    // ======================== READ MESSAGES FROM GOOGLE SHEET ========================
+    // ======================== READ MESSAGES FROM SHEET ========================
     async function readMessagesFromSheet() {
         if (!branchCode) return [];
         
         try {
-            const range = `${SHEET_NAME}!A:J`; // Added columns for status tracking
+            const range = `${SHEET_NAME}!A:J`;
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?key=${API_KEY}`;
-            
             const response = await fetch(url);
             const data = await response.json();
             
-            if (!data.values || data.values.length <= 1) {
-                return [];
-            }
+            if (!data.values || data.values.length <= 1) return [];
             
             const rows = data.values.slice(1);
             const allMessages = [];
+            const newMessageIds = new Set();
+            
+            // Get the maximum existing ID to ensure proper sequential IDs
+            let maxId = 0;
             
             for (let i = 0; i < rows.length; i++) {
                 const row = rows[i];
-                if (row.length >= 5 && row[0]) {
-                    allMessages.push({
-                        id: parseInt(row[0]),
-                        branchCode: row[1] || "",
-                        message: row[2] || "",
-                        timestamp: row[3] || "",
-                        replyToId: row[4] ? parseInt(row[4]) : 0,
-                        replyMessage: row[5] || "",
-                        status: row[6] || "New",
-                        delivered: row[7] === "TRUE",
-                        read: row[8] === "TRUE",
-                        readBy: row[9] || ""
-                    });
+                if (row.length >= 1 && row[0]) {
+                    const id = parseInt(row[0]);
+                    if (!isNaN(id)) {
+                        maxId = Math.max(maxId, id);
+                        const msg = {
+                            id: id,
+                            branchCode: (row[1] || "").toUpperCase(),
+                            message: row[2] || "",
+                            timestamp: row[3] || "",
+                            replyToId: row[4] ? parseInt(row[4]) : 0,
+                            replyMessage: row[5] || "",
+                            status: row[6] || "Sent",
+                            delivered: row[7] === "TRUE",
+                            read: row[8] === "TRUE",
+                            readBy: row[9] || ""
+                        };
+                        allMessages.push(msg);
+                        newMessageIds.add(msg.id);
+                    }
                 }
             }
             
-            allMessages.sort((a, b) => {
-                if (!a.timestamp) return 1;
-                if (!b.timestamp) return -1;
-                return new Date(a.timestamp) - new Date(b.timestamp);
-            });
+            // Check for new messages
+            const hasNewMessages = [...newMessageIds].some(id => !lastMessageIds.has(id));
+            if (hasNewMessages && messages.length > 0 && !isLoading) {
+                const newMsgs = allMessages.filter(m => !lastMessageIds.has(m.id) && m.branchCode !== branchCode);
+                for (let newMsg of newMsgs) {
+                    const isMentioned = newMsg.message.toLowerCase().includes(`@${branchCode.toLowerCase()}`);
+                    if (isMentioned) {
+                        playNotificationSound();
+                        showMentionNotification(newMsg);
+                    } else {
+                        playNotificationSound();
+                    }
+                }
+            }
+            
+            lastMessageIds = newMessageIds;
+            
+            // Sort by ID (which is chronological)
+            allMessages.sort((a, b) => a.id - b.id);
             
             // Filter messages for current branch
             const relevantMessages = allMessages.filter(msg => {
-                const isOwnMessage = msg.branchCode === branchCode;
+                const isOwn = msg.branchCode === branchCode;
                 const isReply = msg.replyToId > 0;
-                const isReplyToMe = isReply && allMessages.find(m => m.id === msg.replyToId)?.branchCode === branchCode;
-                const isNewMessageFromOther = !isOwnMessage && msg.replyToId === 0 && msg.status !== "Replied";
+                const originalMsg = allMessages.find(m => m.id === msg.replyToId);
+                const isReplyToMe = isReply && originalMsg && originalMsg.branchCode === branchCode;
+                const isNewFromOther = !isOwn && msg.replyToId === 0 && msg.status !== "Replied";
+                const isMentioned = !isOwn && msg.message.toLowerCase().includes(`@${branchCode.toLowerCase()}`);
+                // Admin can see all messages
+                const isAdmin = branchCode === 'ADMIN';
                 
-                return isOwnMessage || isReplyToMe || isNewMessageFromOther;
+                return isOwn || isReplyToMe || isNewFromOther || isMentioned || isAdmin;
             });
             
-            // Mark messages as read if current branch sees them
+            // Mark messages as read
             for (let msg of relevantMessages) {
-                if (!msg.isOwnMessage && !msg.read && !msg.readBy.includes(branchCode)) {
+                if (msg.branchCode !== branchCode && !msg.read && !msg.readBy.includes(branchCode)) {
                     await markAsRead(msg.id);
                 }
             }
@@ -609,8 +773,10 @@
             return relevantMessages.map(msg => ({
                 ...msg,
                 isOwnMessage: msg.branchCode === branchCode,
-                canReply: msg.branchCode !== branchCode && msg.replyToId === 0 && msg.status !== "Replied",
-                messageStatus: getMessageStatus(msg, branchCode)
+                canReply: (msg.branchCode !== branchCode && msg.replyToId === 0 && msg.status !== "Replied") || branchCode === 'ADMIN',
+                isMention: !msg.isOwnMessage && msg.message.toLowerCase().includes(`@${branchCode.toLowerCase()}`),
+                isAdmin: msg.branchCode === 'ADMIN',
+                messageStatus: getMessageStatus(msg)
             }));
             
         } catch (error) {
@@ -619,50 +785,65 @@
         }
     }
     
-    function getMessageStatus(message, currentBranch) {
-        if (message.branchCode !== currentBranch) return null;
+    function getMessageStatus(message) {
+        if (message.branchCode !== branchCode) return null;
         
         if (message.read && message.readBy) {
-            return { type: 'read', icon: 'bi-check2-all', color: '#60a5fa', text: 'Seen' };
+            return { type: 'read', icon: 'bi-check2-all', color: '#34b7f1', text: 'Seen' };
         } else if (message.delivered) {
-            return { type: 'delivered', icon: 'bi-check2-all', color: '#9ca3af', text: 'Delivered' };
+            return { type: 'delivered', icon: 'bi-check2-all', color: '#8696a0', text: 'Delivered' };
         } else {
-            return { type: 'sent', icon: 'bi-check2', color: '#9ca3af', text: 'Sent' };
+            return { type: 'sent', icon: 'bi-check2', color: '#8696a0', text: 'Sent' };
         }
     }
     
     async function markAsRead(messageId) {
         try {
-            const payload = {
-                action: "MARK_READ",
-                messageId: messageId,
-                branchCode: branchCode,
-                timestamp: new Date().toISOString()
-            };
-            
             await fetch(APPS_SCRIPT_URL, {
                 method: "POST",
                 mode: "no-cors",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
+                body: JSON.stringify({
+                    action: "MARK_READ",
+                    messageId: messageId,
+                    branchCode: branchCode,
+                    timestamp: new Date().toISOString()
+                })
             });
         } catch (error) {
-            console.error("Error marking as read:", error);
+            console.error("Mark as read error:", error);
         }
+    }
+    
+    function showMentionNotification(msg) {
+        if (!soundEnabled) return;
+        
+        if (document.hidden) {
+            if (Notification.permission === "granted") {
+                new Notification(`Mention from ${msg.branchCode}`, {
+                    body: msg.message.substring(0, 100),
+                    icon: "https://cdn.jsdelivr.net/npm/bootstrap-icons/icons/chat-dots-fill.svg"
+                });
+            }
+        }
+        
+        Swal.fire({
+            icon: 'info',
+            title: `📢 Mention from ${msg.branchCode}`,
+            text: msg.message.substring(0, 100),
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000,
+            background: '#fff3e0'
+        });
     }
     
     // ======================== SEND MESSAGE ========================
     async function sendMessage(message, replyToId = null) {
-        if (!message.trim()) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Empty Message',
-                text: 'Please enter a message to send',
-                toast: true,
-                position: 'top-end',
-                showConfirmButton: false,
-                timer: 3000
-            });
+        if (!message.trim()) return false;
+        if (!branchCode) {
+            Swal.fire('Error', 'Please set your branch code first', 'warning');
             return false;
         }
         
@@ -671,13 +852,13 @@
             action: action,
             branchCode: branchCode,
             message: message.trim(),
-            timestamp: new Date().toISOString(),
-            status: "Sent"
+            timestamp: new Date().toISOString()
         };
         
-        if (replyToId) {
-            payload.replyToId = replyToId;
-        }
+        if (replyToId) payload.replyToId = replyToId;
+        
+        const sendBtn = $('#sendBtn');
+        sendBtn.prop('disabled', true).html('<i class="bi bi-hourglass-split"></i>');
         
         try {
             await fetch(APPS_SCRIPT_URL, {
@@ -689,112 +870,90 @@
             
             $('#messageInput').val('');
             cancelReply();
-            
-            setTimeout(async () => {
-                await loadMessages();
-                scrollToBottom();
-            }, 1000);
-            
+            await loadMessages();
             return true;
             
         } catch (error) {
-            console.error("Error sending message:", error);
-            Swal.fire({
-                icon: 'error',
-                title: 'Send Failed',
-                text: 'Unable to send message',
-                confirmButtonColor: '#667eea'
-            });
+            console.error("Send error:", error);
+            Swal.fire('Error', 'Unable to send message', 'error');
             return false;
+        } finally {
+            sendBtn.prop('disabled', false).html('<i class="bi bi-send-fill"></i>');
         }
     }
     
-    // ======================== FORMAT DATE AND TIME ========================
+    // ======================== MESSAGE RENDERING ========================
     function formatDateTime(timestamp) {
-        if (!timestamp) return 'Invalid date';
-        
+        if (!timestamp) return 'Just now';
         const date = new Date(timestamp);
+        const now = new Date();
+        const diffMs = now - date;
+        const diffMins = Math.floor(diffMs / 60000);
         
-        // Format: DD/MM/YYYY
+        if (diffMins < 1) return 'Just now';
+        if (diffMins < 60) return `${diffMins} min ago`;
+        
         const day = date.getDate().toString().padStart(2, '0');
         const month = (date.getMonth() + 1).toString().padStart(2, '0');
-        const year = date.getFullYear();
-        const formattedDate = `${day}/${month}/${year}`;
-        
-        // Format time: 12-hour format with AM/PM
         let hours = date.getHours();
         const minutes = date.getMinutes().toString().padStart(2, '0');
-        const seconds = date.getSeconds().toString().padStart(2, '0');
         const ampm = hours >= 12 ? 'PM' : 'AM';
-        hours = hours % 12;
-        hours = hours ? hours : 12; // Convert 0 to 12
-        const formattedTime = `${hours}:${minutes}:${seconds} ${ampm}`;
-        
-        return `${formattedDate} at ${formattedTime}`;
+        hours = hours % 12 || 12;
+        return `${day}/${month} ${hours}:${minutes} ${ampm}`;
     }
     
-    // ======================== RENDER MESSAGES ========================
+    function highlightMentions(text, currentBranch) {
+        const mentionRegex = /@(BR\d{4}|ADMIN)/gi;
+        return text.replace(mentionRegex, (match, branch) => {
+            if (branch.toUpperCase() === currentBranch) {
+                return `<span class="mention-highlight">${match}</span>`;
+            }
+            return match;
+        });
+    }
+    
     function renderMessages() {
         const container = $('#chatMessages');
         
         if (!messages || messages.length === 0) {
-            container.html(`
-                <div class="text-center text-muted" style="padding: 50px;">
-                    <i class="bi bi-chat-square-text" style="font-size: 48px;"></i>
-                    <h5 class="mt-3">No messages yet</h5>
-                    <p>Be the first to start a conversation!</p>
-                </div>
-            `);
+            container.html(`<div class="text-center text-muted" style="padding: 50px;"><i class="bi bi-chat-square-text" style="font-size: 48px;"></i><h6>No messages yet</h6><small>Be the first to start a conversation!</small></div>`);
             return;
         }
         
         let html = '';
-        
         messages.forEach(message => {
             const isOwn = message.isOwnMessage;
-            const formattedDateTime = formatDateTime(message.timestamp);
+            const isAdmin = message.isAdmin;
+            const formattedTime = formatDateTime(message.timestamp);
             const isReply = message.replyToId > 0;
             const messageStatus = message.messageStatus;
+            const adminClass = isAdmin && !isOwn ? 'admin-message' : '';
             
-            // Get the original message text if this is a reply
             let originalMessageText = '';
             if (isReply) {
                 const originalMsg = messages.find(m => m.id === message.replyToId);
-                if (originalMsg) {
-                    originalMessageText = originalMsg.message;
-                }
+                if (originalMsg) originalMessageText = originalMsg.message;
             }
             
+            const highlightedMessage = highlightMentions(message.message, branchCode);
+            const branchDisplay = message.branchCode === 'ADMIN' ? '<span class="admin-branch"><i class="bi bi-star-fill"></i> ADMIN</span>' : escapeHtml(message.branchCode);
+            
             html += `
-                <div class="message ${isOwn ? 'message-own' : 'message-other'}">
+                <div class="message ${isOwn ? 'message-own' : 'message-other'} ${adminClass}">
                     <div class="message-bubble">
                         <div class="message-branch">
-                            <i class="bi bi-building"></i> ${escapeHtml(message.branchCode)}
-                            ${message.status === 'Replied' ? '<span class="status-badge replied-badge"><i class="bi bi-check-all"></i> Replied</span>' : ''}
-                            ${!isOwn && message.canReply ? '<span class="status-badge new-badge"><i class="bi bi-chat"></i> Need Reply</span>' : ''}
+                            <span><i class="bi bi-building"></i> ${branchDisplay}</span>
+                            <span class="message-id">#${message.id}</span>
+                            ${message.status === 'Replied' ? '<span class="status-badge replied-badge">Replied</span>' : ''}
+                            ${!isOwn && message.canReply ? '<span class="status-badge new-badge">Reply</span>' : ''}
+                            ${message.isMention ? '<span class="status-badge" style="background:#ff9800;">@Mention</span>' : ''}
                         </div>
-                        ${isReply ? `
-                            <div class="reply-indicator">
-                                <i class="bi bi-reply-fill"></i> Replying to: "${escapeHtml(originalMessageText.substring(0, 100))}"
-                            </div>
-                        ` : ''}
-                        <div class="message-text">
-                            ${escapeHtml(message.message)}
-                            ${message.replyMessage ? `<br><small><i class="bi bi-reply"></i> Reply: ${escapeHtml(message.replyMessage)}</small>` : ''}
-                        </div>
+                        ${isReply ? `<div class="reply-indicator"><i class="bi bi-reply-fill"></i> Reply to #${message.replyToId}: "${escapeHtml(originalMessageText.substring(0, 80))}"</div>` : ''}
+                        <div class="message-text">${highlightedMessage}</div>
                         <div class="message-footer">
-                            <span class="message-time">${formattedDateTime}</span>
-                            ${messageStatus ? `
-                                <span class="tick-mark">
-                                    <i class="${messageStatus.icon}" style="color: ${messageStatus.color}"></i>
-                                    <span class="d-none d-sm-inline"> ${messageStatus.text}</span>
-                                </span>
-                            ` : ''}
-                            ${!isOwn && message.canReply ? `
-                                <button class="reply-btn" onclick="startReply(${message.id}, '${escapeHtml(message.branchCode)}', '${escapeHtml(message.message.substring(0, 50))}')">
-                                    <i class="bi bi-reply-fill"></i> Reply
-                                </button>
-                            ` : ''}
+                            <span>${formattedTime}</span>
+                            ${messageStatus ? `<span class="tick-mark tick-${messageStatus.type}"><i class="${messageStatus.icon}"></i> ${messageStatus.text}</span>` : ''}
+                            ${!isOwn && message.canReply ? `<button class="reply-btn" onclick="startReply(${message.id}, '${escapeHtml(message.branchCode)}', '${escapeHtml(message.message.substring(0, 50))}')"><i class="bi bi-reply-fill"></i> Reply</button>` : ''}
                         </div>
                     </div>
                 </div>
@@ -802,86 +961,128 @@
         });
         
         container.html(html);
+        scrollToBottom();
     }
     
-    // ======================== LOAD MESSAGES ========================
-    async function loadMessages() {
-        if (!branchCode) return;
-        
-        try {
-            const newMessages = await readMessagesFromSheet();
+    // ======================== MENTION HANDLING ========================
+    function setupMentionDetection() {
+        $('#messageInput').on('input', function() {
+            const value = $(this).val();
+            const lastWord = value.split(' ').pop();
             
-            // Check if messages have changed (by ID and content)
-            const hasNewMessages = JSON.stringify(messages) !== JSON.stringify(newMessages);
-            
-            messages = newMessages;
-            
-            renderMessages();
-            
-            if (hasNewMessages) {
-                scrollToBottom();
+            if (lastWord.startsWith('@')) {
+                const searchTerm = lastWord.substring(1).toLowerCase();
+                const allBranches = [...activeBranches.keys()];
+                // Add ADMIN to suggestions if not already in list
+                if (!allBranches.includes('ADMIN')) allBranches.push('ADMIN');
+                
+                const suggestions = allBranches
+                    .filter(b => b !== branchCode && b.toLowerCase().includes(searchTerm))
+                    .slice(0, 8);
+                
+                if (suggestions.length > 0) {
+                    const inputPos = $(this).get(0).selectionStart;
+                    const inputRect = $(this).get(0).getBoundingClientRect();
+                    const messagesRect = $('#chatMessages').get(0).getBoundingClientRect();
+                    
+                    $('#mentionSuggestions').html(suggestions.map(s => 
+                        `<div class="mention-suggestion-item" data-branch="${s}">@${s} ${s === 'ADMIN' ? '⭐' : ''}</div>`
+                    )).css({
+                        display: 'block',
+                        position: 'fixed',
+                        top: Math.min(inputRect.bottom + 5, window.innerHeight - 150),
+                        left: inputRect.left
+                    });
+                    
+                    $('.mention-suggestion-item').off('click').on('click', function() {
+                        const branch = $(this).data('branch');
+                        const text = $('#messageInput').val();
+                        const newText = text.replace(/@\w*$/, `@${branch} `);
+                        $('#messageInput').val(newText);
+                        $('#mentionSuggestions').hide();
+                        $('#messageInput').focus();
+                    });
+                } else {
+                    $('#mentionSuggestions').hide();
+                }
+            } else {
+                $('#mentionSuggestions').hide();
             }
-            
-            updateConnectionStatus(true);
-            await getActiveBranches();
-            
-        } catch (error) {
-            console.error("Error loading messages:", error);
-            updateConnectionStatus(false);
-        }
-    }
-    
-    // ======================== HELPER FUNCTIONS ========================
-    function escapeHtml(str) {
-        if (!str) return '';
-        return str.replace(/[&<>]/g, function(m) {
-            if (m === '&') return '&amp;';
-            if (m === '<') return '&lt;';
-            if (m === '>') return '&gt;';
-            return m;
+        });
+        
+        $(document).on('click', function(e) {
+            if (!$(e.target).closest('#mentionSuggestions').length) {
+                $('#mentionSuggestions').hide();
+            }
         });
     }
     
-    function scrollToBottom() {
-        const messagesDiv = document.getElementById('chatMessages');
-        if (messagesDiv) {
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    function quickMention(branch) {
+        const currentText = $('#messageInput').val();
+        $('#messageInput').val(currentText + (currentText ? ' ' : '') + `@${branch} `);
+        $('#messageInput').focus();
+    }
+    
+    // ======================== LOAD & REFRESH ========================
+    async function loadMessages() {
+        if (!branchCode || isLoading) return;
+        
+        isLoading = true;
+        
+        try {
+            const newMessages = await readMessagesFromSheet();
+            messages = newMessages;
+            renderMessages();
+            updateConnectionStatus(true);
+            await getActiveBranches();
+            
+            if (!initialLoadDone) {
+                $('#initialLoading').hide();
+                initialLoadDone = true;
+            }
+        } catch (error) {
+            console.error("Load error:", error);
+            updateConnectionStatus(false);
+        } finally {
+            isLoading = false;
         }
+    }
+    
+    function scrollToBottom() {
+        const container = document.getElementById('chatMessages');
+        if (container) container.scrollTop = container.scrollHeight;
     }
     
     function updateConnectionStatus(isOnline) {
         const statusDiv = $('#connectionStatus');
         if (isOnline) {
-            statusDiv.removeClass('status-offline').addClass('status-online');
-            statusDiv.html('🟢 Online');
+            statusDiv.html('🟢 Online').css('background', '#25d366');
             $('#onlineStatusText').text('Online');
         } else {
-            statusDiv.removeClass('status-online').addClass('status-offline');
-            statusDiv.html('🔴 Offline');
+            statusDiv.html('🔴 Offline').css('background', '#dc3545');
             $('#onlineStatusText').text('Offline');
         }
-        
-        setTimeout(() => {
-            statusDiv.fadeOut('slow', function() {
-                statusDiv.fadeIn('slow');
-            });
-        }, 3000);
+        setTimeout(() => statusDiv.fadeOut(2000, function() { $(this).fadeIn(2000); }), 3000);
     }
     
-    // ======================== REPLY FUNCTIONS ========================
-    function startReply(messageId, branchCode, messagePreview) {
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            return m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;';
+        });
+    }
+    
+    function startReply(messageId, branch, preview) {
         replyingTo = messageId;
         $('#replyPreview').addClass('active');
-        $('#replyToBranch').text(branchCode);
-        $('#replyToMessage').text(messagePreview);
+        $('#replyToBranch').text(branch);
+        $('#replyToMessage').text(preview);
         $('#messageInput').focus();
     }
     
     function cancelReply() {
         replyingTo = null;
         $('#replyPreview').removeClass('active');
-        $('#replyToBranch').text('');
-        $('#replyToMessage').text('');
     }
     
     // ======================== AUTO REFRESH ========================
@@ -889,123 +1090,135 @@
         if (refreshTimer) clearInterval(refreshTimer);
         if (countdownInterval) clearInterval(countdownInterval);
         
-        let countdown = REFRESH_INTERVAL / 1000;
+        const intervalSeconds = currentRefreshInterval;
+        let countdown = intervalSeconds;
         
         refreshTimer = setInterval(async () => {
             await loadMessages();
-            countdown = REFRESH_INTERVAL / 1000;
-        }, REFRESH_INTERVAL);
+            countdown = intervalSeconds;
+        }, intervalSeconds * 1000);
         
         countdownInterval = setInterval(() => {
             countdown--;
-            if (countdown >= 0) {
-                $('#countdown').text(countdown);
-            } else {
-                countdown = REFRESH_INTERVAL / 1000;
-            }
+            $('#countdown').text(Math.max(0, countdown));
+            if (countdown <= 0) countdown = intervalSeconds;
         }, 1000);
+    }
+    
+    function updateRefreshInterval() {
+        const newInterval = parseInt($('#refreshIntervalInput').val());
+        if (!isNaN(newInterval) && newInterval >= 1 && newInterval <= 30) {
+            currentRefreshInterval = newInterval;
+            localStorage.setItem('refreshInterval', currentRefreshInterval);
+            startAutoRefresh();
+        }
     }
     
     function startHeartbeat() {
         if (heartbeatTimer) clearInterval(heartbeatTimer);
-        
-        // Send heartbeat immediately
         updateHeartbeat();
-        
-        heartbeatTimer = setInterval(() => {
-            updateHeartbeat();
-        }, HEARTBEAT_INTERVAL);
+        heartbeatTimer = setInterval(() => updateHeartbeat(), 5000);
     }
     
-    // ======================== SEND BUTTON HANDLER ========================
-    async function handleSendMessage() {
-        const message = $('#messageInput').val();
-        if (!message.trim()) return;
+    // ======================== INITIALIZATION ========================
+    async function init() {
+        initNotificationSound();
         
-        if (replyingTo) {
-            await sendMessage(message, replyingTo);
-        } else {
-            await sendMessage(message);
+        if (Notification.permission === "default") {
+            Notification.requestPermission();
+        }
+        
+        // Load saved refresh interval
+        const savedInterval = localStorage.getItem('refreshInterval');
+        if (savedInterval) {
+            currentRefreshInterval = parseInt(savedInterval);
+            $('#refreshIntervalInput').val(currentRefreshInterval);
+        }
+        
+        // Load saved branch
+        const savedBranch = getBranchFromStorage();
+        if (savedBranch) {
+            branchCode = savedBranch;
+            $('#branchCodeInput').val(branchCode);
+        }
+        
+        // Branch input handling
+        $('#branchCodeInput').on('change', function() {
+            const newBranch = $(this).val().toUpperCase().trim();
+            if (isValidBranch(newBranch)) {
+                branchCode = saveBranchToStorage(newBranch);
+                initialLoadDone = false;
+                $('#initialLoading').show();
+                loadMessages().then(() => {
+                    Swal.fire('Success', `Branch set to ${branchCode}`, 'success');
+                });
+            } else if (newBranch) {
+                Swal.fire('Invalid', 'Use format: BR0000 or ADMIN', 'warning');
+                $(this).val(branchCode || '');
+            }
+        });
+        
+        // Refresh interval change
+        $('#refreshIntervalInput').on('change', updateRefreshInterval);
+        
+        // Initial load
+        await loadMessages();
+        startAutoRefresh();
+        startHeartbeat();
+        setupMentionDetection();
+        setupWindowFocusTracking();
+        
+        $('#sendBtn').on('click', async () => {
+            const message = $('#messageInput').val();
+            if (replyingTo) {
+                await sendMessage(message, replyingTo);
+            } else {
+                await sendMessage(message);
+            }
+        });
+        
+        $('#messageInput').on('keypress', function(e) {
+            if (e.which === 13 && !e.shiftKey) {
+                e.preventDefault();
+                $('#sendBtn').click();
+            }
+        });
+        
+        $('#toggleToneBtn').on('click', function() {
+            soundEnabled = !soundEnabled;
+            $(this).html(soundEnabled ? '<i class="bi bi-volume-up-fill"></i>' : '<i class="bi bi-volume-mute-fill"></i>');
+            localStorage.setItem('soundEnabled', soundEnabled);
+            Swal.fire('Notification', soundEnabled ? 'Sound enabled' : 'Sound disabled', 'info', { toast: true, timer: 1500, showConfirmButton: false });
+        });
+        
+        // Load sound preference
+        const savedSound = localStorage.getItem('soundEnabled');
+        if (savedSound !== null) {
+            soundEnabled = savedSound === 'true';
+            $('#toggleToneBtn').html(soundEnabled ? '<i class="bi bi-volume-up-fill"></i>' : '<i class="bi bi-volume-mute-fill"></i>');
         }
     }
     
-    // ======================== WINDOW FOCUS TRACKING ========================
     function setupWindowFocusTracking() {
         window.addEventListener('focus', () => {
             isWindowActive = true;
             updateHeartbeat();
             loadMessages();
         });
-        
         window.addEventListener('blur', () => {
             isWindowActive = false;
             updateHeartbeat();
         });
-        
         document.addEventListener('visibilitychange', () => {
             isWindowActive = !document.hidden;
-            updateHeartbeat();
-            if (isWindowActive) {
-                loadMessages();
-            }
+            if (isWindowActive) loadMessages();
         });
     }
-    
-    // ======================== INITIALIZATION ========================
-    async function init() {
-        branchCode = getBranchFromStorage();
-        
-        if (!branchCode || branchCode === 'null' || branchCode === 'undefined') {
-            $('#branchCodeDisplay').text('Not detected');
-            $('#chatMessages').html(`
-                <div class="alert alert-danger m-3">
-                    <i class="bi bi-exclamation-triangle-fill"></i>
-                    <strong>Branch Not Detected!</strong><br>
-                    Please enter your branch code to continue.
-                    <br><br>
-                    <input type="text" id="manualBranchInput" class="form-control" placeholder="Enter Branch Code (e.g., BR001)">
-                    <button class="btn btn-primary mt-2" onclick="setManualBranch()">
-                        <i class="bi bi-check"></i> Set Branch
-                    </button>
-                </div>
-            `);
-            $('#sendBtn').prop('disabled', true);
-            $('#messageInput').prop('disabled', true);
-            return;
-        }
-        
-        $('#branchCodeDisplay').text(branchCode);
-        console.log("Branch initialized:", branchCode);
-        
-        await loadMessages();
-        startAutoRefresh();
-        startHeartbeat();
-        setupWindowFocusTracking();
-        
-        $('#sendBtn').on('click', handleSendMessage);
-        $('#messageInput').on('keypress', function(e) {
-            if (e.which === 13 && !e.shiftKey) {
-                e.preventDefault();
-                handleSendMessage();
-            }
-        });
-        
-        $('#sendBtn').prop('disabled', false);
-        $('#messageInput').prop('disabled', false);
-    }
-    
-    // Manual branch input
-    window.setManualBranch = function() {
-        const branch = $('#manualBranchInput').val();
-        if (branch) {
-            localStorage.setItem('selectedBranch', branch);
-            location.reload();
-        }
-    };
     
     // Make functions globally accessible
     window.startReply = startReply;
     window.cancelReply = cancelReply;
+    window.quickMention = quickMention;
     
     // Start the application
     $(document).ready(init);
