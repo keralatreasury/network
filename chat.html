@@ -50,6 +50,34 @@
             display: inline-block;
         }
         
+        .online-status {
+            display: inline-flex;
+            align-items: center;
+            margin-left: 15px;
+            font-size: 0.8rem;
+        }
+        
+        .online-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #4ade80;
+            margin-right: 5px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 6px rgba(74, 222, 128, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(74, 222, 128, 0);
+            }
+        }
+        
         .chat-messages {
             flex: 1;
             overflow-y: auto;
@@ -74,10 +102,12 @@
             }
         }
         
+        /* Messages sent by current branch - right side */
         .message-own {
             justify-content: flex-end;
         }
         
+        /* Messages from other branches - left side */
         .message-other {
             justify-content: flex-start;
         }
@@ -89,12 +119,14 @@
             position: relative;
         }
         
+        /* Own messages - gradient background */
         .message-own .message-bubble {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border-bottom-right-radius: 4px;
         }
         
+        /* Other messages - white background */
         .message-other .message-bubble {
             background: white;
             border: 1px solid #e0e0e0;
@@ -113,12 +145,23 @@
             word-wrap: break-word;
         }
         
-        .message-time {
-            font-size: 0.7rem;
+        .message-footer {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 5px;
             margin-top: 5px;
+            font-size: 0.7rem;
             opacity: 0.7;
-            text-align: right;
         }
+        
+        .tick-mark {
+            font-size: 0.75rem;
+        }
+        
+        .tick-sent { color: #9ca3af; }
+        .tick-delivered { color: #9ca3af; }
+        .tick-read { color: #60a5fa; }
         
         .reply-indicator {
             background: rgba(0,0,0,0.05);
@@ -220,9 +263,38 @@
             background: #6c757d;
         }
         
+        .new-badge {
+            background: #ffc107;
+            color: #000;
+        }
+        
         .loading-spinner {
             text-align: center;
             padding: 20px;
+        }
+        
+        .active-users-panel {
+            background: white;
+            border-bottom: 1px solid #e0e0e0;
+            padding: 10px 20px;
+            font-size: 0.85rem;
+        }
+        
+        .active-user {
+            display: inline-flex;
+            align-items: center;
+            background: #f0f0f0;
+            padding: 5px 12px;
+            border-radius: 20px;
+            margin: 5px;
+        }
+        
+        .active-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #4ade80;
+            margin-right: 6px;
         }
         
         @media (max-width: 768px) {
@@ -277,6 +349,10 @@
                 <div class="branch-badge">
                     <i class="bi bi-building"></i> Branch: <span id="branchCodeDisplay">Loading...</span>
                 </div>
+                <div class="online-status">
+                    <span class="online-dot"></span>
+                    <span id="onlineStatusText">Online</span>
+                </div>
             </div>
             <div>
                 <span class="auto-refresh-indicator">
@@ -284,6 +360,11 @@
                 </span>
             </div>
         </div>
+    </div>
+    
+    <div class="active-users-panel" id="activeUsersPanel">
+        <small><i class="bi bi-people-fill"></i> Active branches: <span id="activeCount">0</span></small>
+        <div id="activeUsersList"></div>
     </div>
     
     <div class="chat-messages" id="chatMessages">
@@ -322,22 +403,25 @@
     const SPREADSHEET_ID = "1fkiFo1i60NxA_ujl1GhPmNnSLKI6seb3YiMVhPxZjgM"; // Replace with your Google Sheet ID
     const SHEET_NAME = "Chats"; // Your sheet name
     const API_KEY = "AIzaSyBAuS3Brpsw5JOJnjNJii1UlFa7ClXf8d4";
-    const APPS_SCRIPT_URL ="https://script.google.com/macros/s/AKfycbzfXaMxvqU0chQ7rZr1e_TTlKwZWyfSdE2PSsQSpftJnyK_gZqnfos-xOAwh44VM2jFMg/exec"; // Replace with your Apps Script URL
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwDg9KYO7JjoWNUVZAPMvwTTmYWW9q4rQZy0_DOtryBwfGA5o72-YWiiNY6sByBZwzv1w/exec"; // Replace with your Apps Script URL
     const REFRESH_INTERVAL = 30000; // 30 seconds
+    const HEARTBEAT_INTERVAL = 5000; // 5 seconds - update online status
     
     // Global variables
     let branchCode = null;
     let messages = [];
     let refreshTimer = null;
     let countdownInterval = null;
+    let heartbeatTimer = null;
     let replyingTo = null;
     let lastMessageCount = 0;
+    let activeBranches = new Map(); // Store active branches and their last seen time
+    let isWindowActive = true;
     
     // ======================== GET BRANCH FROM STORAGE ========================
     function getBranchFromStorage() {
         let branch = null;
         
-        // Try sessionStorage first (as per your existing HTML)
         const sessionUser = sessionStorage.getItem('currentUser');
         if (sessionUser) {
             try {
@@ -349,7 +433,6 @@
             }
         }
         
-        // Try localStorage if not found
         if (!branch) {
             const localUser = localStorage.getItem('currentUser');
             if (localUser) {
@@ -363,13 +446,11 @@
             }
         }
         
-        // Try direct branch storage
         if (!branch) {
             branch = localStorage.getItem('selectedBranch');
             console.log("Branch from selectedBranch:", branch);
         }
         
-        // For demo purposes - allow manual input if no branch found
         if (!branch || branch === 'null' || branch === 'undefined') {
             branch = prompt("Please enter your branch code (e.g., BR001):", "BR001");
             if (branch) {
@@ -380,32 +461,113 @@
         return branch;
     }
     
-    // ======================== READ MESSAGES FROM GOOGLE SHEET USING API KEY ========================
+    // ======================== UPDATE ONLINE STATUS (HEARTBEAT) ========================
+    async function updateHeartbeat() {
+        if (!branchCode) return;
+        
+        try {
+            const payload = {
+                action: "HEARTBEAT",
+                branchCode: branchCode,
+                timestamp: new Date().toISOString(),
+                isActive: isWindowActive
+            };
+            
+            await fetch(APPS_SCRIPT_URL, {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+            
+            console.log("Heartbeat sent for branch:", branchCode);
+        } catch (error) {
+            console.error("Error sending heartbeat:", error);
+        }
+    }
+    
+    // ======================== GET ACTIVE BRANCHES ========================
+    async function getActiveBranches() {
+        try {
+            const range = `${SHEET_NAME}!H:I`; // Store active status in columns H and I
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?key=${API_KEY}`;
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            const now = new Date();
+            const activeThreshold = 30000; // 30 seconds threshold for active status
+            
+            if (data.values && data.values.length > 1) {
+                activeBranches.clear();
+                for (let i = 1; i < data.values.length; i++) {
+                    const row = data.values[i];
+                    if (row.length >= 2) {
+                        const lastSeen = new Date(row[1]);
+                        const timeDiff = now - lastSeen;
+                        if (timeDiff < activeThreshold) {
+                            activeBranches.set(row[0], {
+                                lastSeen: lastSeen,
+                                isActive: true
+                            });
+                        }
+                    }
+                }
+            }
+            
+            updateActiveUsersDisplay();
+        } catch (error) {
+            console.error("Error getting active branches:", error);
+        }
+    }
+    
+    function updateActiveUsersDisplay() {
+        const activeList = $('#activeUsersList');
+        const activeCount = $('#activeCount');
+        
+        activeCount.text(activeBranches.size);
+        
+        if (activeBranches.size === 0) {
+            activeList.html('<small class="text-muted">No other branches active</small>');
+        } else {
+            let html = '';
+            for (let [branch, data] of activeBranches) {
+                if (branch !== branchCode) {
+                    html += `
+                        <div class="active-user">
+                            <span class="active-dot"></span>
+                            ${escapeHtml(branch)}
+                        </div>
+                    `;
+                }
+            }
+            if (html === '') {
+                html = '<small class="text-muted">Only you are active</small>';
+            }
+            activeList.html(html);
+        }
+    }
+    
+    // ======================== READ MESSAGES FROM GOOGLE SHEET ========================
     async function readMessagesFromSheet() {
         if (!branchCode) return [];
         
         try {
-            // Read columns A-G (ID, Branch_Code, Message, Timestamp, Reply_To_ID, Reply_Message, Status)
-            const range = `${SHEET_NAME}!A:G`;
+            const range = `${SHEET_NAME}!A:J`; // Added columns for status tracking
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?key=${API_KEY}`;
-            
-            console.log("Fetching messages from:", url);
-            updateConnectionStatus(true);
             
             const response = await fetch(url);
             const data = await response.json();
             
             if (!data.values || data.values.length <= 1) {
-                console.log("No messages found in sheet");
                 return [];
             }
             
-            const rows = data.values.slice(1); // Skip header row
+            const rows = data.values.slice(1);
             const allMessages = [];
             
             for (let i = 0; i < rows.length; i++) {
                 const row = rows[i];
-                if (row.length >= 5 && row[0]) { // At least have ID
+                if (row.length >= 5 && row[0]) {
                     allMessages.push({
                         id: parseInt(row[0]),
                         branchCode: row[1] || "",
@@ -413,54 +575,83 @@
                         timestamp: row[3] || "",
                         replyToId: row[4] ? parseInt(row[4]) : 0,
                         replyMessage: row[5] || "",
-                        status: row[6] || "New"
+                        status: row[6] || "New",
+                        delivered: row[7] === "TRUE",
+                        read: row[8] === "TRUE",
+                        readBy: row[9] || ""
                     });
                 }
             }
             
-            // Sort by timestamp descending (newest first)
             allMessages.sort((a, b) => {
                 if (!a.timestamp) return 1;
                 if (!b.timestamp) return -1;
-                return new Date(b.timestamp) - new Date(a.timestamp);
+                return new Date(a.timestamp) - new Date(b.timestamp);
             });
             
-            // Filter messages relevant to current branch
+            // Filter messages for current branch
             const relevantMessages = allMessages.filter(msg => {
-                // Show messages that are:
-                // 1. Sent by current branch (their own messages)
-                // 2. Messages that can be replied to (not from own branch, not replied yet)
-                // 3. Show replies to their messages
-                
                 const isOwnMessage = msg.branchCode === branchCode;
                 const isReply = msg.replyToId > 0;
-                const canReply = !isOwnMessage && msg.replyToId === 0 && msg.status !== "Replied";
+                const isReplyToMe = isReply && allMessages.find(m => m.id === msg.replyToId)?.branchCode === branchCode;
+                const isNewMessageFromOther = !isOwnMessage && msg.replyToId === 0 && msg.status !== "Replied";
                 
-                if (isOwnMessage) return true;
-                if (canReply) return true;
-                if (isReply) {
-                    // Check if this reply is for a message from current branch
-                    const originalMessage = allMessages.find(m => m.id === msg.replyToId);
-                    return originalMessage && originalMessage.branchCode === branchCode;
-                }
-                return false;
+                return isOwnMessage || isReplyToMe || isNewMessageFromOther;
             });
             
-            // Add additional properties for rendering
+            // Mark messages as read if current branch sees them
+            for (let msg of relevantMessages) {
+                if (!msg.isOwnMessage && !msg.read && !msg.readBy.includes(branchCode)) {
+                    await markAsRead(msg.id);
+                }
+            }
+            
             return relevantMessages.map(msg => ({
                 ...msg,
                 isOwnMessage: msg.branchCode === branchCode,
-                canReply: msg.branchCode !== branchCode && msg.replyToId === 0 && msg.status !== "Replied"
+                canReply: msg.branchCode !== branchCode && msg.replyToId === 0 && msg.status !== "Replied",
+                messageStatus: getMessageStatus(msg, branchCode)
             }));
             
         } catch (error) {
-            console.error("Error reading messages from sheet:", error);
-            updateConnectionStatus(false);
+            console.error("Error reading messages:", error);
             return [];
         }
     }
     
-    // ======================== SEND MESSAGE VIA APPS SCRIPT ========================
+    function getMessageStatus(message, currentBranch) {
+        if (message.branchCode !== currentBranch) return null;
+        
+        if (message.read && message.readBy) {
+            return { type: 'read', icon: 'bi-check2-all', color: '#60a5fa', text: 'Seen' };
+        } else if (message.delivered) {
+            return { type: 'delivered', icon: 'bi-check2-all', color: '#9ca3af', text: 'Delivered' };
+        } else {
+            return { type: 'sent', icon: 'bi-check2', color: '#9ca3af', text: 'Sent' };
+        }
+    }
+    
+    async function markAsRead(messageId) {
+        try {
+            const payload = {
+                action: "MARK_READ",
+                messageId: messageId,
+                branchCode: branchCode,
+                timestamp: new Date().toISOString()
+            };
+            
+            await fetch(APPS_SCRIPT_URL, {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+        } catch (error) {
+            console.error("Error marking as read:", error);
+        }
+    }
+    
+    // ======================== SEND MESSAGE ========================
     async function sendMessage(message, replyToId = null) {
         if (!message.trim()) {
             Swal.fire({
@@ -480,7 +671,8 @@
             action: action,
             branchCode: branchCode,
             message: message.trim(),
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            status: "Sent"
         };
         
         if (replyToId) {
@@ -488,97 +680,57 @@
         }
         
         try {
-            updateConnectionStatus(true);
-            
-            // Use no-cors mode as in your original HTML
-            const response = await fetch(APPS_SCRIPT_URL, {
+            await fetch(APPS_SCRIPT_URL, {
                 method: "POST",
                 mode: "no-cors",
-                headers: {
-                    "Content-Type": "application/json"
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload)
             });
             
-            // Since it's no-cors, we assume success if no error
-            console.log("Message sent successfully");
-            
-            // Clear input and refresh messages
             $('#messageInput').val('');
             cancelReply();
             
-            // Wait a bit for sheet to update then refresh
             setTimeout(async () => {
                 await loadMessages();
                 scrollToBottom();
             }, 1000);
             
-            Swal.fire({
-                icon: 'success',
-                title: 'Sent!',
-                text: 'Your message has been sent successfully',
-                toast: true,
-                position: 'top-end',
-                showConfirmButton: false,
-                timer: 2000
-            });
-            
             return true;
             
         } catch (error) {
             console.error("Error sending message:", error);
-            updateConnectionStatus(false);
             Swal.fire({
                 icon: 'error',
                 title: 'Send Failed',
-                text: 'Unable to send message. Please check your connection.',
+                text: 'Unable to send message',
                 confirmButtonColor: '#667eea'
             });
             return false;
         }
     }
     
-    // ======================== LOAD AND RENDER MESSAGES ========================
-    async function loadMessages() {
-        if (!branchCode) {
-            console.warn("No branch code available");
-            return;
-        }
+    // ======================== FORMAT DATE AND TIME ========================
+    function formatDateTime(timestamp) {
+        if (!timestamp) return 'Invalid date';
         
-        try {
-            const newMessages = await readMessagesFromSheet();
-            
-            // Check if messages have changed
-            const newMessageCount = newMessages.length;
-            const hasNewMessages = newMessageCount !== lastMessageCount;
-            
-            messages = newMessages;
-            lastMessageCount = newMessageCount;
-            
-            renderMessages();
-            
-            // Auto-scroll only if there are new messages
-            if (hasNewMessages) {
-                scrollToBottom();
-            }
-            
-            updateConnectionStatus(true);
-            
-        } catch (error) {
-            console.error("Error loading messages:", error);
-            updateConnectionStatus(false);
-            
-            $('#chatMessages').html(`
-                <div class="text-center text-danger" style="padding: 50px;">
-                    <i class="bi bi-exclamation-triangle-fill" style="font-size: 48px;"></i>
-                    <h5 class="mt-3">Failed to load messages</h5>
-                    <p>Please check your internet connection and sheet configuration.</p>
-                    <button class="btn btn-primary mt-2" onclick="location.reload()">
-                        <i class="bi bi-arrow-repeat"></i> Refresh Page
-                    </button>
-                </div>
-            `);
-        }
+        const date = new Date(timestamp);
+        
+        // Format: DD/MM/YYYY
+        const day = date.getDate().toString().padStart(2, '0');
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const year = date.getFullYear();
+        const formattedDate = `${day}/${month}/${year}`;
+        
+        // Format time: 12-hour format with AM/PM
+        let hours = date.getHours();
+        const minutes = date.getMinutes().toString().padStart(2, '0');
+        const seconds = date.getSeconds().toString().padStart(2, '0');
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12;
+        hours = hours ? hours : 12; // Convert 0 to 12
+        const formattedTime = `${hours}:${minutes}:${seconds} ${ampm}`;
+        
+        return `${formattedDate} at ${formattedTime}`;
     }
     
     // ======================== RENDER MESSAGES ========================
@@ -600,8 +752,18 @@
         
         messages.forEach(message => {
             const isOwn = message.isOwnMessage;
-            const time = message.timestamp ? new Date(message.timestamp).toLocaleString() : 'Invalid date';
+            const formattedDateTime = formatDateTime(message.timestamp);
             const isReply = message.replyToId > 0;
+            const messageStatus = message.messageStatus;
+            
+            // Get the original message text if this is a reply
+            let originalMessageText = '';
+            if (isReply) {
+                const originalMsg = messages.find(m => m.id === message.replyToId);
+                if (originalMsg) {
+                    originalMessageText = originalMsg.message;
+                }
+            }
             
             html += `
                 <div class="message ${isOwn ? 'message-own' : 'message-other'}">
@@ -609,19 +771,25 @@
                         <div class="message-branch">
                             <i class="bi bi-building"></i> ${escapeHtml(message.branchCode)}
                             ${message.status === 'Replied' ? '<span class="status-badge replied-badge"><i class="bi bi-check-all"></i> Replied</span>' : ''}
-                            ${!isOwn && message.canReply ? '<span class="status-badge"><i class="bi bi-chat"></i> Can Reply</span>' : ''}
+                            ${!isOwn && message.canReply ? '<span class="status-badge new-badge"><i class="bi bi-chat"></i> Need Reply</span>' : ''}
                         </div>
                         ${isReply ? `
                             <div class="reply-indicator">
-                                <i class="bi bi-reply-fill"></i> Replying to message #${message.replyToId}
+                                <i class="bi bi-reply-fill"></i> Replying to: "${escapeHtml(originalMessageText.substring(0, 100))}"
                             </div>
                         ` : ''}
                         <div class="message-text">
                             ${escapeHtml(message.message)}
                             ${message.replyMessage ? `<br><small><i class="bi bi-reply"></i> Reply: ${escapeHtml(message.replyMessage)}</small>` : ''}
                         </div>
-                        <div class="message-time">
-                            ${time}
+                        <div class="message-footer">
+                            <span class="message-time">${formattedDateTime}</span>
+                            ${messageStatus ? `
+                                <span class="tick-mark">
+                                    <i class="${messageStatus.icon}" style="color: ${messageStatus.color}"></i>
+                                    <span class="d-none d-sm-inline"> ${messageStatus.text}</span>
+                                </span>
+                            ` : ''}
                             ${!isOwn && message.canReply ? `
                                 <button class="reply-btn" onclick="startReply(${message.id}, '${escapeHtml(message.branchCode)}', '${escapeHtml(message.message.substring(0, 50))}')">
                                     <i class="bi bi-reply-fill"></i> Reply
@@ -636,20 +804,31 @@
         container.html(html);
     }
     
-    // ======================== START REPLY ========================
-    function startReply(messageId, branchCode, messagePreview) {
-        replyingTo = messageId;
-        $('#replyPreview').addClass('active');
-        $('#replyToBranch').text(branchCode);
-        $('#replyToMessage').text(messagePreview);
-        $('#messageInput').focus();
-    }
-    
-    function cancelReply() {
-        replyingTo = null;
-        $('#replyPreview').removeClass('active');
-        $('#replyToBranch').text('');
-        $('#replyToMessage').text('');
+    // ======================== LOAD MESSAGES ========================
+    async function loadMessages() {
+        if (!branchCode) return;
+        
+        try {
+            const newMessages = await readMessagesFromSheet();
+            
+            // Check if messages have changed (by ID and content)
+            const hasNewMessages = JSON.stringify(messages) !== JSON.stringify(newMessages);
+            
+            messages = newMessages;
+            
+            renderMessages();
+            
+            if (hasNewMessages) {
+                scrollToBottom();
+            }
+            
+            updateConnectionStatus(true);
+            await getActiveBranches();
+            
+        } catch (error) {
+            console.error("Error loading messages:", error);
+            updateConnectionStatus(false);
+        }
     }
     
     // ======================== HELPER FUNCTIONS ========================
@@ -675,17 +854,34 @@
         if (isOnline) {
             statusDiv.removeClass('status-offline').addClass('status-online');
             statusDiv.html('🟢 Online');
+            $('#onlineStatusText').text('Online');
         } else {
             statusDiv.removeClass('status-online').addClass('status-offline');
             statusDiv.html('🔴 Offline');
+            $('#onlineStatusText').text('Offline');
         }
         
-        // Fade out after 3 seconds
         setTimeout(() => {
             statusDiv.fadeOut('slow', function() {
                 statusDiv.fadeIn('slow');
             });
         }, 3000);
+    }
+    
+    // ======================== REPLY FUNCTIONS ========================
+    function startReply(messageId, branchCode, messagePreview) {
+        replyingTo = messageId;
+        $('#replyPreview').addClass('active');
+        $('#replyToBranch').text(branchCode);
+        $('#replyToMessage').text(messagePreview);
+        $('#messageInput').focus();
+    }
+    
+    function cancelReply() {
+        replyingTo = null;
+        $('#replyPreview').removeClass('active');
+        $('#replyToBranch').text('');
+        $('#replyToMessage').text('');
     }
     
     // ======================== AUTO REFRESH ========================
@@ -710,21 +906,21 @@
         }, 1000);
     }
     
+    function startHeartbeat() {
+        if (heartbeatTimer) clearInterval(heartbeatTimer);
+        
+        // Send heartbeat immediately
+        updateHeartbeat();
+        
+        heartbeatTimer = setInterval(() => {
+            updateHeartbeat();
+        }, HEARTBEAT_INTERVAL);
+    }
+    
     // ======================== SEND BUTTON HANDLER ========================
     async function handleSendMessage() {
         const message = $('#messageInput').val();
-        if (!message.trim()) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Empty Message',
-                text: 'Please type a message before sending',
-                toast: true,
-                position: 'top-end',
-                showConfirmButton: false,
-                timer: 2000
-            });
-            return;
-        }
+        if (!message.trim()) return;
         
         if (replyingTo) {
             await sendMessage(message, replyingTo);
@@ -733,9 +929,30 @@
         }
     }
     
+    // ======================== WINDOW FOCUS TRACKING ========================
+    function setupWindowFocusTracking() {
+        window.addEventListener('focus', () => {
+            isWindowActive = true;
+            updateHeartbeat();
+            loadMessages();
+        });
+        
+        window.addEventListener('blur', () => {
+            isWindowActive = false;
+            updateHeartbeat();
+        });
+        
+        document.addEventListener('visibilitychange', () => {
+            isWindowActive = !document.hidden;
+            updateHeartbeat();
+            if (isWindowActive) {
+                loadMessages();
+            }
+        });
+    }
+    
     // ======================== INITIALIZATION ========================
     async function init() {
-        // Get branch code
         branchCode = getBranchFromStorage();
         
         if (!branchCode || branchCode === 'null' || branchCode === 'undefined') {
@@ -744,10 +961,11 @@
                 <div class="alert alert-danger m-3">
                     <i class="bi bi-exclamation-triangle-fill"></i>
                     <strong>Branch Not Detected!</strong><br>
-                    Unable to detect your branch code. Please login again or contact support.
+                    Please enter your branch code to continue.
                     <br><br>
-                    <button class="btn btn-primary" onclick="location.reload()">
-                        <i class="bi bi-arrow-repeat"></i> Try Again
+                    <input type="text" id="manualBranchInput" class="form-control" placeholder="Enter Branch Code (e.g., BR001)">
+                    <button class="btn btn-primary mt-2" onclick="setManualBranch()">
+                        <i class="bi bi-check"></i> Set Branch
                     </button>
                 </div>
             `);
@@ -759,15 +977,12 @@
         $('#branchCodeDisplay').text(branchCode);
         console.log("Branch initialized:", branchCode);
         
-        // Load initial messages
         await loadMessages();
-        
-        // Start auto-refresh
         startAutoRefresh();
+        startHeartbeat();
+        setupWindowFocusTracking();
         
-        // Event listeners
         $('#sendBtn').on('click', handleSendMessage);
-        
         $('#messageInput').on('keypress', function(e) {
             if (e.which === 13 && !e.shiftKey) {
                 e.preventDefault();
@@ -775,10 +990,22 @@
             }
         });
         
-        // Enable input
         $('#sendBtn').prop('disabled', false);
         $('#messageInput').prop('disabled', false);
     }
+    
+    // Manual branch input
+    window.setManualBranch = function() {
+        const branch = $('#manualBranchInput').val();
+        if (branch) {
+            localStorage.setItem('selectedBranch', branch);
+            location.reload();
+        }
+    };
+    
+    // Make functions globally accessible
+    window.startReply = startReply;
+    window.cancelReply = cancelReply;
     
     // Start the application
     $(document).ready(init);
