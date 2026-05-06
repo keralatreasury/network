@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Branch Communication Hub | Team Chat</title>
+    <title>Branch Communication Hub | NOC Chat</title>
     
-    <!-- Bootstrap CSS -->
-    <link href="./css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="./css/bootstrap-icons.css">
+  <!-- Bootstrap 5.3 + icons -->
+    <link rel="stylesheet" href="./css/bootstrap.min.css">
+    <link rel="stylesheet" href="./css/bootstrap-icons.min.css">
     
     <style>
         * {
@@ -55,6 +55,9 @@
             padding: 5px 15px;
             border-radius: 20px;
             font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         
         .branch-input {
@@ -462,6 +465,12 @@
             background: #075e54;
             color: white;
         }
+        
+        .cache-info {
+            font-size: 0.6rem;
+            opacity: 0.7;
+            margin-left: 5px;
+        }
     </style>
 </head>
 <body>
@@ -472,6 +481,7 @@
             <div class="branch-badge">
                 <i class="bi bi-building"></i> 
                 <input type="text" id="branchCodeInput" class="branch-input" placeholder="BR1001" maxlength="10">
+                <span id="cacheIndicator" class="cache-info" title="Loaded from cache">📦</span>
             </div>
             <div class="online-status">
                 <span class="online-dot"></span>
@@ -483,7 +493,7 @@
         </div>
         <div class="refresh-control">
             <i class="bi bi-arrow-repeat"></i>
-            <input type="number" id="refreshIntervalInput" value="7" min="1" max="59" step="1">
+            <input type="number" id="refreshIntervalInput" value="8" min="1" max="59" step="1">
             <label>sec</label>
         </div>
     </div>
@@ -548,7 +558,7 @@
     let lastMessageIds = new Set();
     let notificationSound = null;
     let soundEnabled = true;
-    let currentRefreshInterval = 3;
+    let currentRefreshInterval = 8; // Changed to 8 seconds default
     let isLoading = false;
     let initialLoadDone = false;
     
@@ -593,25 +603,81 @@
         }
     }
     
-    // ======================== BRANCH MANAGEMENT ========================
+    // ======================== BRANCH MANAGEMENT WITH CACHE ========================
     function isValidBranch(code) {
         if (!code) return false;
         code = code.toString().toUpperCase().trim();
         return /^BR\d{4}$/i.test(code) || code === "ADMIN";
     }
     
+    // Enhanced branch cache retrieval - checks multiple storage locations
     function getBranchFromStorage() {
+        console.log("Fetching branch from cache...");
+        
+        // Priority 1: Check branchCode in localStorage
         let branch = localStorage.getItem('branchCode');
         if (branch && isValidBranch(branch)) {
+            console.log("Branch found in localStorage:", branch);
+            $('#cacheIndicator').attr('title', 'Loaded from localStorage').css('opacity', '1');
             return branch.toUpperCase();
         }
+        
+        // Priority 2: Check selectedBranch in localStorage
+        branch = localStorage.getItem('selectedBranch');
+        if (branch && isValidBranch(branch)) {
+            console.log("Branch found in selectedBranch:", branch);
+            localStorage.setItem('branchCode', branch);
+            $('#cacheIndicator').attr('title', 'Loaded from selectedBranch').css('opacity', '1');
+            return branch.toUpperCase();
+        }
+        
+        // Priority 3: Check sessionStorage for currentUser
+        const sessionUser = sessionStorage.getItem('currentUser');
+        if (sessionUser) {
+            try {
+                const userData = JSON.parse(sessionUser);
+                branch = userData.username || userData.branch || userData.branchCode;
+                if (branch && isValidBranch(branch)) {
+                    console.log("Branch found in sessionStorage:", branch);
+                    localStorage.setItem('branchCode', branch);
+                    $('#cacheIndicator').attr('title', 'Loaded from sessionStorage').css('opacity', '1');
+                    return branch.toUpperCase();
+                }
+            } catch (e) {
+                console.error('Error parsing session user:', e);
+            }
+        }
+        
+        // Priority 4: Check localStorage for currentUser
+        const localUser = localStorage.getItem('currentUser');
+        if (localUser) {
+            try {
+                const userData = JSON.parse(localUser);
+                branch = userData.username || userData.branch || userData.branchCode;
+                if (branch && isValidBranch(branch)) {
+                    console.log("Branch found in localStorage currentUser:", branch);
+                    localStorage.setItem('branchCode', branch);
+                    $('#cacheIndicator').attr('title', 'Loaded from currentUser').css('opacity', '1');
+                    return branch.toUpperCase();
+                }
+            } catch (e) {
+                console.error('Error parsing local user:', e);
+            }
+        }
+        
+        console.log("No branch found in cache");
+        $('#cacheIndicator').attr('title', 'No cached branch found').css('opacity', '0.5');
         return null;
     }
     
     function saveBranchToStorage(branch) {
         if (branch && isValidBranch(branch)) {
-            localStorage.setItem('branchCode', branch.toUpperCase());
-            return branch.toUpperCase();
+            const upperBranch = branch.toUpperCase();
+            localStorage.setItem('branchCode', upperBranch);
+            localStorage.setItem('selectedBranch', upperBranch);
+            console.log("Branch saved to cache:", upperBranch);
+            $('#cacheIndicator').attr('title', 'Saved to cache').css('opacity', '1').fadeOut(100).fadeIn(100);
+            return upperBranch;
         }
         return null;
     }
@@ -705,8 +771,6 @@
                     if (!isNaN(id)) {
                         let messageText = row[2] || "";
                         
-                        // Clean up the message text - remove the "[REPLY TO #X] " prefix for display
-                        // But keep the original for storage
                         let displayMessage = messageText;
                         const replyPrefixMatch = messageText.match(/^\[REPLY TO #\d+\]\s*/i);
                         if (replyPrefixMatch) {
@@ -717,7 +781,7 @@
                             id: id,
                             branchCode: (row[1] || "").toUpperCase(),
                             originalMessage: messageText,
-                            message: displayMessage,  // Cleaned message without prefix
+                            message: displayMessage,
                             timestamp: row[3] || "",
                             replyToId: row[4] ? parseInt(row[4]) : 0,
                             replyMessage: row[5] || "",
@@ -732,7 +796,6 @@
                 }
             }
             
-            // Check for new messages
             const hasNewMessages = [...newMessageIds].some(id => !lastMessageIds.has(id));
             if (hasNewMessages && messages.length > 0 && !isLoading) {
                 const newMsgs = allMessages.filter(m => !lastMessageIds.has(m.id) && m.branchCode !== branchCode);
@@ -748,11 +811,8 @@
             }
             
             lastMessageIds = newMessageIds;
-            
-            // Sort by ID (chronological)
             allMessages.sort((a, b) => a.id - b.id);
             
-            // Filter messages for current branch
             const relevantMessages = allMessages.filter(msg => {
                 const isOwn = msg.branchCode === branchCode;
                 const isReply = msg.replyToId > 0;
@@ -765,7 +825,6 @@
                 return isOwn || isReplyToMe || isNewFromOther || isMentioned || isAdmin;
             });
             
-            // Mark messages as read
             for (let msg of relevantMessages) {
                 if (msg.branchCode !== branchCode && !msg.read && !msg.readBy.includes(branchCode)) {
                     await markAsRead(msg.id);
@@ -851,8 +910,6 @@
         
         const action = replyToId ? "REPLY_MESSAGE" : "SEND_MESSAGE";
         
-        // For reply messages, we'll let the Apps Script add the prefix
-        // We send the clean message, the script will add "[REPLY TO #X] " prefix
         const payload = {
             action: action,
             branchCode: branchCode,
@@ -940,7 +997,6 @@
                 if (originalMsg) originalMessageText = originalMsg.message;
             }
             
-            // Use the cleaned message (without [REPLY TO #X] prefix)
             const highlightedMessage = highlightMentions(message.message, branchCode);
             const branchDisplay = message.branchCode === 'ADMIN' ? '<span class="admin-branch"><i class="bi bi-star-fill"></i> ADMIN</span>' : escapeHtml(message.branchCode);
             
@@ -1096,21 +1152,27 @@
         const intervalSeconds = currentRefreshInterval;
         let countdown = intervalSeconds;
         
+        // Display countdown in the refresh control
+        $('.refresh-control i.bi-arrow-repeat').after(`<span class="ms-1" id="countdownDisplay">${countdown}s</span>`);
+        
         refreshTimer = setInterval(async () => {
             await loadMessages();
             countdown = intervalSeconds;
+            $('#countdownDisplay').text(`${countdown}s`);
         }, intervalSeconds * 1000);
         
         countdownInterval = setInterval(() => {
             countdown--;
-            $('#countdown').text(Math.max(0, countdown));
+            if (countdown >= 0) {
+                $('#countdownDisplay').text(`${countdown}s`);
+            }
             if (countdown <= 0) countdown = intervalSeconds;
         }, 1000);
     }
     
     function updateRefreshInterval() {
         const newInterval = parseInt($('#refreshIntervalInput').val());
-        if (!isNaN(newInterval) && newInterval >= 1 && newInterval <= 30) {
+        if (!isNaN(newInterval) && newInterval >= 1 && newInterval <= 59) {
             currentRefreshInterval = newInterval;
             localStorage.setItem('refreshInterval', currentRefreshInterval);
             startAutoRefresh();
@@ -1131,18 +1193,37 @@
             Notification.requestPermission();
         }
         
+        // Load saved refresh interval (default 8 seconds)
         const savedInterval = localStorage.getItem('refreshInterval');
         if (savedInterval) {
             currentRefreshInterval = parseInt(savedInterval);
             $('#refreshIntervalInput').val(currentRefreshInterval);
+        } else {
+            currentRefreshInterval = 8;
+            $('#refreshIntervalInput').val(8);
         }
         
+        // Load saved branch from cache (Priority: localStorage > sessionStorage > currentUser)
         const savedBranch = getBranchFromStorage();
         if (savedBranch) {
             branchCode = savedBranch;
             $('#branchCodeInput').val(branchCode);
+            console.log("Branch loaded from cache:", branchCode);
+        } else {
+            console.log("No cached branch found, waiting for user input");
+            $('#chatMessages').html(`
+                <div class="text-center text-muted" style="padding: 50px;">
+                    <i class="bi bi-building" style="font-size: 48px;"></i>
+                    <h5 class="mt-3">Welcome to NOC Chat</h5>
+                    <p>Please enter your branch code above to start chatting.</p>
+                    <small class="text-success">Format: BR1001 or ADMIN</small>
+                </div>
+            `);
+            $('#initialLoading').hide();
+            initialLoadDone = true;
         }
         
+        // Branch input handling with cache
         $('#branchCodeInput').on('change', function() {
             const newBranch = $(this).val().toUpperCase().trim();
             if (isValidBranch(newBranch)) {
@@ -1150,17 +1231,28 @@
                 initialLoadDone = false;
                 $('#initialLoading').show();
                 loadMessages().then(() => {
-                    Swal.fire('Success', `Branch set to ${branchCode}`, 'success');
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Branch Set',
+                        text: `Welcome ${branchCode}!`,
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 2000
+                    });
                 });
             } else if (newBranch) {
-                Swal.fire('Invalid', 'Use format: BR0000 or ADMIN', 'warning');
+                Swal.fire('Invalid Format', 'Use BR1001 (BR + 4 digits) or ADMIN', 'warning');
                 $(this).val(branchCode || '');
             }
         });
         
         $('#refreshIntervalInput').on('change', updateRefreshInterval);
         
-        await loadMessages();
+        if (branchCode) {
+            await loadMessages();
+        }
+        
         startAutoRefresh();
         startHeartbeat();
         setupMentionDetection();
