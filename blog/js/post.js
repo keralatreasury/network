@@ -168,7 +168,63 @@ function extractFirstImage(html) {
     const match = html.match(/<img[^>]+src=["']([^"']+)["']/i);
     return match ? match[1] : null;
 }
+// Update Open Graph meta tags for social sharing
+function updateSocialMetaTags(post) {
+    const shareUrl = getCurrentPageUrl(post.id);
+    const featuredImg = extractFirstImage(post.content);
+    const description = stripHtml(post.content).substring(0, 200) + '...';
+    
+    // Update OG meta tags
+    let ogTitle = document.querySelector('meta[property="og:title"]');
+    let ogDescription = document.querySelector('meta[property="og:description"]');
+    let ogImage = document.querySelector('meta[property="og:image"]');
+    let ogUrl = document.querySelector('meta[property="og:url"]');
+    let twitterTitle = document.querySelector('meta[name="twitter:title"]');
+    let twitterDescription = document.querySelector('meta[name="twitter:description"]');
+    let twitterImage = document.querySelector('meta[name="twitter:image"]');
+    
+    if (ogTitle) ogTitle.setAttribute('content', post.title + ' | NOC Blog');
+    if (ogDescription) ogDescription.setAttribute('content', description);
+    if (ogImage && featuredImg) ogImage.setAttribute('content', featuredImg);
+    if (ogUrl) ogUrl.setAttribute('content', shareUrl);
+    
+    if (twitterTitle) twitterTitle.setAttribute('content', post.title + ' | NOC Blog');
+    if (twitterDescription) twitterDescription.setAttribute('content', description);
+    if (twitterImage && featuredImg) twitterImage.setAttribute('content', featuredImg);
+    
+    // Also update standard meta tags
+    let metaDescription = document.querySelector('meta[name="description"]');
+    if (!metaDescription) {
+        metaDescription = document.createElement('meta');
+        metaDescription.setAttribute('name', 'description');
+        document.head.appendChild(metaDescription);
+    }
+    metaDescription.setAttribute('content', description);
+    
+    // Update page title
+    document.title = `${post.title} | NOC Blog`;
+    
+    console.log('Social meta tags updated with image:', featuredImg);
+}
 
+// Enhanced extractFirstImage to get absolute URL if needed
+function extractFirstImageAbsolute(html, baseUrl = window.location.origin) {
+    if (!html) return null;
+    const match = html.match(/<img[^>]+src=["']([^"']+)["']/i);
+    if (match) {
+        let imgUrl = match[1];
+        // Convert relative URLs to absolute
+        if (imgUrl.startsWith('/')) {
+            imgUrl = baseUrl + imgUrl;
+        } else if (imgUrl.startsWith('./')) {
+            imgUrl = baseUrl + imgUrl.substring(1);
+        } else if (!imgUrl.startsWith('http://') && !imgUrl.startsWith('https://')) {
+            imgUrl = baseUrl + '/' + imgUrl;
+        }
+        return imgUrl;
+    }
+    return null;
+}
 // Strip HTML tags
 function stripHtml(html) {
     let temp = document.createElement("div");
@@ -640,9 +696,12 @@ async function renderPostPage(post, comments) {
     allComments = comments;
     document.getElementById("loadingSpinner").style.display = "none";
     document.getElementById("postContentWrapper").style.display = "block";
-    document.title = `${post.title} | Blog Studio`;
+
+    updateSocialMetaTags(post);
+    document.title = `${post.title} | NOC / blog`;
     
     updateBrowserUrl(post.id);
+    
     
     const avatarLetter = (post.author.charAt(0) || 'A').toUpperCase();
     const featuredImg = extractFirstImage(post.content);
