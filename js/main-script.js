@@ -1,3 +1,5 @@
+
+
 // Google Sheets configuration
 const SPREADSHEET_ID = '1jd1xZe9x2mrZm5KAwGT12vMNYjbrnynsmelNKeK95jc';
 const API_KEY = 'AIzaSyBB1V3vJpNZ9X1GIF-YOwoa6YSt_iXMLo0';
@@ -9,6 +11,24 @@ const MENU_RANGE = 'A:D';
 const ICON_RANGE = 'A:F';
 const LOGIN_RANGE = 'B:D';
 const FLASH_RANGE = 'A:A';
+
+// Add cache-busting timestamp to all API calls
+const CACHE_BUST = Date.now();
+
+// Modify all fetch URLs to include cache-busting
+// Find and replace the fetch URLs in the file:
+
+// For login URL:
+const loginUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${LOGIN_SHEET}!${LOGIN_RANGE}?key=${API_KEY}&_=${CACHE_BUST}`;
+
+// For menu URL:
+const menuUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${menuSheetName}!${MENU_RANGE}?key=${API_KEY}&_=${CACHE_BUST}`;
+
+// For icon URL:
+const iconUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${ICON_SHEET}!${ICON_RANGE}?key=${API_KEY}&_=${CACHE_BUST}`;
+
+// For flash news URL:
+const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${FLASH_SHEET}!A2:A?key=${API_KEY}&_=${Date.now()}`;
 
 // Chat configuration for notification system
 const CHAT_SPREADSHEET_ID = "1fkiFo1i60NxA_ujl1GhPmNnSLKI6seb3YiMVhPxZjgM";
