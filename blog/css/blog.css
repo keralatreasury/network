@@ -102,7 +102,9 @@ a:hover {
 .nav-link:hover {
     color: var(--primary);
 }
-
+.navbar-toggler {
+    border: none ! important;
+}
 /* ---------- Search Styles ---------- */
 .search-wrapper {
     position: relative;
