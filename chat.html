@@ -8,6 +8,7 @@
     <!-- Bootstrap 5.3 + icons -->
     <link rel="stylesheet" href="./css/bootstrap.min.css">
     <link rel="stylesheet" href="./css/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="./css/sweetalert2.min.css">
     
     <style>
         * {
@@ -84,7 +85,7 @@
             padding: 4px 8px;
             border-radius: 16px;
             color: #1f2c34;
-            width: 100px;
+            width: 150px;
             font-size: 0.85rem;
             font-weight: 500;
         }
@@ -614,7 +615,7 @@
             <h6 class="mb-0"><i class="bi bi-chat-dots-fill" style="color: #25d366;"></i> NOC Chat</h6>
             <div class="branch-badge">
                 <i class="bi bi-building"></i> 
-                <input type="text" id="branchCodeInput" class="branch-input" placeholder="BR1001" maxlength="10">
+                <input type="text" id="branchCodeInput" class="branch-input" placeholder="Enter BRcode" maxlength="10">
                 <span id="cacheIndicator" class="cache-info" title="Loaded from cache">📦</span>
             </div>
             <div class="online-status">
@@ -1365,7 +1366,7 @@
                     <i class="bi bi-chat-square-text" style="font-size: 48px; color: #cbd5e1;"></i>
                     <h5 class="mt-3" style="color: #1f2c34;">Welcome to NOC Chat</h5>
                     <p style="color: #8696a0;">Please enter your branch code above to start chatting.</p>
-                    <small class="text-success">Format: BR1001 or ADMIN</small>
+                    <small class="text-success">Format: "BR"& 4 digit treasury code. ex: BR0101, BR1001 etc</small>
                 </div>
             `);
             $('#initialLoading').hide();
