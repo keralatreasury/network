@@ -1,5 +1,3 @@
-
-
 // Google Sheets configuration
 const SPREADSHEET_ID = '1jd1xZe9x2mrZm5KAwGT12vMNYjbrnynsmelNKeK95jc';
 const API_KEY = 'AIzaSyBB1V3vJpNZ9X1GIF-YOwoa6YSt_iXMLo0';
@@ -14,21 +12,6 @@ const FLASH_RANGE = 'A:A';
 
 // Add cache-busting timestamp to all API calls
 const CACHE_BUST = Date.now();
-
-// Modify all fetch URLs to include cache-busting
-// Find and replace the fetch URLs in the file:
-
-// For login URL:
-const loginUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${LOGIN_SHEET}!${LOGIN_RANGE}?key=${API_KEY}&_=${CACHE_BUST}`;
-
-// For menu URL:
-const menuUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${MENU_SHEET}!${MENU_RANGE}?key=${API_KEY}&_=${CACHE_BUST}`;
-
-// For icon URL:
-const iconUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${ICON_SHEET}!${ICON_RANGE}?key=${API_KEY}&_=${CACHE_BUST}`;
-
-// For flash news URL:
-const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${FLASH_SHEET}!A2:A?key=${API_KEY}&_=${Date.now()}`;
 
 // Chat configuration for notification system
 const CHAT_SPREADSHEET_ID = "1fkiFo1i60NxA_ujl1GhPmNnSLKI6seb3YiMVhPxZjgM";
@@ -136,8 +119,9 @@ async function fetchUnreadChatCount() {
     }
     
     try {
-        const range = `${CHAT_SHEET_NAME}!A:J`;
-        const url = `https://sheets.googleapis.com/v4/spreadsheets/${CHAT_SPREADSHEET_ID}/values/${range}?key=${CHAT_API_KEY}`;
+        // Fetch columns A:K (including column K for @All read tracking)
+        const range = `${CHAT_SHEET_NAME}!A:K`;
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${CHAT_SPREADSHEET_ID}/values/${range}?key=${CHAT_API_KEY}&_=${Date.now()}`;
         const response = await fetch(url);
         const data = await response.json();
         
@@ -151,15 +135,24 @@ async function fetchUnreadChatCount() {
         
         for (let i = 0; i < rows.length; i++) {
             const row = rows[i];
-            if (row.length >= 9) {
+            if (row.length >= 3) {
                 const messageBranch = row[1] ? row[1].toString().toUpperCase() : "";
-                const readStatus = row[8];
-                const readBy = row[9] ? row[9].toString() : "";
+                const readStatus = row[8] ? row[8].toString() : ""; // Column I
+                const readBy = row[9] ? row[9].toString() : ""; // Column J
+                const allMentionReadBy = row[10] ? row[10].toString() : ""; // Column K
+                const messageText = row[2] ? row[2].toString().toLowerCase() : "";
+                const isAllMention = messageText.includes('@all');
                 
-                if (messageBranch !== branch && 
-                    readStatus !== "TRUE" && 
-                    !readBy.includes(branch)) {
-                    unreadCount++;
+                // Only count messages not from current branch
+                if (messageBranch !== branch) {
+                    // Regular unread messages (not @All mention)
+                    if (!isAllMention && readStatus !== "TRUE" && !readBy.includes(branch)) {
+                        unreadCount++;
+                    }
+                    // @All mention unread messages (even if regular read is marked)
+                    else if (isAllMention && !allMentionReadBy.includes(branch)) {
+                        unreadCount++;
+                    }
                 }
             }
         }
@@ -193,7 +186,7 @@ function updateNotificationBadge(count) {
 }
 
 function openChatInIframe() {
-    const chatUrl = "./chat.html";
+    const chatUrl = "./chat.html?t=" + Date.now();
     const iframe = document.getElementById('content-frame');
     const loading = document.getElementById('loading');
     const welcomeMessage = document.getElementById('welcome-message');
@@ -239,6 +232,8 @@ function stopUnreadCheckInterval() {
 function initNotificationSystem() {
     const notificationBtn = document.getElementById('notificationIconBtn');
     if (notificationBtn) {
+        // Remove existing listener to avoid duplicates
+        notificationBtn.removeEventListener('click', openChatInIframe);
         notificationBtn.addEventListener('click', openChatInIframe);
     }
     startUnreadCheckInterval();
@@ -252,7 +247,7 @@ async function fetchAndDisplayFlashNews() {
     if (!flashContainer || !flashTicker) return;
     
     try {
-        const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${FLASH_SHEET}!A2:A?key=${API_KEY}`;
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${FLASH_SHEET}!A2:A?key=${API_KEY}&_=${Date.now()}`;
         const response = await fetch(url);
         const data = await response.json();
         
@@ -288,7 +283,7 @@ async function fetchAndDisplayFlashNews() {
         flashTicker.innerHTML = tickerHtml;
         
         flashTicker.style.animation = 'none';
-        flashTicker.offsetHeight;
+        flashTicker.offsetHeight; // Force reflow
         flashTicker.style.animation = `scroll-left ${scrollDuration}s linear infinite`;
         
         flashContainer.classList.remove('hidden');
@@ -331,7 +326,7 @@ function adjustWrapperHeightForTicker() {
 // ======================== LOGIN FUNCTIONS ========================
 async function validateLogin(username, password) {
     try {
-        const loginUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${LOGIN_SHEET}!${LOGIN_RANGE}?key=${API_KEY}`;
+        const loginUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${LOGIN_SHEET}!${LOGIN_RANGE}?key=${API_KEY}&_=${Date.now()}`;
         const response = await fetch(loginUrl);
         const data = await response.json();
         
@@ -664,7 +659,7 @@ async function fetchSheetData(menuSheetName) {
         
         iconData.clear();
         
-        const menuUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${menuSheetName}!${MENU_RANGE}?key=${API_KEY}`;
+        const menuUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${menuSheetName}!${MENU_RANGE}?key=${API_KEY}&_=${Date.now()}`;
         const menuResponse = await fetch(menuUrl);
         const menuData_raw = await menuResponse.json();
         
@@ -673,7 +668,7 @@ async function fetchSheetData(menuSheetName) {
             throw new Error(`Menu sheet '${menuSheetName}' not found or inaccessible`);
         }
         
-        const iconUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${ICON_SHEET}!${ICON_RANGE}?key=${API_KEY}`;
+        const iconUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${ICON_SHEET}!${ICON_RANGE}?key=${API_KEY}&_=${Date.now()}`;
         const iconResponse = await fetch(iconUrl);
         const iconData_raw = await iconResponse.json();
         if (!iconData_raw.error) processIconData(iconData_raw.values);
@@ -772,6 +767,13 @@ function loadUrlInIframe(url) {
     if (loading) loading.style.display = 'flex';
     
     let fullUrl = url;
+    
+    // Add cache-busting to URLs
+    if (fullUrl.includes('?')) {
+        fullUrl += `&_=${Date.now()}`;
+    } else {
+        fullUrl += `?_=${Date.now()}`;
+    }
     
     if (url.includes('treasury-status') && currentUser && currentUser.branch) {
         const separator = url.includes('?') ? '&' : '?';
