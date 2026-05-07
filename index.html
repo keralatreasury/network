@@ -6,13 +6,19 @@
     <title>NOC Admin</title>
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <!-- Bootstrap 5.3 + icons -->
-    <link rel="stylesheet" href="./css/bootstrap.min.css">
-    <link rel="stylesheet" href="./css/bootstrap-icons.min.css">
+    
+    <!-- Cache Control Meta Tags -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
+    <!-- Bootstrap 5.3 + icons with cache-busting -->
+    <link rel="stylesheet" href="./css/bootstrap.min.css?v=20250101">
+    <link rel="stylesheet" href="./css/bootstrap-icons.min.css?v=20250101">
     <!-- Google Fonts: Noto Malayalam -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Malayalam:wght@400;500;700&display=swap" rel="stylesheet">
-    <!-- Local CSS -->
-    <link rel="stylesheet" href="./css/main-style.css">
+    <!-- Local CSS with cache-busting -->
+    <link rel="stylesheet" href="./css/main-style.css?v=20250101">
     <!-- PWA Manifest -->
     <link rel="manifest" href="/network/manifest.json">
     
@@ -48,7 +54,6 @@
             transition: all 0.2s ease;
             background: transparent;
             border: none;
-           /* padding: 8px;*/
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -118,13 +123,158 @@
                 right: -6px;
             }
         }
+        
+        /* Cache info indicator */
+        .cache-info-badge {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.6);
+            color: #fff;
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-size: 10px;
+            z-index: 9999;
+            font-family: monospace;
+            cursor: pointer;
+        }
+        
+        .cache-info-badge:hover {
+            background: rgba(0,0,0,0.8);
+        }
+        
+        /* Refresh indicator */
+        .refresh-indicator {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.6);
+            color: #fff;
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-size: 10px;
+            z-index: 9999;
+            font-family: monospace;
+        }
     </style>
     
- <script>
-        // Mobile redirect
-        if (window.innerWidth <= 768 || /Mobile|iPhone|iPad|Android/i.test(navigator.userAgent)) {
-            window.location.href = "app.html";
+    <script>
+        // ======================== CACHE MANAGEMENT ========================
+        // Get current version from localStorage or set new one
+        const APP_VERSION = "20250101_v2";
+        const LAST_CLEAR_DATE_KEY = "lastCacheClearDate";
+        
+        function clearOldCache() {
+            // Check if we need to clear cache (once per day)
+            const today = new Date().toDateString();
+            const lastClear = localStorage.getItem(LAST_CLEAR_DATE_KEY);
+            
+            if (lastClear !== today) {
+                console.log("Daily cache cleanup triggered for:", today);
+                
+                // Clear specific caches
+                if ('caches' in window) {
+                    caches.keys().then(function(names) {
+                        for (let name of names) {
+                            if (name.includes('network') || name.includes('css') || name.includes('js')) {
+                                caches.delete(name);
+                                console.log("Deleted cache:", name);
+                            }
+                        }
+                    });
+                }
+                
+                // Clear localStorage items (except user data)
+                const keysToKeep = ['currentUser', 'branchCode', 'selectedBranch', 'theme', 'refreshInterval', 'soundEnabled', LAST_CLEAR_DATE_KEY];
+                const keysToRemove = [];
+                
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (!keysToKeep.includes(key)) {
+                        keysToRemove.push(key);
+                    }
+                }
+                
+                keysToRemove.forEach(key => {
+                    localStorage.removeItem(key);
+                    console.log("Removed localStorage item:", key);
+                });
+                
+                // Set today as last clear date
+                localStorage.setItem(LAST_CLEAR_DATE_KEY, today);
+                
+                // Force reload if needed
+                const urlParams = new URLSearchParams(window.location.search);
+                if (!urlParams.has('nocache')) {
+                    window.location.href = window.location.pathname + '?nocache=' + Date.now();
+                    return true;
+                }
+            }
+            return false;
         }
+        
+        // Check if page needs refresh (daily first login)
+        function checkDailyRefresh() {
+            const lastLoginDate = localStorage.getItem('lastLoginDate');
+            const today = new Date().toDateString();
+            
+            if (lastLoginDate !== today) {
+                console.log("First login of the day - clearing session cache");
+                // Clear sessionStorage on first login of the day
+                sessionStorage.clear();
+                localStorage.setItem('lastLoginDate', today);
+                return true;
+            }
+            return false;
+        }
+        
+        // Add version to all script and link URLs
+        function addVersionToResources() {
+            // This is handled by the static version parameters in href/src
+            console.log("App version:", APP_VERSION);
+        }
+        
+        // Display cache info
+        function displayCacheInfo() {
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'cache-info-badge';
+            infoDiv.innerHTML = `📦 Cache: ${localStorage.getItem(LAST_CLEAR_DATE_KEY) || 'Not cleared'} | v${APP_VERSION}`;
+            infoDiv.onclick = function() {
+                if (confirm('Clear all cache and reload?')) {
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    if ('caches' in window) {
+                        caches.keys().then(function(names) {
+                            names.forEach(name => caches.delete(name));
+                        });
+                    }
+                    window.location.reload(true);
+                }
+            };
+            document.body.appendChild(infoDiv);
+            
+            const refreshDiv = document.createElement('div');
+            refreshDiv.className = 'refresh-indicator';
+            refreshDiv.innerHTML = `🔄 v${APP_VERSION}`;
+            refreshDiv.onclick = function() {
+                window.location.reload(true);
+            };
+            document.body.appendChild(refreshDiv);
+        }
+        
+        // Mobile redirect with cache check
+        if (window.innerWidth <= 768 || /Mobile|iPhone|iPad|Android/i.test(navigator.userAgent)) {
+            // Clear cache before redirecting to mobile app
+            if (checkDailyRefresh()) {
+                sessionStorage.clear();
+            }
+            window.location.href = "app.html?nocache=" + Date.now();
+        }
+        
+        // Run cache management on page load
+        clearOldCache();
+        checkDailyRefresh();
+        addVersionToResources();
     </script>
 </head>
 <body class="light-theme">
@@ -134,7 +284,6 @@
             <div class="login-card">
                 <div class="login-header">
                     <div class="login-logo">
-                      <!--  <i class="bi bi-compass"></i>-->
                         <img class="top_bar_pic" id="headder_thumb_pic" src="https://profile.mgovcloud.in/file?fs=thumb&amp;ID=2109903&amp;nps=404&amp;allowCORP=true" style="width: 100%; height: 100%;">
                     </div>
                     <h2>NOC Admin</h2>
@@ -150,6 +299,11 @@
                         <input type="password" class="form-control" id="password" placeholder="Enter password">
                     </div>
                     
+                    <!-- Version info -->
+                    <div class="text-center mb-2" style="font-size: 11px; color: var(--text-muted);">
+                        Version: <span id="appVersion"><?= APP_VERSION ?></span>
+                    </div>
+                    
                     <!-- Error Message Footer -->
                     <div class="login-error" id="loginError" style="display: none;">
                         <i class="bi bi-exclamation-triangle-fill"></i>
@@ -160,8 +314,11 @@
                         <span class="spinner-border spinner-border-sm d-none" id="loginSpinner" role="status" aria-hidden="true"></span>
                         <span id="loginText">Login</span>
                     </button> 
-<div style="text-align: center;" ><a href="password-manager.html" target="_blank"> Forgot Password</a> ● <a href="./blog/index.html" target="_blank"> NOC / blog</a> </div>
-
+                    <div style="text-align: center; margin-top: 15px;">
+                        <a href="password-manager.html" target="_blank"> Forgot Password</a> ● 
+                        <a href="./blog/index.html" target="_blank"> NOC / blog</a> ●
+                        <a href="#" onclick="location.reload(true); return false;" style="color: var(--text-muted);"> Refresh</a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -184,8 +341,7 @@
                 <div class="d-flex align-items-center">
                     <a class="navbar-brand" href="#">
                         <div class="logo">
-                             <!--  <i class="bi bi-compass"></i>-->
-                        <img class="top_bar_pic" id="headder_thumb_pic" src="https://profile.mgovcloud.in/file?fs=thumb&amp;ID=2109903&amp;nps=404&amp;allowCORP=true" style="width: 100%; height: 100%;">
+                            <img class="top_bar_pic" src="https://profile.mgovcloud.in/file?fs=thumb&amp;ID=2109903&amp;nps=404&amp;allowCORP=true" style="width: 100%; height: 100%;">
                         </div>
                         <div class="brand-text">
                             <h1>NOC Admin</h1>
@@ -224,8 +380,6 @@
                 </div>
             </div>
         </nav>
-
-   
 
         <!-- Wrapper: sidebar + content -->
         <div class="wrapper">
@@ -268,12 +422,21 @@
         </div>
     </div>
 
-    <!-- scripts -->
-    <script src="./js/bootstrap.bundle.min.js"></script>
-    <script src="./js/main-script.js"></script>
+    <!-- scripts with cache-busting -->
+    <script src="./js/bootstrap.bundle.min.js?v=20250101"></script>
+    <script src="./js/main-script.js?v=20250101"></script>
     
-    <!-- Additional script for notification functionality -->
     <script>
+        // Display cache info after DOM load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set version in login screen
+            const versionSpan = document.getElementById('appVersion');
+            if (versionSpan) {
+                versionSpan.textContent = APP_VERSION;
+            }
+            displayCacheInfo();
+        });
+        
         // ======================== NOTIFICATION CONFIGURATION ========================
         const CHAT_SPREADSHEET_ID = "1fkiFo1i60NxA_ujl1GhPmNnSLKI6seb3YiMVhPxZjgM";
         const CHAT_SHEET_NAME = "Chats";
@@ -283,16 +446,13 @@
         
         // ======================== GET CURRENT BRANCH/USER ========================
         function getCurrentBranchForChat() {
-            // First check if currentUser exists from login
-            if (currentUser && currentUser.username) {
-                let username = currentUser.username.toUpperCase();
-                // Check if username matches branch pattern (BRXXXX) or ADMIN
+            if (window.currentUser && window.currentUser.username) {
+                let username = window.currentUser.username.toUpperCase();
                 if (/^BR\d{4}$/i.test(username) || username === "ADMIN") {
                     return username;
                 }
             }
             
-            // Check localStorage for branch
             let branch = localStorage.getItem('branchCode');
             if (branch && (/^BR\d{4}$/i.test(branch) || branch === "ADMIN")) {
                 return branch.toUpperCase();
@@ -303,7 +463,6 @@
                 return branch.toUpperCase();
             }
             
-            // Check sessionStorage for currentUser
             const sessionUser = sessionStorage.getItem('currentUser');
             if (sessionUser) {
                 try {
@@ -318,19 +477,16 @@
             return null;
         }
         
-        // ======================== FETCH UNREAD COUNT ========================
         async function fetchUnreadChatCount() {
             const branch = getCurrentBranchForChat();
             if (!branch) {
-                console.log("No branch found for unread chat check");
                 updateNotificationBadge(0);
                 return 0;
             }
             
             try {
-                // Fetch columns A:J (including Read column I)
                 const range = `${CHAT_SHEET_NAME}!A:J`;
-                const url = `https://sheets.googleapis.com/v4/spreadsheets/${CHAT_SPREADSHEET_ID}/values/${range}?key=${CHAT_API_KEY}`;
+                const url = `https://sheets.googleapis.com/v4/spreadsheets/${CHAT_SPREADSHEET_ID}/values/${range}?key=${CHAT_API_KEY}&_=${Date.now()}`;
                 const response = await fetch(url);
                 const data = await response.json();
                 
@@ -339,20 +495,16 @@
                     return 0;
                 }
                 
-                const rows = data.values.slice(1); // Skip header
+                const rows = data.values.slice(1);
                 let unreadCount = 0;
                 
                 for (let i = 0; i < rows.length; i++) {
                     const row = rows[i];
                     if (row.length >= 9) {
                         const messageBranch = row[1] ? row[1].toString().toUpperCase() : "";
-                        const readStatus = row[8]; // Column I - Read status
-                        const readBy = row[9] ? row[9].toString() : ""; // Column J - ReadBy
+                        const readStatus = row[8];
+                        const readBy = row[9] ? row[9].toString() : "";
                         
-                        // Count unread messages:
-                        // 1. Not from current branch (other branch messages)
-                        // 2. Read status is not TRUE
-                        // 3. Current branch hasn't read it yet
                         if (messageBranch !== branch && 
                             readStatus !== "TRUE" && 
                             !readBy.includes(branch)) {
@@ -361,7 +513,6 @@
                     }
                 }
                 
-                console.log(`Unread messages for ${branch}: ${unreadCount}`);
                 updateNotificationBadge(unreadCount);
                 return unreadCount;
                 
@@ -372,7 +523,6 @@
             }
         }
         
-        // ======================== UPDATE NOTIFICATION BADGE ========================
         function updateNotificationBadge(count) {
             const badge = document.getElementById('notificationBadge');
             if (!badge) return;
@@ -380,7 +530,6 @@
             if (count > 0) {
                 badge.textContent = count > 99 ? '99+' : count;
                 badge.classList.remove('zero');
-                // Add bounce animation
                 badge.style.animation = 'pulse-red 0.5s ease-in-out';
                 setTimeout(() => {
                     badge.style.animation = 'pulse-red 1.5s infinite';
@@ -391,9 +540,8 @@
             }
         }
         
-        // ======================== OPEN CHAT IN IFRAME ========================
         function openChatInIframe() {
-            const chatUrl = "./chat.html";
+            const chatUrl = "./chat.html?t=" + Date.now();
             const iframe = document.getElementById('content-frame');
             const loading = document.getElementById('loading');
             const welcomeMessage = document.getElementById('welcome-message');
@@ -412,22 +560,16 @@
             
             iframe.src = chatUrl;
             
-            // Reset badge after opening chat (will refresh on next interval)
             setTimeout(() => {
                 fetchUnreadChatCount();
             }, 2000);
         }
         
-        // ======================== START UNREAD CHECK INTERVAL ========================
         function startUnreadCheckInterval() {
             if (unreadCheckInterval) clearInterval(unreadCheckInterval);
-            
-            // Check immediately
             fetchUnreadChatCount();
-            
-            // Check every 10 seconds
             unreadCheckInterval = setInterval(() => {
-                if (isAuthenticated) {
+                if (window.isAuthenticated) {
                     fetchUnreadChatCount();
                 }
             }, 10000);
@@ -440,18 +582,15 @@
             }
         }
         
-        // ======================== INITIALIZE NOTIFICATION ========================
         function initNotificationSystem() {
             const notificationBtn = document.getElementById('notificationIconBtn');
             if (notificationBtn) {
+                notificationBtn.removeEventListener('click', openChatInIframe);
                 notificationBtn.addEventListener('click', openChatInIframe);
             }
-            
-            // Start checking for unread messages
             startUnreadCheckInterval();
         }
         
-        // Override logout function to stop interval
         const originalLogout = window.logout;
         if (originalLogout) {
             window.logout = function() {
@@ -460,11 +599,9 @@
             };
         }
         
-        // Initialize after login
         document.addEventListener('DOMContentLoaded', function() {
-            // Wait for authentication to complete
             const checkAuthInterval = setInterval(() => {
-                if (isAuthenticated === true) {
+                if (window.isAuthenticated === true) {
                     clearInterval(checkAuthInterval);
                     setTimeout(() => {
                         initNotificationSystem();
@@ -473,9 +610,9 @@
             }, 500);
         });
         
-        // Export for global access
         window.fetchUnreadChatCount = fetchUnreadChatCount;
         window.openChatInIframe = openChatInIframe;
+        window.getCurrentBranchForChat = getCurrentBranchForChat;
     </script>
 </body>
 </html>
