@@ -254,6 +254,15 @@
             border-left: 3px solid #ff9800;
         }
         
+        /* @All mention highlight */
+        .all-mention-highlight {
+            background: #ff9800;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 12px;
+            font-weight: bold;
+        }
+        
         .message-branch {
             font-size: 0.68rem;
             font-weight: 600;
@@ -440,6 +449,10 @@
             background: #ff9800;
         }
         
+        .all-mention-badge {
+            background: #ff9800;
+        }
+        
         .loading-spinner {
             text-align: center;
             padding: 40px;
@@ -515,8 +528,8 @@
         
         .connection-status {
             position: fixed;
-           /* bottom: 80px;*/
             right: 10px;
+            top: 70px;
             z-index: 9999;
             padding: 4px 10px;
             border-radius: 20px;
@@ -612,7 +625,7 @@
                 <i class="bi bi-volume-up-fill"></i>
             </button>
         </div>
-		<div id="connectionStatus" class="connection-status">🟢 Online</div>
+        <div id="connectionStatus" class="connection-status">🟢 Online</div>
         <div class="refresh-control">
             <i class="bi bi-arrow-repeat"></i>
             <input type="number" id="refreshIntervalInput" value="8" min="1" max="59" step="1">
@@ -643,19 +656,18 @@
         </div>
         
         <div class="input-group">
-            <textarea class="form-control" id="messageInput" rows="1" placeholder="Type a message"></textarea>
+            <textarea class="form-control" id="messageInput" rows="1" placeholder="Type a message... @mention branch, @Admin, or @All"></textarea>
             <button class="btn send-btn" id="sendBtn">
               <i class="bi bi-arrow-right"></i>
             </button>
         </div>
         <div class="quick-actions">
             <button class="quick-btn" onclick="quickMention('Admin')"><i class="bi bi-star-fill"></i> @Admin</button>
+            <button class="quick-btn" onclick="quickMention('All')"><i class="bi bi-people-fill"></i> @All</button>
         </div>
         <div id="mentionSuggestions" class="mention-suggestion"></div>
     </div>
 </div>
-
-
 
 <script src="./js/jquery.min.js"></script>
 <script src="./js/bootstrap.bundle.min.js"></script>
@@ -666,7 +678,7 @@
     const SPREADSHEET_ID = "1fkiFo1i60NxA_ujl1GhPmNnSLKI6seb3YiMVhPxZjgM";
     const SHEET_NAME = "Chats";
     const API_KEY = "AIzaSyBAuS3Brpsw5JOJnjNJii1UlFa7ClXf8d4";
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwDg9KYO7JjoWNUVZAPMvwTTmYWW9q4rQZy0_DOtryBwfGA5o72-YWiiNY6sByBZwzv1w/exec";
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzrcCh9tqIOKAw2mp7yc9-r3leLxlN80lsGdolzzEx37-Avphrdk-tV2KL0uSTOK4jXHg/exec";
     
     // Global variables
     let branchCode = null;
@@ -854,7 +866,7 @@
         if (!branchCode) return [];
         
         try {
-            const range = `${SHEET_NAME}!A:J`;
+            const range = `${SHEET_NAME}!A:K`; // Added column K for @All read tracking
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?key=${API_KEY}`;
             const response = await fetch(url);
             const data = await response.json();
@@ -889,7 +901,8 @@
                             status: row[6] || "Sent",
                             delivered: row[7] === "TRUE",
                             read: row[8] === "TRUE",
-                            readBy: row[9] || ""
+                            readBy: row[9] || "",
+                            allMentionReadBy: row[10] || "" // Column K - Track which branches have seen @All mention
                         };
                         allMessages.push(msg);
                         newMessageIds.add(msg.id);
@@ -902,11 +915,12 @@
                 const newMsgs = allMessages.filter(m => !lastMessageIds.has(m.id) && m.branchCode !== branchCode);
                 for (let newMsg of newMsgs) {
                     const isMentioned = newMsg.message.toLowerCase().includes(`@${branchCode.toLowerCase()}`);
-                    if (isMentioned) {
+                    const isAllMention = newMsg.message.toLowerCase().includes('@all');
+                    const hasNotSeenAllMention = isAllMention && !newMsg.allMentionReadBy.includes(branchCode);
+                    
+                    if (isMentioned || hasNotSeenAllMention) {
                         playNotificationSound();
-                        showMentionNotification(newMsg);
-                    } else {
-                        playNotificationSound();
+                        showMentionNotification(newMsg, isAllMention);
                     }
                 }
             }
@@ -914,6 +928,7 @@
             lastMessageIds = newMessageIds;
             allMessages.sort((a, b) => a.id - b.id);
             
+            // Filter messages for current branch
             const relevantMessages = allMessages.filter(msg => {
                 const isOwn = msg.branchCode === branchCode;
                 const isReply = msg.replyToId > 0;
@@ -921,14 +936,22 @@
                 const isReplyToMe = isReply && originalMsg && originalMsg.branchCode === branchCode;
                 const isNewFromOther = !isOwn && msg.replyToId === 0 && msg.status !== "Replied";
                 const isMentioned = !isOwn && msg.message.toLowerCase().includes(`@${branchCode.toLowerCase()}`);
+                const isAllMention = !isOwn && msg.message.toLowerCase().includes('@all');
                 const isAdmin = branchCode === 'ADMIN';
                 
-                return isOwn || isReplyToMe || isNewFromOther || isMentioned || isAdmin;
+                return isOwn || isReplyToMe || isNewFromOther || isMentioned || isAllMention || isAdmin;
             });
             
+            // Mark messages as read (both regular read and @All mention read)
             for (let msg of relevantMessages) {
+                // Regular read marking
                 if (msg.branchCode !== branchCode && !msg.read && !msg.readBy.includes(branchCode)) {
                     await markAsRead(msg.id);
+                }
+                
+                // @All mention read marking
+                if (msg.message.toLowerCase().includes('@all') && !msg.allMentionReadBy.includes(branchCode)) {
+                    await markAllMentionAsRead(msg.id, branchCode);
                 }
             }
             
@@ -937,6 +960,8 @@
                 isOwnMessage: msg.branchCode === branchCode,
                 canReply: (msg.branchCode !== branchCode && msg.replyToId === 0 && msg.status !== "Replied") || branchCode === 'ADMIN',
                 isMention: !msg.isOwnMessage && msg.message.toLowerCase().includes(`@${branchCode.toLowerCase()}`),
+                isAllMention: !msg.isOwnMessage && msg.message.toLowerCase().includes('@all'),
+                hasSeenAllMention: msg.allMentionReadBy.includes(branchCode),
                 isAdmin: msg.branchCode === 'ADMIN',
                 messageStatus: getMessageStatus(msg)
             }));
@@ -944,6 +969,24 @@
         } catch (error) {
             console.error("Error reading messages:", error);
             return [];
+        }
+    }
+    
+    async function markAllMentionAsRead(messageId, branch) {
+        try {
+            await fetch(APPS_SCRIPT_URL, {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    action: "MARK_ALL_MENTION_READ",
+                    messageId: messageId,
+                    branchCode: branch,
+                    timestamp: new Date().toISOString()
+                })
+            });
+        } catch (error) {
+            console.error("Mark all mention as read error:", error);
         }
     }
     
@@ -977,12 +1020,14 @@
         }
     }
     
-    function showMentionNotification(msg) {
+    function showMentionNotification(msg, isAllMention = false) {
         if (!soundEnabled) return;
+        
+        const title = isAllMention ? `📢 @All mention from ${msg.branchCode}` : `📢 Mention from ${msg.branchCode}`;
         
         if (document.hidden) {
             if (Notification.permission === "granted") {
-                new Notification(`Mention from ${msg.branchCode}`, {
+                new Notification(title, {
                     body: msg.message.substring(0, 100),
                     icon: "https://cdn.jsdelivr.net/npm/bootstrap-icons/icons/chat-dots-fill.svg"
                 });
@@ -991,13 +1036,13 @@
         
         Swal.fire({
             icon: 'info',
-            title: `📢 Mention from ${msg.branchCode}`,
+            title: title,
             text: msg.message.substring(0, 100),
             toast: true,
             position: 'top-end',
             showConfirmButton: false,
             timer: 3000,
-            background: '#fff3e0'
+            background: isAllMention ? '#fff3e0' : '#e8f5e9'
         });
     }
     
@@ -1066,13 +1111,18 @@
     }
     
     function highlightMentions(text, currentBranch) {
+        // Highlight @All mentions specially
+        let highlighted = text.replace(/@ALL/gi, match => `<span class="all-mention-highlight">${match}</span>`);
+        
         const mentionRegex = /@(BR\d{4}|ADMIN)/gi;
-        return text.replace(mentionRegex, (match, branch) => {
+        highlighted = highlighted.replace(mentionRegex, (match, branch) => {
             if (branch.toUpperCase() === currentBranch) {
                 return `<span class="mention-highlight">${match}</span>`;
             }
             return match;
         });
+        
+        return highlighted;
     }
     
     function renderMessages() {
@@ -1110,6 +1160,7 @@
                             ${message.status === 'Replied' ? '<span class="status-badge replied-badge">Replied</span>' : ''}
                             ${!isOwn && message.canReply ? '<span class="status-badge new-badge">Reply</span>' : ''}
                             ${message.isMention ? '<span class="status-badge" style="background:#ff9800;">@Mention</span>' : ''}
+                            ${message.isAllMention && !message.hasSeenAllMention && !isOwn ? '<span class="status-badge all-mention-badge">@All</span>' : ''}
                         </div>
                         ${isReply ? `<div class="reply-indicator"><i class="bi bi-reply-fill"></i> Reply to #${message.replyToId}: "${escapeHtml(originalMessageText.substring(0, 80))}"</div>` : ''}
                         <div class="message-text">${highlightedMessage}</div>
@@ -1137,8 +1188,8 @@
                 const searchTerm = lastWord.substring(1).toLowerCase();
                 const allBranches = [...activeBranches.keys()];
                 if (!allBranches.includes('ADMIN')) allBranches.push('ADMIN');
-                
-                const suggestions = allBranches
+                // Add @All option
+                const suggestions = ['All', ...allBranches]
                     .filter(b => b !== branchCode && b.toLowerCase().includes(searchTerm))
                     .slice(0, 8);
                 
@@ -1146,7 +1197,7 @@
                     const inputRect = $(this).get(0).getBoundingClientRect();
                     
                     $('#mentionSuggestions').html(suggestions.map(s => 
-                        `<div class="mention-suggestion-item" data-branch="${s}">@${s} ${s === 'ADMIN' ? '⭐' : ''}</div>`
+                        `<div class="mention-suggestion-item" data-branch="${s}">@${s} ${s === 'ADMIN' ? '⭐' : s === 'All' ? '🌐' : ''}</div>`
                     )).css({
                         display: 'block',
                         position: 'fixed',
