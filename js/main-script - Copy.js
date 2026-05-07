@@ -10,21 +10,11 @@ const ICON_RANGE = 'A:F';
 const LOGIN_RANGE = 'B:D';
 const FLASH_RANGE = 'A:A';
 
-// Chat configuration for notification system
-const CHAT_SPREADSHEET_ID = "1fkiFo1i60NxA_ujl1GhPmNnSLKI6seb3YiMVhPxZjgM";
-const CHAT_SHEET_NAME = "Chats";
-const CHAT_API_KEY = "AIzaSyBAuS3Brpsw5JOJnjNJii1UlFa7ClXf8d4";
-
 let menuData = [];
 let iconData = new Map();
 let isAuthenticated = false;
 let currentUser = null;
 let flashNewsInterval = null;
-let unreadCheckInterval = null;
-
-// Make variables globally accessible for notification system
-window.isAuthenticated = false;
-window.currentUser = null;
 
 // Theme functions
 function initTheme() {
@@ -70,161 +60,7 @@ function hideLoginError() {
     }
 }
 
-// ======================== NOTIFICATION SYSTEM FUNCTIONS ========================
-function getCurrentBranchForChat() {
-    // First check if currentUser exists from login
-    if (currentUser && currentUser.username) {
-        let username = currentUser.username.toUpperCase();
-        // Check if username matches branch pattern (BRXXXX) or ADMIN
-        if (/^BR\d{4}$/i.test(username) || username === "ADMIN") {
-            return username;
-        }
-    }
-    
-    // Check localStorage for branch
-    let branch = localStorage.getItem('branchCode');
-    if (branch && (/^BR\d{4}$/i.test(branch) || branch === "ADMIN")) {
-        return branch.toUpperCase();
-    }
-    
-    branch = localStorage.getItem('selectedBranch');
-    if (branch && (/^BR\d{4}$/i.test(branch) || branch === "ADMIN")) {
-        return branch.toUpperCase();
-    }
-    
-    // Check sessionStorage for currentUser
-    const sessionUser = sessionStorage.getItem('currentUser');
-    if (sessionUser) {
-        try {
-            const userData = JSON.parse(sessionUser);
-            const username = userData.username;
-            if (username && (/^BR\d{4}$/i.test(username) || username === "ADMIN")) {
-                return username.toUpperCase();
-            }
-        } catch(e) {}
-    }
-    
-    return null;
-}
-
-async function fetchUnreadChatCount() {
-    const branch = getCurrentBranchForChat();
-    if (!branch) {
-        console.log("No branch found for unread chat check");
-        updateNotificationBadge(0);
-        return 0;
-    }
-    
-    try {
-        const range = `${CHAT_SHEET_NAME}!A:J`;
-        const url = `https://sheets.googleapis.com/v4/spreadsheets/${CHAT_SPREADSHEET_ID}/values/${range}?key=${CHAT_API_KEY}`;
-        const response = await fetch(url);
-        const data = await response.json();
-        
-        if (!data.values || data.values.length <= 1) {
-            updateNotificationBadge(0);
-            return 0;
-        }
-        
-        const rows = data.values.slice(1);
-        let unreadCount = 0;
-        
-        for (let i = 0; i < rows.length; i++) {
-            const row = rows[i];
-            if (row.length >= 9) {
-                const messageBranch = row[1] ? row[1].toString().toUpperCase() : "";
-                const readStatus = row[8];
-                const readBy = row[9] ? row[9].toString() : "";
-                
-                if (messageBranch !== branch && 
-                    readStatus !== "TRUE" && 
-                    !readBy.includes(branch)) {
-                    unreadCount++;
-                }
-            }
-        }
-        
-        console.log(`Unread messages for ${branch}: ${unreadCount}`);
-        updateNotificationBadge(unreadCount);
-        return unreadCount;
-        
-    } catch (error) {
-        console.error("Error fetching unread chat count:", error);
-        updateNotificationBadge(0);
-        return 0;
-    }
-}
-
-function updateNotificationBadge(count) {
-    const badge = document.getElementById('notificationBadge');
-    if (!badge) return;
-    
-    if (count > 0) {
-        badge.textContent = count > 99 ? '99+' : count;
-        badge.classList.remove('zero');
-        badge.style.animation = 'pulse-red 0.5s ease-in-out';
-        setTimeout(() => {
-            if (badge) badge.style.animation = 'pulse-red 1.5s infinite';
-        }, 500);
-    } else {
-        badge.textContent = '0';
-        badge.classList.add('zero');
-    }
-}
-
-function openChatInIframe() {
-    const chatUrl = "./chat.html";
-    const iframe = document.getElementById('content-frame');
-    const loading = document.getElementById('loading');
-    const welcomeMessage = document.getElementById('welcome-message');
-    
-    if (welcomeMessage) welcomeMessage.style.display = 'none';
-    if (loading) loading.style.display = 'flex';
-    
-    iframe.onload = function() { 
-        if (loading) loading.style.display = 'none'; 
-    };
-    
-    iframe.onerror = function() { 
-        if (loading) loading.style.display = 'none'; 
-        console.error('Error loading chat page');
-    };
-    
-    iframe.src = chatUrl;
-    
-    setTimeout(() => {
-        fetchUnreadChatCount();
-    }, 2000);
-}
-
-function startUnreadCheckInterval() {
-    if (unreadCheckInterval) clearInterval(unreadCheckInterval);
-    
-    fetchUnreadChatCount();
-    
-    unreadCheckInterval = setInterval(() => {
-        if (isAuthenticated) {
-            fetchUnreadChatCount();
-        }
-    }, 10000);
-}
-
-function stopUnreadCheckInterval() {
-    if (unreadCheckInterval) {
-        clearInterval(unreadCheckInterval);
-        unreadCheckInterval = null;
-    }
-}
-
-function initNotificationSystem() {
-    const notificationBtn = document.getElementById('notificationIconBtn');
-    if (notificationBtn) {
-        notificationBtn.addEventListener('click', openChatInIframe);
-    }
-    startUnreadCheckInterval();
-}
-
-// ======================== FLASH NEWS FUNCTIONS ========================
+// Flash News Functions
 async function fetchAndDisplayFlashNews() {
     const flashContainer = document.getElementById('flashNewsContainer');
     const flashTicker = document.getElementById('flashNewsTicker');
@@ -232,6 +68,7 @@ async function fetchAndDisplayFlashNews() {
     if (!flashContainer || !flashTicker) return;
     
     try {
+        // Fetch from A2:A range (starting from row 2 to skip header)
         const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${FLASH_SHEET}!A2:A?key=${API_KEY}`;
         const response = await fetch(url);
         const data = await response.json();
@@ -245,11 +82,13 @@ async function fetchAndDisplayFlashNews() {
         
         let newsItems = [];
         if (data.values && data.values.length > 0) {
+            // Filter out empty cells, undefined, null, and whitespace-only strings
             newsItems = data.values
                 .map(row => row[0] ? row[0].toString().trim() : '')
                 .filter(text => text !== '' && text !== null && text !== undefined);
         }
         
+        // Check if there are any valid news items
         if (newsItems.length === 0) {
             console.log('No scroll texts found in A2:A range, hiding ticker');
             flashContainer.classList.add('hidden');
@@ -257,20 +96,27 @@ async function fetchAndDisplayFlashNews() {
             return;
         }
         
+        // Build ticker HTML with icon and text - NO DUPLICATION
         let tickerHtml = '';
         newsItems.forEach((item) => {
             tickerHtml += `<span><i class="bi bi-megaphone-fill"></i> ${escapeHtml(item)}</span>`;
         });
         
+        // Calculate scroll speed based on number of items and total content width
+        // Slower speed for more content, faster for less content
         const totalItems = newsItems.length;
+        // Base speed: 25 seconds, adjusted by item count (more items = slower speed)
+        // Range: 15 seconds (min) to 40 seconds (max)
         let scrollDuration = Math.min(40, Math.max(15, 25 + (totalItems * 0.5)));
         
         flashTicker.innerHTML = tickerHtml;
         
+        // Remove existing animation and reapply with new duration
         flashTicker.style.animation = 'none';
-        flashTicker.offsetHeight;
+        flashTicker.offsetHeight; // Force reflow
         flashTicker.style.animation = `scroll-left ${scrollDuration}s linear infinite`;
         
+        // Show the container
         flashContainer.classList.remove('hidden');
         adjustWrapperHeightForTicker();
         
@@ -308,7 +154,7 @@ function adjustWrapperHeightForTicker() {
     wrapper.style.height = `${viewportHeight - navbarHeight - tickerHeight}px`;
 }
 
-// ======================== LOGIN FUNCTIONS ========================
+// Login validation
 async function validateLogin(username, password) {
     try {
         const loginUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${LOGIN_SHEET}!${LOGIN_RANGE}?key=${API_KEY}`;
@@ -351,6 +197,7 @@ async function validateLogin(username, password) {
     }
 }
 
+// Login handler
 async function handleLogin() {
     const username = document.getElementById('username').value.trim();
     const password = document.getElementById('password').value.trim();
@@ -378,10 +225,6 @@ async function handleLogin() {
             isAuthenticated = true;
             currentUser = userData;
             
-            // Update global variables
-            window.isAuthenticated = true;
-            window.currentUser = userData;
-            
             localStorage.setItem('currentUser', JSON.stringify({
                 username: userData.username,
                 loginTime: new Date().toISOString(),
@@ -402,7 +245,6 @@ async function handleLogin() {
                 loadMenuData(userData.menuSheet);
                 setTimeout(() => {
                     fetchAndDisplayFlashNews();
-                    initNotificationSystem();
                 }, 100);
             }, 500);
         } else {
@@ -423,16 +265,12 @@ async function handleLogin() {
     }
 }
 
+// Logout function
 function logout() {
-    stopUnreadCheckInterval();
-    
     localStorage.removeItem('currentUser');
     sessionStorage.removeItem('currentUser');
     currentUser = null;
     isAuthenticated = false;
-    
-    window.isAuthenticated = false;
-    window.currentUser = null;
     
     const loginOverlay = document.getElementById('loginOverlay');
     const dashboardContainer = document.getElementById('dashboardContainer');
@@ -449,22 +287,18 @@ function logout() {
     document.getElementById('username').value = '';
     document.getElementById('password').value = '';
     
-    // Reset notification badge
-    updateNotificationBadge(0);
-    
     setTimeout(() => {
         document.getElementById('username').focus();
     }, 100);
 }
 
-// ======================== USER DISPLAY FUNCTIONS ========================
+// Display logged-in user in sidebar
 function displayLoggedInUser() {
     const storedUser = localStorage.getItem('currentUser');
     if (storedUser) {
         try {
             const userData = JSON.parse(storedUser);
             currentUser = userData;
-            window.currentUser = userData;
             
             const existingDesktopUser = document.getElementById('desktopUserInfo');
             if (existingDesktopUser) existingDesktopUser.remove();
@@ -523,6 +357,7 @@ function displayLoggedInUser() {
     }
 }
 
+// Check for existing session
 function checkExistingSession() {
     const storedUser = localStorage.getItem('currentUser');
     if (storedUser) {
@@ -539,8 +374,6 @@ function checkExistingSession() {
             
             isAuthenticated = true;
             currentUser = userData;
-            window.isAuthenticated = true;
-            window.currentUser = userData;
             
             const loginOverlay = document.getElementById('loginOverlay');
             const dashboardContainer = document.getElementById('dashboardContainer');
@@ -551,7 +384,6 @@ function checkExistingSession() {
             loadMenuData(userData.menuSheet);
             setTimeout(() => {
                 fetchAndDisplayFlashNews();
-                initNotificationSystem();
             }, 100);
         } catch (e) {
             console.error('Error restoring session:', e);
@@ -560,7 +392,7 @@ function checkExistingSession() {
     }
 }
 
-// ======================== MENU DATA FUNCTIONS ========================
+// Menu data functions
 function processIconData(rows) {
     if (!rows || rows.length < 2) return;
     for (let i = 1; i < rows.length; i++) {
@@ -779,7 +611,7 @@ function initDesktopSidebarToggle() {
     });
 }
 
-// ======================== INITIALIZATION ========================
+// Initialize everything
 document.addEventListener('DOMContentLoaded', function() {
     initTheme();
     
@@ -867,6 +699,3 @@ if ('serviceWorker' in navigator) {
 window.fetchAndDisplayFlashNews = fetchAndDisplayFlashNews;
 window.adjustWrapperHeightForTicker = adjustWrapperHeightForTicker;
 window.logout = logout;
-window.fetchUnreadChatCount = fetchUnreadChatCount;
-window.openChatInIframe = openChatInIframe;
-window.getCurrentBranchForChat = getCurrentBranchForChat;
