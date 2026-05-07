@@ -24,12 +24,191 @@ let isAuthenticated = false;
 let currentUser = null;
 let flashNewsInterval = null;
 let unreadCheckInterval = null;
+let lastUnreadCount = 0;
+let notificationSound = null;
+let soundEnabled = true;
+let audioContext = null;
+let userInteracted = false;
 
 // Make variables globally accessible for notification system
 window.isAuthenticated = false;
 window.currentUser = null;
 
-// Theme functions
+// ======================== NOTIFICATION SOUND FUNCTIONS ========================
+function initNotificationSound() {
+    try {
+        // Try to load Audio element first
+        notificationSound = new Audio('./sweet.mp3');
+        notificationSound.volume = 0.5;
+        notificationSound.load();
+        console.log("Notification sound loaded from ./sweet.mp3");
+        
+        // Also initialize Web Audio API context for fallback (suspended initially)
+        if (!audioContext) {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            // Keep it suspended until user interaction
+            console.log("Web Audio API context created (suspended)");
+        }
+    } catch(e) {
+        console.log("Audio not supported or file not found:", e);
+        notificationSound = null;
+    }
+}
+
+// Call this function on user interaction (click, touch, etc.)
+function enableAudioOnUserInteraction() {
+    if (userInteracted) return;
+    userInteracted = true;
+    
+    console.log("User interaction detected - enabling audio");
+    
+    // Resume Web Audio context if it exists
+    if (audioContext && audioContext.state === 'suspended') {
+        audioContext.resume().then(() => {
+            console.log("AudioContext resumed successfully");
+        }).catch(e => {
+            console.log("Failed to resume AudioContext:", e);
+        });
+    }
+    
+    // Try to play and immediately pause a silent sound to unlock audio
+    if (notificationSound) {
+        try {
+            notificationSound.volume = 0;
+            notificationSound.play().then(() => {
+                notificationSound.pause();
+                notificationSound.currentTime = 0;
+                notificationSound.volume = 0.5;
+                console.log("Audio unlocked via silent playback");
+            }).catch(e => {
+                console.log("Silent playback failed:", e);
+            });
+        } catch(e) {
+            console.log("Error unlocking audio:", e);
+        }
+    }
+}
+
+// Set up global event listeners to capture first user interaction
+function setupUserInteractionListener() {
+    const events = ['click', 'touchstart', 'keydown', 'mousedown'];
+    const handler = function() {
+        enableAudioOnUserInteraction();
+        // Remove listeners after first interaction
+        events.forEach(event => {
+            document.removeEventListener(event, handler);
+        });
+    };
+    
+    events.forEach(event => {
+        document.addEventListener(event, handler);
+    });
+}
+
+function playNotificationSound() {
+    if (!soundEnabled) {
+        console.log("Sound disabled by user");
+        return;
+    }
+    
+    // Try to play with Audio element
+    if (notificationSound) {
+        try {
+            notificationSound.currentTime = 0;
+            const playPromise = notificationSound.play();
+            
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    console.log("Notification sound played successfully");
+                }).catch(error => {
+                    console.log("Audio play failed:", error.message);
+                    // Fallback to Web Audio beep if available
+                    playFallbackBeep();
+                });
+            }
+        } catch(e) {
+            console.log("Sound play error:", e);
+            playFallbackBeep();
+        }
+    } else {
+        playFallbackBeep();
+    }
+}
+
+function playFallbackBeep() {
+    // Only play if user has interacted OR audio context is already running
+    if (!userInteracted && (!audioContext || audioContext.state !== 'running')) {
+        console.log("Waiting for user interaction before playing beep");
+        return;
+    }
+    
+    try {
+        // Use existing audio context or create a new one
+        let ctx = audioContext;
+        if (!ctx) {
+            ctx = new (window.AudioContext || window.webkitAudioContext)();
+            audioContext = ctx;
+        }
+        
+        // Resume if suspended
+        if (ctx.state === 'suspended') {
+            ctx.resume().then(() => {
+                playBeepWithContext(ctx);
+            }).catch(e => console.log("Cannot resume AudioContext:", e));
+        } else if (ctx.state === 'running') {
+            playBeepWithContext(ctx);
+        } else {
+            // Create a one-time context for this beep only
+            const tempCtx = new (window.AudioContext || window.webkitAudioContext)();
+            tempCtx.resume().then(() => {
+                playBeepWithContext(tempCtx);
+                // Close after beep to clean up
+                setTimeout(() => tempCtx.close(), 500);
+            }).catch(e => console.log("Cannot create temp context:", e));
+        }
+    } catch(e) {
+        console.log("Fallback beep failed:", e);
+    }
+}
+
+function playBeepWithContext(ctx) {
+    try {
+        const oscillator = ctx.createOscillator();
+        const gainNode = ctx.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(ctx.destination);
+        oscillator.frequency.value = 880;
+        gainNode.gain.value = 0.15;
+        oscillator.start();
+        gainNode.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.4);
+        oscillator.stop(ctx.currentTime + 0.4);
+        console.log("Fallback beep played");
+    } catch(e) {
+        console.log("Beep playback failed:", e);
+    }
+}
+
+function toggleNotificationSound() {
+    soundEnabled = !soundEnabled;
+    localStorage.setItem('notificationSoundEnabled', soundEnabled);
+    console.log("Notification sound:", soundEnabled ? "Enabled" : "Disabled");
+    
+    // Update sound icon if exists
+    const soundIcon = document.getElementById('notificationSoundIcon');
+    if (soundIcon) {
+        soundIcon.innerHTML = soundEnabled ? '<i class="bi bi-volume-up-fill"></i>' : '<i class="bi bi-volume-mute-fill"></i>';
+    }
+    
+    return soundEnabled;
+}
+
+// Load sound preference
+const savedSoundPref = localStorage.getItem('notificationSoundEnabled');
+if (savedSoundPref !== null) {
+    soundEnabled = savedSoundPref === 'true';
+}
+
+// ======================== THEME FUNCTIONS ========================
 function initTheme() {
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     const savedTheme = localStorage.getItem('theme');
@@ -51,7 +230,7 @@ function toggleTheme() {
     localStorage.setItem('theme', newTheme);
 }
 
-// Show error message in login footer
+// ======================== LOGIN ERROR FUNCTIONS ========================
 function showLoginError(message) {
     const errorDiv = document.getElementById('loginError');
     const errorText = document.getElementById('errorMessageText');
@@ -65,7 +244,6 @@ function showLoginError(message) {
     }
 }
 
-// Hide error message
 function hideLoginError() {
     const errorDiv = document.getElementById('loginError');
     if (errorDiv) {
@@ -78,7 +256,6 @@ function getCurrentBranchForChat() {
     // First check if currentUser exists from login
     if (currentUser && currentUser.username) {
         let username = currentUser.username.toUpperCase();
-        // Check if username matches branch pattern (BRXXXX) or ADMIN
         if (/^BR\d{4}$/i.test(username) || username === "ADMIN") {
             return username;
         }
@@ -119,7 +296,6 @@ async function fetchUnreadChatCount() {
     }
     
     try {
-        // Fetch columns A:K (including column K for @All read tracking)
         const range = `${CHAT_SHEET_NAME}!A:K`;
         const url = `https://sheets.googleapis.com/v4/spreadsheets/${CHAT_SPREADSHEET_ID}/values/${range}?key=${CHAT_API_KEY}&_=${Date.now()}`;
         const response = await fetch(url);
@@ -137,19 +313,16 @@ async function fetchUnreadChatCount() {
             const row = rows[i];
             if (row.length >= 3) {
                 const messageBranch = row[1] ? row[1].toString().toUpperCase() : "";
-                const readStatus = row[8] ? row[8].toString() : ""; // Column I
-                const readBy = row[9] ? row[9].toString() : ""; // Column J
-                const allMentionReadBy = row[10] ? row[10].toString() : ""; // Column K
+                const readStatus = row[8] ? row[8].toString() : "";
+                const readBy = row[9] ? row[9].toString() : "";
+                const allMentionReadBy = row[10] ? row[10].toString() : "";
                 const messageText = row[2] ? row[2].toString().toLowerCase() : "";
                 const isAllMention = messageText.includes('@all');
                 
-                // Only count messages not from current branch
                 if (messageBranch !== branch) {
-                    // Regular unread messages (not @All mention)
                     if (!isAllMention && readStatus !== "TRUE" && !readBy.includes(branch)) {
                         unreadCount++;
                     }
-                    // @All mention unread messages (even if regular read is marked)
                     else if (isAllMention && !allMentionReadBy.includes(branch)) {
                         unreadCount++;
                     }
@@ -157,7 +330,13 @@ async function fetchUnreadChatCount() {
             }
         }
         
-        console.log(`Unread messages for ${branch}: ${unreadCount}`);
+        // Play sound if unread count increased (only after user interaction)
+        if (unreadCount > lastUnreadCount && unreadCount > 0) {
+            // Schedule sound play - will only work if user has interacted
+            setTimeout(() => playNotificationSound(), 100);
+        }
+        
+        lastUnreadCount = unreadCount;
         updateNotificationBadge(unreadCount);
         return unreadCount;
         
@@ -179,9 +358,13 @@ function updateNotificationBadge(count) {
         setTimeout(() => {
             if (badge) badge.style.animation = 'pulse-red 1.5s infinite';
         }, 500);
+        
+        // Update document title with notification count
+        document.title = `(${count}) NOC Admin`;
     } else {
         badge.textContent = '0';
         badge.classList.add('zero');
+        document.title = 'NOC Admin';
     }
 }
 
@@ -196,6 +379,10 @@ function openChatInIframe() {
     
     iframe.onload = function() { 
         if (loading) loading.style.display = 'none'; 
+        // Reset badge after opening chat
+        setTimeout(() => {
+            fetchUnreadChatCount();
+        }, 3000);
     };
     
     iframe.onerror = function() { 
@@ -204,10 +391,6 @@ function openChatInIframe() {
     };
     
     iframe.src = chatUrl;
-    
-    setTimeout(() => {
-        fetchUnreadChatCount();
-    }, 2000);
 }
 
 function startUnreadCheckInterval() {
@@ -230,9 +413,11 @@ function stopUnreadCheckInterval() {
 }
 
 function initNotificationSystem() {
+    initNotificationSound();
+    setupUserInteractionListener(); // Set up listeners for first user interaction
+    
     const notificationBtn = document.getElementById('notificationIconBtn');
     if (notificationBtn) {
-        // Remove existing listener to avoid duplicates
         notificationBtn.removeEventListener('click', openChatInIframe);
         notificationBtn.addEventListener('click', openChatInIframe);
     }
@@ -283,7 +468,7 @@ async function fetchAndDisplayFlashNews() {
         flashTicker.innerHTML = tickerHtml;
         
         flashTicker.style.animation = 'none';
-        flashTicker.offsetHeight; // Force reflow
+        flashTicker.offsetHeight;
         flashTicker.style.animation = `scroll-left ${scrollDuration}s linear infinite`;
         
         flashContainer.classList.remove('hidden');
@@ -466,6 +651,13 @@ function logout() {
     
     // Reset notification badge
     updateNotificationBadge(0);
+    lastUnreadCount = 0;
+    
+    // Reset document title
+    document.title = 'NOC Admin';
+    
+    // Reset user interaction flag
+    userInteracted = false;
     
     setTimeout(() => {
         document.getElementById('username').focus();
@@ -892,3 +1084,4 @@ window.logout = logout;
 window.fetchUnreadChatCount = fetchUnreadChatCount;
 window.openChatInIframe = openChatInIframe;
 window.getCurrentBranchForChat = getCurrentBranchForChat;
+window.toggleNotificationSound = toggleNotificationSound;
