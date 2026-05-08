@@ -11,11 +11,19 @@ let ttsText = '';
 let ttsSentences = [];
 let currentSentenceIndex = 0;
 let availableVoices = [];
-let maleVoices = [];
-let femaleVoices = [];
+let currentHighlightElement = null;
 let autoScrollEnabled = true;
 let lastUserScrollTime = 0;
-let currentHighlightElement = null;
+
+// ======================== CORE FUNCTIONS ========================
+let currentPost = null;
+let allComments = [];
+let commenterName = localStorage.getItem('commenterName') || '';
+let currentPostId = null;
+let isLikePending = false;
+let isCommentPending = false;
+let allPostsMaster = [];
+let relatedSwiper = null;
 
 // Get text to read (title + content without HTML) with sentence splitting
 function getTTSContent() {
@@ -40,19 +48,12 @@ function getTTSContent() {
 
 // Highlight current sentence being read
 function highlightCurrentSentence(index) {
-    // Remove all existing highlights
     const contentElement = document.querySelector('.blog-content');
     if (!contentElement) return;
     
-    // Remove all existing highlight classes from elements
+    // Remove all existing highlights
     document.querySelectorAll('.tts-sentence-highlight').forEach(el => {
         el.classList.remove('tts-sentence-highlight');
-        // If we wrapped content, unwrap it
-        if (el.parentNode && el.childNodes.length === 1 && el.firstChild.nodeType === Node.TEXT_NODE) {
-            const parent = el.parentNode;
-            const text = el.textContent;
-            parent.replaceChild(document.createTextNode(text), el);
-        }
     });
     
     if (index >= ttsSentences.length) return;
@@ -60,20 +61,15 @@ function highlightCurrentSentence(index) {
     const sentenceToFind = ttsSentences[index];
     if (!sentenceToFind) return;
     
-    // Get the first few words of the sentence for accurate matching
     const searchText = sentenceToFind.substring(0, 50).trim();
-    
-    // Find the paragraph or element containing this sentence
     const paragraphs = contentElement.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li, div:not(.action-bar)');
     
     for (let para of paragraphs) {
         const paraText = para.innerText;
         if (paraText.includes(searchText.substring(0, 30))) {
-            // Add highlight class to the paragraph
             para.classList.add('tts-sentence-highlight');
             currentHighlightElement = para;
             
-            // Auto-scroll if enabled and user hasn't scrolled recently
             const now = Date.now();
             if (autoScrollEnabled && (now - lastUserScrollTime) > 2000) {
                 para.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -95,120 +91,116 @@ function getSentenceBoundary(charIndex) {
     return 0;
 }
 
-// Get available voices and categorize
+// Get available voices and populate dropdown
 function loadVoices() {
     return new Promise((resolve) => {
         const voices = speechSynthesis.getVoices();
         if (voices.length) {
-            categorizeVoices(voices);
+            populateVoiceList(voices);
             resolve();
         } else {
             speechSynthesis.onvoiceschanged = () => {
                 const newVoices = speechSynthesis.getVoices();
-                categorizeVoices(newVoices);
+                populateVoiceList(newVoices);
                 resolve();
             };
         }
     });
 }
 
-function categorizeVoices(voices) {
+function populateVoiceList(voices) {
     availableVoices = voices;
-    maleVoices = [];
-    femaleVoices = [];
+    const voiceSelect = document.getElementById('voiceSelect');
+    if (!voiceSelect) return;
     
-    voices.forEach(voice => {
-        const name = voice.name.toLowerCase();
-        const lang = voice.lang;
-        
-        if (name.includes('male') || name.includes('man') || name.includes('david') || 
-            name.includes('daniel') || name.includes('michael') || 
-            (lang === 'en-US' && name.includes('male'))) {
-            maleVoices.push(voice);
+    voiceSelect.innerHTML = '<option value="">Select Voice</option>';
+    
+    // Filter English voices and sort by name
+    const englishVoices = voices.filter(voice => voice.lang.startsWith('en'));
+    
+    englishVoices.forEach((voice, index) => {
+        const option = document.createElement('option');
+        option.value = index;
+        option.textContent = `${voice.name} (${voice.lang})`;
+        if (currentVoice && currentVoice.name === voice.name) {
+            option.selected = true;
         }
-        else if (name.includes('female') || name.includes('woman') || name.includes('samantha') || 
-                 name.includes('susan') || name.includes('karen') || name.includes('victoria') ||
-                 name.includes('google uk english female') || name.includes('alice') ||
-                 (lang === 'en-US' && name.includes('female'))) {
-            femaleVoices.push(voice);
-        }
+        voiceSelect.appendChild(option);
     });
     
-    if (maleVoices.length === 0 && femaleVoices.length === 0) {
-        const englishVoices = voices.filter(v => v.lang.startsWith('en'));
-        englishVoices.forEach(voice => {
-            if (maleVoices.length <= femaleVoices.length) {
-                maleVoices.push(voice);
-            } else {
-                femaleVoices.push(voice);
-            }
-        });
-    }
-    
-    if (femaleVoices.length > 0) {
-        currentVoice = femaleVoices[0];
-    } else if (maleVoices.length > 0) {
-        currentVoice = maleVoices[0];
-    }
-    
-    updateVoiceSelectionUI();
-}
-
-function updateVoiceSelectionUI() {
-    const maleSelect = document.getElementById('maleVoiceSelect');
-    const femaleSelect = document.getElementById('femaleVoiceSelect');
-    
-    if (maleSelect) {
-        maleSelect.innerHTML = '<option value="">Select Male Voice</option>';
-        maleVoices.forEach((voice, index) => {
-            const option = document.createElement('option');
-            option.value = index;
-            option.textContent = `${voice.name} (${voice.lang})`;
-            maleSelect.appendChild(option);
-        });
-    }
-    
-    if (femaleSelect) {
-        femaleSelect.innerHTML = '<option value="">Select Female Voice</option>';
-        femaleVoices.forEach((voice, index) => {
-            const option = document.createElement('option');
-            option.value = index;
-            option.textContent = `${voice.name} (${voice.lang})`;
-            femaleSelect.appendChild(option);
-        });
+    // Set default voice if none selected
+    if (!currentVoice && englishVoices.length > 0) {
+        currentVoice = englishVoices[0];
+        if (voiceSelect) voiceSelect.value = 0;
     }
 }
-
-function setVoice(gender, voiceIndex) {
-    if (gender === 'male' && maleVoices[voiceIndex]) {
-        currentVoice = maleVoices[voiceIndex];
-    } else if (gender === 'female' && femaleVoices[voiceIndex]) {
-        currentVoice = femaleVoices[voiceIndex];
+function setVoice(voiceIndex) {
+    if (availableVoices[voiceIndex]) {
+        currentVoice = availableVoices[voiceIndex];
+        localStorage.setItem('ttsVoiceIndex', voiceIndex);
+        localStorage.setItem('ttsVoiceName', currentVoice.name);
+        
+        // If currently playing, restart with new voice
+        if (isPlaying) {
+            const wasPlaying = isPlaying;
+            const progressBar = document.getElementById('ttsProgressBar');
+            const currentProgress = progressBar ? parseFloat(progressBar.value) : 0;
+            stopTTSPlayback();
+            startTTSPlayback();
+            // Seek to approximately the same position (simplified)
+            setTimeout(() => {
+                if (progressBar && currentDuration) {
+                    progressBar.value = currentProgress;
+                }
+            }, 100);
+        }
     }
-    localStorage.setItem('ttsVoiceGender', gender);
-    localStorage.setItem('ttsVoiceIndex', voiceIndex);
 }
 
 function loadVoicePreference() {
-    const savedGender = localStorage.getItem('ttsVoiceGender');
-    const savedIndex = localStorage.getItem('ttsVoiceIndex');
+    const savedVoiceIndex = localStorage.getItem('ttsVoiceIndex');
+    const savedVoiceName = localStorage.getItem('ttsVoiceName');
     
-    if (savedGender === 'male' && maleVoices[savedIndex]) {
-        currentVoice = maleVoices[savedIndex];
-        const maleSelect = document.getElementById('maleVoiceSelect');
-        if (maleSelect) maleSelect.value = savedIndex;
-    } else if (savedGender === 'female' && femaleVoices[savedIndex]) {
-        currentVoice = femaleVoices[savedIndex];
-        const femaleSelect = document.getElementById('femaleVoiceSelect');
-        if (femaleSelect) femaleSelect.value = savedIndex;
+    if (savedVoiceIndex && availableVoices[savedVoiceIndex]) {
+        currentVoice = availableVoices[savedVoiceIndex];
+        const voiceSelect = document.getElementById('voiceSelect');
+        if (voiceSelect) voiceSelect.value = savedVoiceIndex;
+    } else if (savedVoiceName) {
+        const voice = availableVoices.find(v => v.name === savedVoiceName);
+        if (voice) {
+            currentVoice = voice;
+            const voiceIndex = availableVoices.indexOf(voice);
+            const voiceSelect = document.getElementById('voiceSelect');
+            if (voiceSelect) voiceSelect.value = voiceIndex;
+        }
     }
 }
 
+// Speed presets
+const speedPresets = [
+    { value: 0.75, label: '0.75x (Slow)' },
+    { value: 1.0, label: '1x (Normal)' },
+    { value: 1.15, label: '1.15x (Default)' },
+    { value: 1.5, label: '1.5x' },
+    { value: 2.0, label: '2x' },
+    { value: 2.5, label: '2.5x (Fast)' }
+];
+
+
+function setSpeed(speedValue) {
+    currentSpeed = parseFloat(speedValue);
+    if (currentUtterance) {
+        currentUtterance.rate = currentSpeed;
+    }
+    localStorage.setItem('ttsSpeed', currentSpeed);
+    updateTTSDuration();
+}
 function initTTSWidget() {
     const blogContentWrapper = document.querySelector('.blog-content-wrapper');
     if (!blogContentWrapper) return;
     if (document.querySelector('.tts-widget')) return;
     
+    // Simplified widget - only play button, progress bar, time, and settings button
     const ttsWidgetHtml = `
         <div class="tts-widget">
             <div class="tts-controls">
@@ -256,47 +248,44 @@ function initTTSSettingsModal() {
         <div id="ttsSettingsModal" class="tts-settings-modal">
             <div class="tts-settings-card">
                 <div class="tts-settings-header">
-                    <h5><i class="bi bi-speedometer2"></i> Reading Settings</h5>
+                    <h5><i class="bi bi-gear-fill"></i> TTS Settings</h5>
                     <button class="tts-settings-close" onclick="closeTTSSettings()">&times;</button>
                 </div>
                 <div class="tts-settings-body">
-                    <div class="mb-3">
-                        <label class="fw-semibold mb-2"><i class="bi bi-mic"></i> Voice Selection</label>
-                        <div class="row g-2">
-                            <div class="col-6">
-                                <select id="maleVoiceSelect" class="form-select form-select-sm">
-                                    <option value="">Male Voices</option>
-                                </select>
-                            </div>
-                            <div class="col-6">
-                                <select id="femaleVoiceSelect" class="form-select form-select-sm">
-                                    <option value="">Female Voices</option>
-                                </select>
-                            </div>
-                        </div>
+                    <!-- Voice Selection -->
+                    <div class="tts-setting-group">
+                        <label><i class="bi bi-mic"></i> Voice Selection</label>
+                        <select id="voiceSelect" class="tts-select-full">
+                            <option value="">Loading voices...</option>
+                        </select>
                     </div>
-                    <div class="mb-3">
-                        <label class="fw-semibold mb-2"><i class="bi bi-speedometer2"></i> Reading Speed</label>
+                    
+                    <!-- Speed Control -->
+                    <div class="tts-setting-group">
+                        <label><i class="bi bi-speedometer2"></i> Reading Speed</label>
                         <div class="speed-control">
                             <span class="speed-value" id="speedValue">${currentSpeed}x</span>
-                            <input type="range" id="speedSlider" class="speed-slider" min="1.15" max="2.5" step="0.05" value="${currentSpeed}">
+                            <input type="range" id="speedSlider" class="speed-slider" min="0.75" max="2.5" step="0.05" value="${currentSpeed}">
                         </div>
-                        <div class="speed-presets mt-2">
+                        <div class="speed-presets" id="speedPresets">
+                            <button class="speed-preset-btn" data-speed="0.75">0.75x</button>
+                            <button class="speed-preset-btn" data-speed="1.0">1x</button>
                             <button class="speed-preset-btn" data-speed="1.15">1.15x</button>
                             <button class="speed-preset-btn" data-speed="1.5">1.5x</button>
-                            <button class="speed-preset-btn" data-speed="1.75">1.75x</button>
-                            <button class="speed-preset-btn" data-speed="2.0">2.0x</button>
+                            <button class="speed-preset-btn" data-speed="2.0">2x</button>
                             <button class="speed-preset-btn" data-speed="2.5">2.5x</button>
                         </div>
                     </div>
-                    <div class="mb-3">
-                        <div class="form-check form-switch">
+                    
+                    <!-- Auto-scroll Toggle -->
+                    <div class="tts-setting-group">
+                        <div class="form-switch">
                             <input class="form-check-input" type="checkbox" id="autoScrollToggle" checked>
                             <label class="form-check-label" for="autoScrollToggle">
                                 <i class="bi bi-arrow-down-circle"></i> Auto-scroll while reading
                             </label>
                         </div>
-                        <small class="text-muted">When enabled, page scrolls automatically. Scroll manually to pause auto-scroll temporarily.</small>
+                        <small class="text-muted d-block mt-2">When enabled, page scrolls automatically. Scroll manually to pause auto-scroll temporarily.</small>
                     </div>
                 </div>
             </div>
@@ -305,58 +294,43 @@ function initTTSSettingsModal() {
     
     document.body.insertAdjacentHTML('beforeend', modalHtml);
     
-    const maleSelect = document.getElementById('maleVoiceSelect');
-    const femaleSelect = document.getElementById('femaleVoiceSelect');
-    
-    if (maleSelect) {
-        maleSelect.addEventListener('change', function() {
+    // Voice selection event listener
+    const voiceSelect = document.getElementById('voiceSelect');
+    if (voiceSelect) {
+        voiceSelect.addEventListener('change', function() {
             if (this.value !== '') {
-                setVoice('male', parseInt(this.value));
-                femaleSelect.value = '';
-            }
-        });
-    }
-    if (femaleSelect) {
-        femaleSelect.addEventListener('change', function() {
-            if (this.value !== '') {
-                setVoice('female', parseInt(this.value));
-                maleSelect.value = '';
+                setVoice(parseInt(this.value));
             }
         });
     }
     
+    // Speed slider event listener
     const speedSlider = document.getElementById('speedSlider');
     const speedValue = document.getElementById('speedValue');
-    const presetBtns = document.querySelectorAll('.speed-preset-btn');
-    const autoScrollToggle = document.getElementById('autoScrollToggle');
     
     if (speedSlider) {
         speedSlider.addEventListener('input', function() {
-            currentSpeed = parseFloat(this.value);
-            speedValue.textContent = currentSpeed + 'x';
-            if (currentUtterance) {
-                currentUtterance.rate = currentSpeed;
-            }
-            localStorage.setItem('ttsSpeed', currentSpeed);
+            const speed = parseFloat(this.value);
+            if (speedValue) speedValue.textContent = speed + 'x';
+            setSpeed(speed);
+            updateActiveSpeedPreset(speed);
         });
     }
     
+    // Speed preset buttons
+    const presetBtns = document.querySelectorAll('.speed-preset-btn');
     presetBtns.forEach(btn => {
         btn.addEventListener('click', function() {
             const speed = parseFloat(this.dataset.speed);
-            currentSpeed = speed;
             if (speedSlider) speedSlider.value = speed;
             if (speedValue) speedValue.textContent = speed + 'x';
-            if (currentUtterance) currentUtterance.rate = currentSpeed;
-            localStorage.setItem('ttsSpeed', currentSpeed);
-            presetBtns.forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
+            setSpeed(speed);
+            updateActiveSpeedPreset(speed);
         });
-        if (parseFloat(btn.dataset.speed) === currentSpeed) {
-            btn.classList.add('active');
-        }
     });
     
+    // Auto-scroll toggle
+    const autoScrollToggle = document.getElementById('autoScrollToggle');
     if (autoScrollToggle) {
         autoScrollToggle.addEventListener('change', function() {
             autoScrollEnabled = this.checked;
@@ -364,14 +338,36 @@ function initTTSSettingsModal() {
         });
     }
     
+    // Load saved preferences
     loadVoicePreference();
+    
     const savedAutoScroll = localStorage.getItem('ttsAutoScroll');
     if (savedAutoScroll !== null) {
         autoScrollEnabled = savedAutoScroll === 'true';
         if (autoScrollToggle) autoScrollToggle.checked = autoScrollEnabled;
     }
+    
+    // Set active speed preset
+    updateActiveSpeedPreset(currentSpeed);
+    
+    // Populate voices after they're loaded
+    setTimeout(() => {
+        if (availableVoices.length > 0) {
+            populateVoiceList(availableVoices);
+        }
+    }, 100);
 }
-
+function updateActiveSpeedPreset(speed) {
+    const presetBtns = document.querySelectorAll('.speed-preset-btn');
+    presetBtns.forEach(btn => {
+        const btnSpeed = parseFloat(btn.dataset.speed);
+        if (Math.abs(btnSpeed - speed) < 0.01) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+}
 function openTTSSettings() {
     const modal = document.getElementById('ttsSettingsModal');
     if (modal) modal.classList.add('active');
@@ -425,11 +421,7 @@ function toggleTTSPlayback() {
     if (isPlaying) {
         pauseTTSPlayback();
     } else {
-        if (currentUtterance && speechSynthesis.speaking) {
-            resumeTTSPlayback();
-        } else {
-            startTTSPlayback();
-        }
+        startTTSPlayback();
     }
 }
 
@@ -439,8 +431,15 @@ function startTTSPlayback() {
         return;
     }
     
+    // Stop any ongoing speech
     if (speechSynthesis.speaking) {
         speechSynthesis.cancel();
+    }
+    
+    // Clear any pending progress interval
+    if (progressInterval) {
+        clearInterval(progressInterval);
+        progressInterval = null;
     }
     
     currentSentenceIndex = -1;
@@ -463,7 +462,6 @@ function startTTSPlayback() {
         currentStartTime = Date.now();
         const playBtn = document.getElementById('ttsPlayBtn');
         if (playBtn) playBtn.innerHTML = '<i class="bi bi-pause-fill"></i>';
-        if (progressInterval) clearInterval(progressInterval);
         progressInterval = setInterval(updateTTSProgress, 100);
     };
     
@@ -498,18 +496,14 @@ function startTTSPlayback() {
 function pauseTTSPlayback() {
     if (speechSynthesis.speaking) {
         speechSynthesis.cancel();
-        isPlaying = false;
-        const playBtn = document.getElementById('ttsPlayBtn');
-        if (playBtn) playBtn.innerHTML = '<i class="bi bi-play-fill"></i>';
-        if (progressInterval) {
-            clearInterval(progressInterval);
-            progressInterval = null;
-        }
     }
-}
-
-function resumeTTSPlayback() {
-    startTTSPlayback();
+    isPlaying = false;
+    const playBtn = document.getElementById('ttsPlayBtn');
+    if (playBtn) playBtn.innerHTML = '<i class="bi bi-play-fill"></i>';
+    if (progressInterval) {
+        clearInterval(progressInterval);
+        progressInterval = null;
+    }
 }
 
 function stopTTSPlayback() {
@@ -543,7 +537,6 @@ function loadTTSPreferences() {
     const savedSpeed = localStorage.getItem('ttsSpeed');
     if (savedSpeed) {
         currentSpeed = parseFloat(savedSpeed);
-        if (currentSpeed < 1.15) currentSpeed = 1.15;
     }
 }
 
@@ -558,19 +551,34 @@ function setupScrollTracking() {
     window.addEventListener('touchmove', () => { lastUserScrollTime = Date.now(); });
 }
 
-// ======================== CORE FUNCTIONS ========================
-let currentPost = null;
-let allComments = [];
-let commenterName = localStorage.getItem('commenterName') || '';
-let currentPostId = null;
-let isLikePending = false;
-let isCommentPending = false;
-let allPostsMaster = [];
-let relatedSwiper = null;
+// Stop TTS when page is unloaded (closed, refreshed, or navigated away)
+function setupPageUnloadHandler() {
+    window.addEventListener('beforeunload', () => {
+        if (speechSynthesis.speaking) {
+            speechSynthesis.cancel();
+        }
+    });
+    
+    // Also handle page visibility change (tab switch)
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden && speechSynthesis.speaking) {
+            speechSynthesis.cancel();
+            isPlaying = false;
+            const playBtn = document.getElementById('ttsPlayBtn');
+            if (playBtn) playBtn.innerHTML = '<i class="bi bi-play-fill"></i>';
+            if (progressInterval) {
+                clearInterval(progressInterval);
+                progressInterval = null;
+            }
+        }
+    });
+}
 
+// ======================== UTILITY FUNCTIONS ========================
 function showToastMessage(msg, isError = false) {
     const toastEl = document.getElementById('liveToast');
     const span = document.getElementById('toastMsg');
+    if (!toastEl || !span) return;
     span.innerText = msg;
     toastEl.style.background = isError ? '#d32f2f' : '#1f1f1f';
     toastEl.style.opacity = '1';
@@ -891,169 +899,7 @@ function escapeHtml(str) {
     return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m] || m)); 
 }
 
-async function renderPostPage(post, comments) {
-    allComments = comments;
-    document.getElementById("loadingSpinner").style.display = "none";
-    document.getElementById("postContentWrapper").style.display = "block";
-
-    updateSocialMetaTags(post);
-    document.title = `${post.title} | NOC / blog`;
-    updateBrowserUrl(post.id);
-    
-    const avatarLetter = (post.author.charAt(0) || 'A').toUpperCase();
-    const featuredImg = extractFirstImage(post.content);
-    const authorProfile = await fetchAuthorProfile(post.author);
-    let contentWithoutFirstImage = post.content;
-    if (featuredImg) {
-        contentWithoutFirstImage = removeFirstImageFromContent(post.content);
-    }
-    
-    let authorAvatarHtml = '';
-    if (authorProfile.imageUrl) {
-        authorAvatarHtml = `<img src="${authorProfile.imageUrl}" class="author-avatar-img author-link" 
-                            data-author="${escapeHtml(post.author)}" 
-                            data-designation="${escapeHtml(authorProfile.designation)}"
-                            alt="${escapeHtml(post.author)}"
-                            onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'avatar d-inline-flex author-link\' data-author=\'${escapeHtml(post.author)}\' data-designation=\'${escapeHtml(authorProfile.designation)}\'>${avatarLetter}</div>';">`;
-    } else {
-        authorAvatarHtml = `<div class="avatar d-inline-flex author-link" 
-                             data-author="${escapeHtml(post.author)}" 
-                             data-designation="${escapeHtml(authorProfile.designation)}">
-                             ${avatarLetter}
-                           </div>`;
-    }
-    
-    const shareUrl = getCurrentPageUrl(post.id);
-    
-    let contentHtml = `<div class="blog-header">
-        <div class="text-muted small mb-2">
-            <span class="category-link" data-category="${escapeHtml(post.category)}">
-                <i class="bi bi-folder"></i> ${escapeHtml(post.category)}
-            </span>
-        </div>
-        <h1 class="blog-title">${escapeHtml(post.title)}</h1>
-        <div class="blog-meta">
-            <div class="d-flex align-items-center gap-2">
-                ${authorAvatarHtml}
-                <div>
-                    <div class="author-link fw-bold" data-author="${escapeHtml(post.author)}" data-designation="${escapeHtml(authorProfile.designation)}">
-                        ${escapeHtml(post.author)}
-                    </div>
-                    ${authorProfile.designation ? `<div class="small text-muted">${escapeHtml(authorProfile.designation)}</div>` : ''}
-                </div>
-            </div>
-            <span><i class="bi bi-calendar3"></i> ${escapeHtml(post.publishedTime)}</span>
-            <span><i class="bi bi-tag"></i> ${escapeHtml(post.tags) || 'general'}</span>
-        </div>
-    </div>`;
-    
-    if(featuredImg) {
-        contentHtml += `<div class="post-featured-img-container">
-            <img src="${featuredImg}" class="post-featured-img-full" alt="Featured image for ${escapeHtml(post.title)}">
-        </div>`;
-    }
-    
-    contentHtml += `<div class="blog-content-wrapper">
-        <div class="blog-content">${contentWithoutFirstImage}</div>
-    </div>
-    <div class="action-bar">
-        <button id="likeButton" class="action-btn like-btn"><i class="bi bi-hand-thumbs-up"></i> <span id="likeCountSpan">${post.likeCount}</span> likes</button>
-        <span><i class="bi bi-chat-dots"></i> ${comments.length} comments</span>
-        <button id="shareButton" class="action-btn share-btn"><i class="bi bi-share-fill"></i> Share</button>
-    </div>`;
-    
-    document.getElementById("postContentWrapper").innerHTML = contentHtml;
-    renderCommentsSection();
-    
-    initTTSWidget();
-    setupScrollTracking();
-    
-    const sliderContainer = document.getElementById('relatedPostsSliderContainer');
-    const commentsArea = document.getElementById('commentsArea');
-    if (sliderContainer && commentsArea) {
-        commentsArea.insertAdjacentElement('afterend', sliderContainer);
-    }
-    
-    renderRelatedPostsSlider(post.id, post.category);
-    
-    document.querySelector('.category-link')?.addEventListener('click', (e) => {
-        const category = e.currentTarget.getAttribute('data-category');
-        navigateToCategory(category);
-    });
-    
-    document.querySelectorAll('.author-link').forEach(el => {
-        el.addEventListener('click', (e) => {
-            const authorName = el.getAttribute('data-author');
-            const authorDesignation = el.getAttribute('data-designation');
-            navigateToAuthor(authorName, authorDesignation);
-        });
-    });
-    
-    const likeButton = document.getElementById("likeButton");
-    if (likeButton) {
-        const newLikeButton = likeButton.cloneNode(true);
-        likeButton.parentNode.replaceChild(newLikeButton, likeButton);
-        
-        newLikeButton.addEventListener("click", async (e) => {
-            e.preventDefault();
-            if (isLikePending) {
-                showToastMessage("Please wait, your like is being processed...", true);
-                return;
-            }
-            
-            const likeSpan = document.getElementById("likeCountSpan");
-            if (likeSpan && !isLikePending) {
-                const currentLikeCount = parseInt(likeSpan.innerText) || 0;
-                likeSpan.innerText = currentLikeCount + 1;
-                const btn = document.getElementById("likeButton");
-                if (btn) {
-                    btn.disabled = true;
-                    btn.style.opacity = '0.6';
-                    btn.style.cursor = 'wait';
-                }
-                isLikePending = true;
-                showToastMessage('❤️ Liked!');
-                
-                try {
-                    const formData = new FormData();
-                    formData.append('action', 'like');
-                    formData.append('postId', currentPost.id);
-                    const response = await fetch(CONFIG.APPS_SCRIPT_URL, {
-                        method: 'POST',
-                        body: formData
-                    });
-                    const result = await response.json();
-                    if(result.success) {
-                        if (likeSpan && result.newLikes !== parseInt(likeSpan.innerText)) {
-                            likeSpan.innerText = result.newLikes;
-                        }
-                    } else {
-                        throw new Error(result.error);
-                    }
-                } catch(error) {
-                    console.error('Like sync error:', error);
-                    showToastMessage('Failed to sync like. Please try again.', true);
-                    if (likeSpan) {
-                        likeSpan.innerText = currentLikeCount;
-                    }
-                } finally {
-                    isLikePending = false;
-                    const btn = document.getElementById("likeButton");
-                    if (btn) {
-                        btn.disabled = false;
-                        btn.style.opacity = '1';
-                        btn.style.cursor = 'pointer';
-                    }
-                }
-            }
-        });
-    }
-    
-    document.getElementById("shareButton")?.addEventListener("click", () => {
-        openShareModal(shareUrl, post.title, featuredImg);
-    });
-}
-
+// ======================== COMMENTS FUNCTIONS ========================
 function renderCommentsSection() {
     const wrapper = document.getElementById("postContentWrapper");
     let existingDiv = document.getElementById("commentsArea");
@@ -1196,7 +1042,7 @@ function optimisticCommentUpdate(userName, commentText) {
     return true;
 }
 
-// Share functions
+// ======================== SHARE FUNCTIONS ========================
 function shareOnFacebook(url, title) {
     const shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
     window.open(shareUrl, '_blank', 'width=600,height=400');
@@ -1284,6 +1130,172 @@ function openShareModal(url, title, imageUrl) {
     if (shareModal) shareModal.classList.add('active');
 }
 
+// ======================== POST RENDERING ========================
+async function renderPostPage(post, comments) {
+    allComments = comments;
+    document.getElementById("loadingSpinner").style.display = "none";
+    document.getElementById("postContentWrapper").style.display = "block";
+
+    updateSocialMetaTags(post);
+    document.title = `${post.title} | NOC / blog`;
+    updateBrowserUrl(post.id);
+    
+    const avatarLetter = (post.author.charAt(0) || 'A').toUpperCase();
+    const featuredImg = extractFirstImage(post.content);
+    const authorProfile = await fetchAuthorProfile(post.author);
+    let contentWithoutFirstImage = post.content;
+    if (featuredImg) {
+        contentWithoutFirstImage = removeFirstImageFromContent(post.content);
+    }
+    
+    let authorAvatarHtml = '';
+    if (authorProfile.imageUrl) {
+        authorAvatarHtml = `<img src="${authorProfile.imageUrl}" class="author-avatar-img author-link" 
+                            data-author="${escapeHtml(post.author)}" 
+                            data-designation="${escapeHtml(authorProfile.designation)}"
+                            alt="${escapeHtml(post.author)}"
+                            onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'avatar d-inline-flex author-link\' data-author=\'${escapeHtml(post.author)}\' data-designation=\'${escapeHtml(authorProfile.designation)}\'>${avatarLetter}</div>';">`;
+    } else {
+        authorAvatarHtml = `<div class="avatar d-inline-flex author-link" 
+                             data-author="${escapeHtml(post.author)}" 
+                             data-designation="${escapeHtml(authorProfile.designation)}">
+                             ${avatarLetter}
+                           </div>`;
+    }
+    
+    const shareUrl = getCurrentPageUrl(post.id);
+    
+    let contentHtml = `<div class="blog-header">
+        <div class="text-muted small mb-2">
+            <span class="category-link" data-category="${escapeHtml(post.category)}">
+                <i class="bi bi-folder"></i> ${escapeHtml(post.category)}
+            </span>
+        </div>
+        <h1 class="blog-title">${escapeHtml(post.title)}</h1>
+        <div class="blog-meta">
+            <div class="d-flex align-items-center gap-2">
+                ${authorAvatarHtml}
+                <div>
+                    <div class="author-link fw-bold" data-author="${escapeHtml(post.author)}" data-designation="${escapeHtml(authorProfile.designation)}">
+                        ${escapeHtml(post.author)}
+                    </div>
+                    ${authorProfile.designation ? `<div class="small text-muted">${escapeHtml(authorProfile.designation)}</div>` : ''}
+                </div>
+            </div>
+            <span><i class="bi bi-calendar3"></i> ${escapeHtml(post.publishedTime)}</span>
+            <span><i class="bi bi-tag"></i> ${escapeHtml(post.tags) || 'general'}</span>
+        </div>
+    </div>`;
+    
+    if(featuredImg) {
+        contentHtml += `<div class="post-featured-img-container">
+            <img src="${featuredImg}" class="post-featured-img-full" alt="Featured image for ${escapeHtml(post.title)}">
+        </div>`;
+    }
+    
+    contentHtml += `<div class="blog-content-wrapper">
+        <div class="blog-content">${contentWithoutFirstImage}</div>
+    </div>
+    <div class="action-bar">
+        <button id="likeButton" class="action-btn like-btn"><i class="bi bi-hand-thumbs-up"></i> <span id="likeCountSpan">${post.likeCount}</span> likes</button>
+        <span><i class="bi bi-chat-dots"></i> ${comments.length} comments</span>
+        <button id="shareButton" class="action-btn share-btn"><i class="bi bi-share-fill"></i> Share</button>
+    </div>`;
+    
+    document.getElementById("postContentWrapper").innerHTML = contentHtml;
+    renderCommentsSection();
+    
+    initTTSWidget();
+    setupScrollTracking();
+    setupPageUnloadHandler();
+    
+    const sliderContainer = document.getElementById('relatedPostsSliderContainer');
+    const commentsArea = document.getElementById('commentsArea');
+    if (sliderContainer && commentsArea) {
+        commentsArea.insertAdjacentElement('afterend', sliderContainer);
+    }
+    
+    renderRelatedPostsSlider(post.id, post.category);
+    
+    document.querySelector('.category-link')?.addEventListener('click', (e) => {
+        const category = e.currentTarget.getAttribute('data-category');
+        navigateToCategory(category);
+    });
+    
+    document.querySelectorAll('.author-link').forEach(el => {
+        el.addEventListener('click', (e) => {
+            const authorName = el.getAttribute('data-author');
+            const authorDesignation = el.getAttribute('data-designation');
+            navigateToAuthor(authorName, authorDesignation);
+        });
+    });
+    
+    const likeButton = document.getElementById("likeButton");
+    if (likeButton) {
+        const newLikeButton = likeButton.cloneNode(true);
+        likeButton.parentNode.replaceChild(newLikeButton, likeButton);
+        
+        newLikeButton.addEventListener("click", async (e) => {
+            e.preventDefault();
+            if (isLikePending) {
+                showToastMessage("Please wait, your like is being processed...", true);
+                return;
+            }
+            
+            const likeSpan = document.getElementById("likeCountSpan");
+            if (likeSpan && !isLikePending) {
+                const currentLikeCount = parseInt(likeSpan.innerText) || 0;
+                likeSpan.innerText = currentLikeCount + 1;
+                const btn = document.getElementById("likeButton");
+                if (btn) {
+                    btn.disabled = true;
+                    btn.style.opacity = '0.6';
+                    btn.style.cursor = 'wait';
+                }
+                isLikePending = true;
+                showToastMessage('❤️ Liked!');
+                
+                try {
+                    const formData = new FormData();
+                    formData.append('action', 'like');
+                    formData.append('postId', currentPost.id);
+                    const response = await fetch(CONFIG.APPS_SCRIPT_URL, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const result = await response.json();
+                    if(result.success) {
+                        if (likeSpan && result.newLikes !== parseInt(likeSpan.innerText)) {
+                            likeSpan.innerText = result.newLikes;
+                        }
+                    } else {
+                        throw new Error(result.error);
+                    }
+                } catch(error) {
+                    console.error('Like sync error:', error);
+                    showToastMessage('Failed to sync like. Please try again.', true);
+                    if (likeSpan) {
+                        likeSpan.innerText = currentLikeCount;
+                    }
+                } finally {
+                    isLikePending = false;
+                    const btn = document.getElementById("likeButton");
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.style.opacity = '1';
+                        btn.style.cursor = 'pointer';
+                    }
+                }
+            }
+        });
+    }
+    
+    document.getElementById("shareButton")?.addEventListener("click", () => {
+        openShareModal(shareUrl, post.title, featuredImg);
+    });
+}
+
+// ======================== INITIALIZATION ========================
 async function initPostPage() {
     await loadHeaderConfig();
     loadTTSPreferences();
@@ -1316,6 +1328,7 @@ async function initPostPage() {
     }
 }
 
+// ======================== EVENT LISTENERS ========================
 window.addEventListener('popstate', function(event) {
     const postId = getPostIdFromUrl();
     if (postId && postId !== currentPostId) {
@@ -1334,4 +1347,5 @@ window.closeShareModal = closeShareModal;
 window.closeTTSSettings = closeTTSSettings;
 window.toggleTTSPlayback = toggleTTSPlayback;
 
+// Start the application
 initPostPage();
