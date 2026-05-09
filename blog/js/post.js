@@ -83,7 +83,7 @@ function getTTSContent() {
     // Add author details and published date with natural phrasing
     let authorText = '';
     if (authorName && authorName !== 'Anonymous') {
-        authorText = `Posted by ${authorName}. `;
+        authorText = `Written by ${authorName}. `;
         
         // Add designation if available
         if (authorDesignation && authorDesignation.trim()) {
@@ -110,7 +110,7 @@ function getTTSContent() {
     }
     
     // Add a brief pause before content (using a short sentence)
-    text += ' hmm ';
+    text += ' "".."".. ';
     
     // Add main content
     if (contentElement) {
