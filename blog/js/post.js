@@ -25,25 +25,128 @@ let isCommentPending = false;
 let allPostsMaster = [];
 let relatedSwiper = null;
 
-// Get text to read (title + content without HTML) with sentence splitting
+// Get text to read (title + author details + content without HTML) with sentence splitting
 function getTTSContent() {
     const titleElement = document.querySelector('.blog-title');
     const contentElement = document.querySelector('.blog-content');
     
+    // Get author details - try multiple selectors to ensure we find them
+    let authorName = '';
+    let authorDesignation = '';
+    let publishedDate = '';
+    
+    // Try to get author name from author-link element
+    const authorLinkElement = document.querySelector('.author-link[data-author]');
+    if (authorLinkElement) {
+        authorName = authorLinkElement.getAttribute('data-author') || authorLinkElement.innerText.trim();
+    } else {
+        // Fallback: try to find by class
+        const authorElement = document.querySelector('.author-link');
+        if (authorElement) {
+            authorName = authorElement.innerText.trim();
+        }
+    }
+    
+    // Try to get designation
+    const designationElement = document.querySelector('.author-link + div .small.text-muted, .author-link ~ div .small.text-muted, [data-designation]');
+    if (designationElement) {
+        authorDesignation = designationElement.getAttribute('data-designation') || designationElement.innerText.trim();
+    }
+    
+    // Try to get published date
+    const dateElement = document.querySelector('.blog-meta span i.bi-calendar3')?.parentElement;
+    if (dateElement) {
+        publishedDate = dateElement.innerText.trim();
+    } else {
+        // Fallback: try to get from blog-meta
+        const metaSpans = document.querySelectorAll('.blog-meta span');
+        for (let span of metaSpans) {
+            if (span.innerHTML.includes('bi-calendar3')) {
+                publishedDate = span.innerText.trim();
+                break;
+            }
+        }
+    }
+    
+    // If still no date, try to get from currentPost object
+    if (!publishedDate && currentPost && currentPost.publishedTime) {
+        publishedDate = currentPost.publishedTime;
+    }
+    
     let text = '';
+    
+    // Add title
     if (titleElement) {
         text += titleElement.innerText.trim() + '. ';
     }
+    
+    // Add author details and published date with natural phrasing
+    let authorText = '';
+    if (authorName && authorName !== 'Anonymous') {
+        authorText = `Posted by ${authorName}. `;
+        
+        // Add designation if available
+        if (authorDesignation && authorDesignation.trim()) {
+            authorText += `${authorDesignation}. `;
+        }
+    } else if (authorName === 'Anonymous') {
+        // Skip saying "Posted by Anonymous" as it sounds odd
+        // Just add a short pause
+        authorText = '';
+    }
+    
+    // Add published date
+    if (publishedDate && publishedDate.trim()) {
+        if (authorText) {
+            authorText += `Published on ${publishedDate}. `;
+        } else {
+            authorText = `This article was published on ${publishedDate}. `;
+        }
+    }
+    
+    // If we have author text, add it after title with a natural flow
+    if (authorText) {
+        text += authorText;
+    }
+    
+    // Add a brief pause before content (using a short sentence)
+    text += '..... ';
+    
+    // Add main content
     if (contentElement) {
         text += contentElement.innerText.trim();
     }
+    
+    // Clean up extra spaces
     text = text.replace(/\s+/g, ' ').trim();
+    
+    console.log('TTS Text generated:', text.substring(0, 200) + '...'); // Debug log
     
     // Split into sentences for highlighting
     ttsSentences = text.match(/[^.!?]+[.!?]+/g) || [text];
     ttsSentences = ttsSentences.map(s => s.trim()).filter(s => s.length > 0);
     
     return text;
+}
+
+// Refresh TTS content when needed (call after DOM is fully ready)
+function refreshTTSContent() {
+    ttsText = getTTSContent();
+    updateTTSDuration();
+    
+    // If currently playing, restart with new content
+    if (isPlaying) {
+        const wasPlaying = isPlaying;
+        const progressBar = document.getElementById('ttsProgressBar');
+        const currentProgress = progressBar ? parseFloat(progressBar.value) : 0;
+        stopTTSPlayback();
+        startTTSPlayback();
+        setTimeout(() => {
+            if (progressBar && currentDuration) {
+                progressBar.value = currentProgress;
+            }
+        }, 100);
+    }
 }
 
 // Highlight current sentence being read
@@ -60,6 +163,12 @@ function highlightCurrentSentence(index) {
     
     const sentenceToFind = ttsSentences[index];
     if (!sentenceToFind) return;
+    
+    // For author details (which are not in the content), we don't highlight anything
+    if (sentenceToFind.includes('Posted by') || sentenceToFind.includes('Published on') || sentenceToFind.includes('Now reading the article')) {
+        // Skip highlighting for non-content sentences
+        return;
+    }
     
     const searchText = sentenceToFind.substring(0, 50).trim();
     const paragraphs = contentElement.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li, div:not(.action-bar)');
@@ -134,6 +243,7 @@ function populateVoiceList(voices) {
         if (voiceSelect) voiceSelect.value = 0;
     }
 }
+
 function setVoice(voiceIndex) {
     if (availableVoices[voiceIndex]) {
         currentVoice = availableVoices[voiceIndex];
@@ -142,17 +252,8 @@ function setVoice(voiceIndex) {
         
         // If currently playing, restart with new voice
         if (isPlaying) {
-            const wasPlaying = isPlaying;
-            const progressBar = document.getElementById('ttsProgressBar');
-            const currentProgress = progressBar ? parseFloat(progressBar.value) : 0;
             stopTTSPlayback();
             startTTSPlayback();
-            // Seek to approximately the same position (simplified)
-            setTimeout(() => {
-                if (progressBar && currentDuration) {
-                    progressBar.value = currentProgress;
-                }
-            }, 100);
         }
     }
 }
@@ -186,7 +287,6 @@ const speedPresets = [
     { value: 2.5, label: '2.5x (Fast)' }
 ];
 
-
 function setSpeed(speedValue) {
     currentSpeed = parseFloat(speedValue);
     if (currentUtterance) {
@@ -195,6 +295,7 @@ function setSpeed(speedValue) {
     localStorage.setItem('ttsSpeed', currentSpeed);
     updateTTSDuration();
 }
+
 function initTTSWidget() {
     const blogContentWrapper = document.querySelector('.blog-content-wrapper');
     if (!blogContentWrapper) return;
@@ -237,8 +338,15 @@ function initTTSWidget() {
         settingsBtn.addEventListener('click', openTTSSettings);
     }
     
+    // Initial TTS content fetch
     ttsText = getTTSContent();
     updateTTSDuration();
+    
+    // Set up a MutationObserver to watch for DOM changes and refresh TTS content
+    // This ensures author details are captured if they load after initial render
+    setTimeout(() => {
+        refreshTTSContent();
+    }, 500);
 }
 
 function initTTSSettingsModal() {
@@ -357,6 +465,7 @@ function initTTSSettingsModal() {
         }
     }, 100);
 }
+
 function updateActiveSpeedPreset(speed) {
     const presetBtns = document.querySelectorAll('.speed-preset-btn');
     presetBtns.forEach(btn => {
@@ -368,6 +477,7 @@ function updateActiveSpeedPreset(speed) {
         }
     });
 }
+
 function openTTSSettings() {
     const modal = document.getElementById('ttsSettingsModal');
     if (modal) modal.classList.add('active');
@@ -426,6 +536,9 @@ function toggleTTSPlayback() {
 }
 
 function startTTSPlayback() {
+    // Refresh content before starting to ensure latest author details
+    refreshTTSContent();
+    
     if (!ttsText || ttsText.trim().length === 0) {
         showToastMessage('No content to read', true);
         return;
@@ -1293,6 +1406,11 @@ async function renderPostPage(post, comments) {
     document.getElementById("shareButton")?.addEventListener("click", () => {
         openShareModal(shareUrl, post.title, featuredImg);
     });
+    
+    // Refresh TTS content after everything is fully rendered
+    setTimeout(() => {
+        refreshTTSContent();
+    }, 300);
 }
 
 // ======================== INITIALIZATION ========================
