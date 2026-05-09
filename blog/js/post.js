@@ -110,7 +110,7 @@ function getTTSContent() {
     }
     
     // Add a brief pause before content (using a short sentence)
-    text += '..... ';
+    text += ' hmm ';
     
     // Add main content
     if (contentElement) {
