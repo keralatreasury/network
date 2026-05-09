@@ -87,7 +87,7 @@ function getTTSContent() {
         
         // Add designation if available
         if (authorDesignation && authorDesignation.trim()) {
-            authorText += `${authorDesignation}. `;
+            authorText += ` :: ${authorDesignation}. `;
         }
     } else if (authorName === 'Anonymous') {
         // Skip saying "Posted by Anonymous" as it sounds odd
