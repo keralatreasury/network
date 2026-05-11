@@ -29,9 +29,9 @@ let relatedSwiper = null;
 function createSlug(title) {
     return title
         .toLowerCase()
-        .replace(/[^\w\s-]/g, '') // Remove special characters
-        .replace(/\s+/g, '-')     // Replace spaces with hyphens
-        .replace(/-+/g, '-')      // Replace multiple hyphens with single
+        .replace(/[^\w\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
         .trim();
 }
 
@@ -40,61 +40,19 @@ function isLocalFileProtocol() {
     return window.location.protocol === 'file:';
 }
 
-// Get current page URL with slug
+// Get current page URL (always use ID-based URL)
 function getCurrentPageUrl(postId, postTitle) {
-    if (isLocalFileProtocol()) {
-        // For local development, use query parameter format
-        return `post.html?id=${postId}`;
-    }
-    const baseUrl = window.location.href.split('?')[0].split('/').slice(0, -1).join('/');
-    if (postTitle) {
-        const slug = createSlug(postTitle);
-        return `${baseUrl}/post/${slug}`;
-    }
-    return `${baseUrl}/post.html?id=${postId}`;
+    return `post.html?id=${postId}`;
 }
 
-// Get post ID from URL (supports both formats)
+// Get post ID from URL (only supports id parameter now)
 function getPostIdFromUrl() {
     const urlParams = new URLSearchParams(window.location.search);
     const urlId = urlParams.get('id');
     if (urlId && !isNaN(parseInt(urlId))) {
-        return { type: 'id', value: urlId };
+        return urlId;
     }
-    
-    // Only check for slug format if not on local file protocol
-    if (!isLocalFileProtocol()) {
-        const path = window.location.pathname;
-        const slugMatch = path.match(/\/post\/([^/?]+)/);
-        if (slugMatch) {
-            return { type: 'slug', value: slugMatch[1] };
-        }
-    }
-    
     return null;
-}
-
-// Find post by slug
-function findPostBySlug(slug, posts) {
-    return posts.find(post => createSlug(post.title) === slug);
-}
-
-// Update browser URL with slug (only works on web server, not local files)
-function updateBrowserUrl(postId, postTitle) {
-    // Skip URL update if running on local file protocol
-    if (isLocalFileProtocol()) {
-        console.log('Local file protocol detected - skipping URL update');
-        return;
-    }
-    
-    try {
-        const slug = createSlug(postTitle);
-        const newUrl = `${window.location.origin}${window.location.pathname.split('/').slice(0, -1).join('/')}/post/${slug}`;
-        window.history.pushState({ postId: postId, slug: slug }, '', newUrl);
-    } catch (error) {
-        console.warn('Could not update browser URL:', error.message);
-        // Silently fail - this is expected on local file protocol
-    }
 }
 
 // Get text to read (title + author details + content without HTML) with sentence splitting
@@ -102,35 +60,29 @@ function getTTSContent() {
     const titleElement = document.querySelector('.blog-title');
     const contentElement = document.querySelector('.blog-content');
     
-    // Get author details - try multiple selectors to ensure we find them
     let authorName = '';
     let authorDesignation = '';
     let publishedDate = '';
     
-    // Try to get author name from author-link element
     const authorLinkElement = document.querySelector('.author-link[data-author]');
     if (authorLinkElement) {
         authorName = authorLinkElement.getAttribute('data-author') || authorLinkElement.innerText.trim();
     } else {
-        // Fallback: try to find by class
         const authorElement = document.querySelector('.author-link');
         if (authorElement) {
             authorName = authorElement.innerText.trim();
         }
     }
     
-    // Try to get designation
     const designationElement = document.querySelector('.author-link + div .small.text-muted, .author-link ~ div .small.text-muted, [data-designation]');
     if (designationElement) {
         authorDesignation = designationElement.getAttribute('data-designation') || designationElement.innerText.trim();
     }
     
-    // Try to get published date
     const dateElement = document.querySelector('.blog-meta span i.bi-calendar3')?.parentElement;
     if (dateElement) {
         publishedDate = dateElement.innerText.trim();
     } else {
-        // Fallback: try to get from blog-meta
         const metaSpans = document.querySelectorAll('.blog-meta span');
         for (let span of metaSpans) {
             if (span.innerHTML.includes('bi-calendar3')) {
@@ -140,24 +92,20 @@ function getTTSContent() {
         }
     }
     
-    // If still no date, try to get from currentPost object
     if (!publishedDate && currentPost && currentPost.publishedTime) {
         publishedDate = currentPost.publishedTime;
     }
     
     let text = '';
     
-    // Add title
     if (titleElement) {
         text += titleElement.innerText.trim() + '. ';
     }
     
-    // Add author details and published date with natural phrasing
     let authorText = '';
     if (authorName && authorName !== 'Anonymous') {
         authorText = `Written by ${authorName}. `;
         
-        // Add designation if available
         if (authorDesignation && authorDesignation.trim()) {
             authorText += ` :: ${authorDesignation}. `;
         }
@@ -165,7 +113,6 @@ function getTTSContent() {
         authorText = '';
     }
     
-    // Add published date
     if (publishedDate && publishedDate.trim()) {
         if (authorText) {
             authorText += `Published on ${publishedDate}. `;
@@ -174,32 +121,26 @@ function getTTSContent() {
         }
     }
     
-    // If we have author text, add it after title with a natural flow
     if (authorText) {
         text += authorText;
     }
     
-    // Add a brief pause before content
     text += ' "".."".. ';
     
-    // Add main content
     if (contentElement) {
         text += contentElement.innerText.trim();
     }
     
-    // Clean up extra spaces
     text = text.replace(/\s+/g, ' ').trim();
     
     console.log('TTS Text generated:', text.substring(0, 200) + '...');
     
-    // Split into sentences for highlighting
     ttsSentences = text.match(/[^.!?]+[.!?]+/g) || [text];
     ttsSentences = ttsSentences.map(s => s.trim()).filter(s => s.length > 0);
     
     return text;
 }
 
-// Refresh TTS content when needed
 function refreshTTSContent() {
     ttsText = getTTSContent();
     updateTTSDuration();
@@ -217,7 +158,6 @@ function refreshTTSContent() {
     }
 }
 
-// Highlight current sentence being read
 function highlightCurrentSentence(index) {
     const contentElement = document.querySelector('.blog-content');
     if (!contentElement) return;
@@ -253,7 +193,6 @@ function highlightCurrentSentence(index) {
     }
 }
 
-// Get character index at sentence boundary
 function getSentenceBoundary(charIndex) {
     let charCount = 0;
     for (let i = 0; i < ttsSentences.length; i++) {
@@ -265,7 +204,6 @@ function getSentenceBoundary(charIndex) {
     return 0;
 }
 
-// Get available voices and populate dropdown
 function loadVoices() {
     return new Promise((resolve) => {
         const voices = speechSynthesis.getVoices();
@@ -736,6 +674,7 @@ function navigateToCategory(category) {
 }
 
 function navigateToTag(tag) {
+    // Fixed: Remove extra "post/" from tag navigation
     window.location.href = `tag.html?tag=${encodeURIComponent(tag)}`;
 }
 
@@ -748,13 +687,7 @@ function navigateToAuthor(authorName, authorDesignation) {
 }
 
 function navigateToPost(postId) {
-    const post = allPostsMaster.find(p => String(p.id) === String(postId));
-    if (post && !isLocalFileProtocol()) {
-        const slug = createSlug(post.title);
-        window.location.href = `post/${slug}`;
-    } else {
-        window.location.href = `post.html?id=${postId}`;
-    }
+    window.location.href = `post.html?id=${postId}`;
 }
 
 function navigateToHome() {
@@ -773,16 +706,13 @@ function stripHtml(html) {
     return temp.textContent || temp.innerText || "";
 }
 
-// Parse tags from content
 function parseTags(tagsString, content) {
     let tags = [];
     
-    // First try to get from tags field
     if (tagsString && tagsString.trim()) {
         tags = tagsString.split(',').map(t => t.trim()).filter(t => t);
     }
     
-    // If no tags in field, try to extract hashtags from content
     if (tags.length === 0 && content) {
         const hashtagMatches = content.match(/#[\w\u0590-\u05fe]+/g);
         if (hashtagMatches) {
@@ -794,7 +724,7 @@ function parseTags(tagsString, content) {
 }
 
 function updateSocialMetaTags(post, featuredImg) {
-    const shareUrl = isLocalFileProtocol() ? `post.html?id=${post.id}` : getCurrentPageUrl(post.id, post.title);
+    const shareUrl = getCurrentPageUrl(post.id, post.title);
     const description = stripHtml(post.content).substring(0, 200) + '...';
     const imageToUse = featuredImg || extractFirstImage(post.content) || '';
     
@@ -1056,7 +986,6 @@ function escapeHtml(str) {
     return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m] || m)); 
 }
 
-// Render tags section
 function renderTagsSection(tags) {
     if (!tags || tags.length === 0) return '';
     
@@ -1316,11 +1245,6 @@ async function renderPostPage(post, comments) {
     updateSocialMetaTags(post, featuredImg);
     document.title = `${post.title} | NOC / blog`;
     
-    // Only update browser URL if not on local file protocol
-    if (!isLocalFileProtocol()) {
-        updateBrowserUrl(post.id, post.title);
-    }
-    
     const avatarLetter = (post.author.charAt(0) || 'A').toUpperCase();
     const authorProfile = await fetchAuthorProfile(post.author);
     let contentWithoutFirstImage = post.content;
@@ -1328,7 +1252,6 @@ async function renderPostPage(post, comments) {
         contentWithoutFirstImage = removeFirstImageFromContent(post.content);
     }
     
-    // Parse tags
     const tags = parseTags(post.tags, post.content);
     
     let authorAvatarHtml = '';
@@ -1346,7 +1269,7 @@ async function renderPostPage(post, comments) {
                            </div>`;
     }
     
-    const shareUrl = isLocalFileProtocol() ? `post.html?id=${post.id}` : getCurrentPageUrl(post.id, post.title);
+    const shareUrl = getCurrentPageUrl(post.id, post.title);
     
     let contentHtml = `<div class="blog-header">
         <div class="text-muted small mb-2">
@@ -1389,7 +1312,6 @@ async function renderPostPage(post, comments) {
     document.getElementById("postContentWrapper").innerHTML = contentHtml;
     renderCommentsSection();
     
-    // Add tag click handlers
     document.querySelectorAll('.tag-badge').forEach(badge => {
         badge.addEventListener('click', () => {
             const tag = badge.getAttribute('data-tag');
@@ -1486,7 +1408,6 @@ async function renderPostPage(post, comments) {
         openShareModal(shareUrl, post.title, featuredImg);
     });
     
-    // Refresh TTS content after everything is fully rendered
     setTimeout(() => {
         refreshTTSContent();
     }, 300);
@@ -1498,34 +1419,20 @@ async function initPostPage() {
     loadTTSPreferences();
     await loadVoices();
     
-    const urlInfo = getPostIdFromUrl();
+    const postId = getPostIdFromUrl();
     
-    if(!urlInfo) {
+    if(!postId) {
         document.getElementById("loadingSpinner").innerHTML = `<div class="error-box alert alert-danger">
             <i class="bi bi-exclamation-triangle-fill"></i><br>
             <strong>No post ID found!</strong><br>
             Please use a valid post URL like:<br>
-            <code>post.html?id=1</code> or <code>post/my-post-title</code>
+            <code>post.html?id=1</code>
         </div>`;
         return;
     }
     
     try {
         allPostsMaster = await fetchAllPosts();
-        
-        let postId = null;
-        
-        if (urlInfo.type === 'id') {
-            postId = urlInfo.value;
-        } else if (urlInfo.type === 'slug') {
-            const post = findPostBySlug(urlInfo.value, allPostsMaster);
-            if (post) {
-                postId = post.id;
-            } else {
-                throw new Error(`Post with slug "${urlInfo.value}" not found`);
-            }
-        }
-        
         currentPostId = postId;
         const { post, comments } = await fetchPostData(postId);
         currentPost = post;
@@ -1542,13 +1449,12 @@ async function initPostPage() {
 
 // ======================== EVENT LISTENERS ========================
 window.addEventListener('popstate', function(event) {
-    const urlInfo = getPostIdFromUrl();
-    if (urlInfo) {
+    const postId = getPostIdFromUrl();
+    if (postId) {
         window.location.reload();
     }
 });
 
-// Make functions globally accessible
 window.shareOnFacebook = shareOnFacebook;
 window.shareOnTwitter = shareOnTwitter;
 window.shareOnWhatsApp = shareOnWhatsApp;
@@ -1559,5 +1465,4 @@ window.closeShareModal = closeShareModal;
 window.closeTTSSettings = closeTTSSettings;
 window.toggleTTSPlayback = toggleTTSPlayback;
 
-// Start the application
 initPostPage();
