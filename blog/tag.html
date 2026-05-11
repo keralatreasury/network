@@ -28,53 +28,31 @@
             background: #f8fafc;
         }
         
+        /* EXACT MATCH of original tag-header style from attached HTML */
         .tag-header {
-            background: linear-gradient(135deg, #0b2b9e, #0f3bce);
+            background: linear-gradient(135deg, #001b9d, #001b9d);
             color: white;
             padding: 3rem 0;
             margin-bottom: 2rem;
-            border-bottom-left-radius: 2rem;
-            border-bottom-right-radius: 2rem;
-            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
         }
-        
         .tag-header h1 {
-            font-size: 2.8rem;
+            font-size: 2.5rem;
             font-weight: 700;
-            letter-spacing: -0.01em;
         }
-        
         .tag-header .tag-icon {
-            font-size: 3.2rem;
+            font-size: 3rem;
             margin-bottom: 1rem;
-            background: rgba(255,255,255,0.2);
-            display: inline-block;
-            width: 80px;
-            line-height: 80px;
-            border-radius: 50%;
-            backdrop-filter: blur(4px);
         }
-        
         .post-count-badge {
-            background: rgba(255,255,255,0.25);
-            border-radius: 60px;
-            padding: 0.4rem 1.3rem;
+            background: rgba(255,255,255,0.2);
+            border-radius: 9999px;
+            padding: 0.25rem 1rem;
             font-size: 0.9rem;
-            font-weight: 500;
             display: inline-block;
-            margin-top: 0.8rem;
-            letter-spacing: 0.3px;
+            margin-top: 0.5rem;
         }
         
-        .no-results-tag {
-            text-align: center;
-            padding: 3rem 2rem;
-            background: white;
-            border-radius: 2rem;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.03);
-        }
-        
-        /* card styles */
+        /* Card styles (modern but clean) */
         .card-blog {
             background: white;
             border-radius: 1.5rem;
@@ -138,7 +116,7 @@
             transition: 0.2s;
         }
         
-        /* TAG CLOUD SECTION — New beautiful area */
+        /* TAG CLOUD SECTION */
         .tag-cloud-section {
             background: white;
             border-radius: 2rem;
@@ -157,7 +135,7 @@
             color: #0b2b9e;
             margin-bottom: 1.8rem;
             letter-spacing: -0.2px;
-            border-left: 5px solid #0f3bce;
+            border-left: 5px solid #001b9d;
             padding-left: 1rem;
         }
         
@@ -182,7 +160,6 @@
             text-decoration: none;
             transition: all 0.25s cubic-bezier(0.2, 0.9, 0.4, 1.1);
             border: 1px solid #e2e8f0;
-            backdrop-filter: blur(2px);
         }
         
         .cloud-tag i {
@@ -192,18 +169,18 @@
         }
         
         .cloud-tag:hover {
-            background: #0f3bce;
+            background: #001b9d;
             color: white;
             transform: translateY(-3px) scale(1.02);
-            border-color: #0f3bce;
-            box-shadow: 0 10px 15px -6px rgba(15, 59, 206, 0.3);
+            border-color: #001b9d;
+            box-shadow: 0 10px 15px -6px rgba(0, 27, 157, 0.3);
         }
         
         .cloud-tag:hover i {
             color: white;
         }
         
-        /* Frequency-based sizes (dynamic via JS) */
+        /* Frequency-based sizes */
         .cloud-tag[data-weight="high"] {
             font-size: 1rem;
             font-weight: 700;
@@ -219,6 +196,13 @@
             font-size: 0.75rem;
             font-weight: 500;
             padding: 0.35rem 1rem;
+        }
+        
+        .no-results-tag {
+            text-align: center;
+            padding: 3rem 2rem;
+            background: white;
+            border-radius: 1.5rem;
         }
         
         .skeleton-loader {
@@ -268,6 +252,7 @@
 <header id="main-header"></header>
 
 <main>
+    <!-- tag-header style EXACTLY as original: gradient #001b9d, same padding and icon style -->
     <div class="tag-header text-center">
         <div class="container">
             <div class="tag-icon">
@@ -287,15 +272,14 @@
             </div>
         </div>
 
-        <!-- ========== BEAUTIFUL TAG CLOUD SECTION ========== -->
+        <!-- ========== BEAUTIFUL TAG CLOUD SECTION (all tags from column C) ========== -->
         <div id="tagCloudWrapper" style="display: none;">
             <div class="tag-cloud-section">
                 <div class="tag-cloud-title">
                     <i class="bi bi-cloud-arrow-up-fill" style="font-size: 1.8rem;"></i> 
-                    Explore All Tags
+                    All Tags from Your Blog
                 </div>
                 <div id="tagCloudContainer" class="tag-cloud">
-                    <!-- dynamic tag cloud with weights & links -->
                     <div class="text-muted text-center w-100 py-3">Loading tag cloud...</div>
                 </div>
                 <div class="text-muted small mt-3 ms-2">
@@ -323,7 +307,7 @@ function showToastMessage(msg, isError = false) {
     const span = document.getElementById('toastMsg');
     if (!toastEl || !span) return;
     span.innerText = msg;
-    toastEl.style.background = isError ? '#d32f2f' : '#0f3bce';
+    toastEl.style.background = isError ? '#d32f2f' : '#001b9d';
     toastEl.style.opacity = '1';
     setTimeout(() => { toastEl.style.opacity = '0'; }, 2700);
 }
@@ -423,14 +407,17 @@ function renderHeader(title, logoUrl, menus) {
     document.getElementById('main-header').innerHTML = navHtml;
 }
 
-// Parse hashtags from content (for extra but we also rely on column C)
-function parseTagsFromContent(content) {
-    if (!content) return [];
-    const hashtagMatches = content.match(/#[\w\u0590-\u05fe]+/g);
-    if (hashtagMatches) {
-        return [...new Set(hashtagMatches.map(t => t.substring(1)))];
+// Extract tags from post's column C (supports comma or space separated)
+function extractTagsFromPost(post) {
+    let tagStr = post.tagsRaw || "";
+    if (!tagStr.trim()) return [];
+    let candidates = [];
+    if (tagStr.includes(',')) {
+        candidates = tagStr.split(',').map(s => s.trim());
+    } else {
+        candidates = tagStr.split(/\s+/).map(s => s.trim());
     }
-    return [];
+    return candidates.filter(t => t.length > 0);
 }
 
 // Fetch all posts from sheet "blog data" columns A:I
@@ -448,7 +435,7 @@ async function fetchAllPosts() {
             posts.push({
                 id: row[0],
                 category: row[1] || "General",
-                tagsRaw: row[2] || "",        // Column C: comma or space separated tags
+                tagsRaw: row[2] || "",        // Column C: tags field
                 author: row[3] || "Anonymous",
                 publishedTime: row[4] || "",
                 title: row[5] || "Untitled",
@@ -462,39 +449,20 @@ async function fetchAllPosts() {
     return posts;
 }
 
-// Extract tag array from a post: split column C intelligently (comma, space, or both)
-function extractTagsFromPost(post) {
-    let tagStr = post.tagsRaw || "";
-    if (!tagStr.trim()) return [];
-    // Split by commas first, then spaces if needed, clean each token
-    let candidates = [];
-    if (tagStr.includes(',')) {
-        candidates = tagStr.split(',').map(s => s.trim());
-    } else {
-        candidates = tagStr.split(/\s+/).map(s => s.trim());
-    }
-    // Filter empty and also optionally deduplicate per post
-    return candidates.filter(t => t.length > 0);
-}
-
-// Collect ALL tags from entire dataset with frequency for tag cloud
+// Get frequency of all tags across all posts (from column C)
 function getAllTagsFrequency(posts) {
-    const freqMap = new Map(); // tag -> count
+    const freqMap = new Map();
     for (const post of posts) {
         const tags = extractTagsFromPost(post);
         for (const tag of tags) {
-            const lowerTag = tag.toLowerCase();
-            freqMap.set(lowerTag, (freqMap.get(lowerTag) || 0) + 1);
+            const normalized = tag.toLowerCase();
+            freqMap.set(normalized, (freqMap.get(normalized) || 0) + 1);
         }
-        // Additionally, we may also consider inline hashtags? Optionally extend but column C is primary.
-        // For completeness also from content hashtags? but spec says "all the tags from c column", exactly C column.
-        // But we do extra safety: if user manually added only hashtags inside content we can merge? But requirement: tags from column C.
-        // We strictly follow column C. However we keep original behavior but tag cloud from column C.
     }
     return freqMap;
 }
 
-// Return posts filtered by a specific tag (based on column C tags)
+// Filter posts by exact tag (case-insensitive) using column C
 function getPostsByTagColumn(posts, targetTag) {
     const lowerTarget = targetTag.toLowerCase();
     return posts.filter(post => {
@@ -503,36 +471,31 @@ function getPostsByTagColumn(posts, targetTag) {
     });
 }
 
-// Renders tag cloud with weighted sizes
+// Renders tag cloud with weighted sizes based on frequency
 function renderTagCloud(tagFrequencyMap, currentActiveTag = null) {
     const container = document.getElementById('tagCloudContainer');
     if (!container) return;
     if (!tagFrequencyMap || tagFrequencyMap.size === 0) {
-        container.innerHTML = '<div class="text-muted w-100 text-center py-3">✨ No tags found in your sheet’s column C ✨</div>';
+        container.innerHTML = '<div class="text-muted w-100 text-center py-3">✨ No tags found in column C. Add tags like "tech, lifestyle" to see cloud ✨</div>';
         return;
     }
     
-    // Convert to array and sort alphabetically for consistent order
     const tagsArray = Array.from(tagFrequencyMap.entries()).map(([tag, count]) => ({ tag, count }));
     tagsArray.sort((a,b) => a.tag.localeCompare(b.tag));
     
-    // Compute min / max for weight classes
     const counts = tagsArray.map(t => t.count);
     const maxCount = Math.max(...counts, 1);
-    const minCount = Math.min(...counts, 1);
     
-    // Generate HTML
     let cloudHtml = '';
     for (let item of tagsArray) {
         const { tag, count } = item;
-        // calculate weight: high > 70% of max, medium > 30%, low otherwise
-        let weightClass = 'low';
         const ratio = count / maxCount;
+        let weightClass = 'low';
         if (ratio > 0.65) weightClass = 'high';
         else if (ratio > 0.3) weightClass = 'medium';
         
         const isCurrent = (currentActiveTag && currentActiveTag.toLowerCase() === tag.toLowerCase());
-        const activeStyle = isCurrent ? 'background: #0f3bce; color: white; border-color: #0f3bce; box-shadow: 0 5px 12px rgba(15,59,206,0.3);' : '';
+        const activeStyle = isCurrent ? 'background: #001b9d; color: white; border-color: #001b9d; box-shadow: 0 5px 12px rgba(0,27,157,0.3);' : '';
         cloudHtml += `<a href="tag.html?tag=${encodeURIComponent(tag)}" class="cloud-tag" data-weight="${weightClass}" style="${activeStyle}" title="${count} article${count !== 1 ? 's' : ''}">
             <i class="bi bi-hash"></i> ${escapeHtml(tag)} <span class="opacity-75 ms-1" style="font-size:0.7rem;">(${count})</span>
         </a>`;
@@ -540,7 +503,7 @@ function renderTagCloud(tagFrequencyMap, currentActiveTag = null) {
     container.innerHTML = cloudHtml;
 }
 
-// Main initialization of tag page
+// Main initialization
 async function initTagPage() {
     await loadHeaderConfig();
     
@@ -555,24 +518,29 @@ async function initTagPage() {
                 Use: <code>tag.html?tag=yourTagName</code>
             </div>`;
         document.getElementById("tagName").innerHTML = `<i class="bi bi-tag"></i> Missing tag`;
-        document.getElementById("tagCloudWrapper").style.display = "block";
-        // Still try to load all tags cloud even if no tag param? yes we fetch anyway
+        document.getElementById("postCount").innerHTML = `0 posts`;
+        // Still load tag cloud even if no tag param
         try {
             const allPostsFetch = await fetchAllPosts();
             const freqMap = getAllTagsFrequency(allPostsFetch);
-            renderTagCloud(freqMap, null);
-            if(freqMap.size) document.getElementById("tagCloudWrapper").style.display = "block";
+            if (freqMap.size) {
+                renderTagCloud(freqMap, null);
+                document.getElementById("tagCloudWrapper").style.display = "block";
+            } else {
+                document.getElementById("tagCloudWrapper").style.display = "block";
+                document.getElementById("tagCloudContainer").innerHTML = '<div class="text-muted w-100 text-center py-3">📭 No tags in column C</div>';
+            }
         } catch(e) { console.warn(e); }
         return;
     }
     
     const decodedTag = decodeURIComponent(tagParam);
+    // Update header with exact style from original
     document.getElementById("tagName").innerHTML = `<i class="bi bi-hash"></i> ${escapeHtml(decodedTag)}`;
     document.title = `#${decodedTag} | NOC Blog`;
     
     try {
         const allPosts = await fetchAllPosts();
-        // Filter posts using column C tags exactly
         const taggedPosts = getPostsByTagColumn(allPosts, decodedTag);
         
         const postsContainer = document.getElementById("postsContainer");
@@ -588,7 +556,7 @@ async function initTagPage() {
                     <div class="no-results-tag">
                         <i class="bi bi-tag fs-1 text-muted"></i>
                         <h3 class="mt-3">No posts found with tag "#${escapeHtml(decodedTag)}"</h3>
-                        <p class="text-muted">Check other tags from the cloud below ✨ or add new articles with this tag.</p>
+                        <p class="text-muted">Check other tags from the cloud below or add this tag.</p>
                         <a href="./index.html" class="btn btn-primary rounded-pill px-4 mt-3">
                             <i class="bi bi-house"></i> Back to Home
                         </a>
@@ -623,19 +591,18 @@ async function initTagPage() {
             `).join('');
         }
         
-        // ========== 2. GENERATE TAG CLOUD from column C (all tags across posts) ==========
+        // ========== GENERATE TAG CLOUD from column C ==========
         const tagFreqMap = getAllTagsFrequency(allPosts);
         const tagCloudWrapper = document.getElementById("tagCloudWrapper");
         if (tagFreqMap.size > 0) {
             renderTagCloud(tagFreqMap, decodedTag);
             tagCloudWrapper.style.display = "block";
         } else {
-            // no tags column data found
             tagCloudWrapper.style.display = "block";
-            document.getElementById("tagCloudContainer").innerHTML = '<div class="text-muted w-100 text-center py-3">📭 No tags found in column C of your sheet. Add tags like "tech, lifestyle" to see cloud.</div>';
+            document.getElementById("tagCloudContainer").innerHTML = '<div class="text-muted w-100 text-center py-3">📭 No tags found in column C of your sheet. Add tags (comma or space separated) to see cloud.</div>';
         }
         
-        // attach post card & click handlers (navigate)
+        // Attach click handlers for cards, read more buttons, category badges
         document.querySelectorAll('.card-blog').forEach(card => {
             card.addEventListener('click', (e) => {
                 if (!e.target.classList.contains('read-more-btn') && 
@@ -671,12 +638,12 @@ async function initTagPage() {
                 <strong>⚠️ Error loading posts:</strong> ${err.message}<br>
                 <a href="./index.html">← Back to Home</a>
             </div>`;
-        // try showing tag cloud anyway if possible
+        // Try to still load tag cloud
         try {
-            const allPosts = await fetchAllPosts();
-            const freqMap = getAllTagsFrequency(allPosts);
-            if(freqMap.size) {
-                renderTagCloud(freqMap, null);
+            const allPostsErr = await fetchAllPosts();
+            const freqErr = getAllTagsFrequency(allPostsErr);
+            if(freqErr.size) {
+                renderTagCloud(freqErr, null);
                 document.getElementById("tagCloudWrapper").style.display = "block";
             }
         } catch(e) {}
