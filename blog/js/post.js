@@ -25,6 +25,78 @@ let isCommentPending = false;
 let allPostsMaster = [];
 let relatedSwiper = null;
 
+// Helper function to create URL-friendly slug from title
+function createSlug(title) {
+    return title
+        .toLowerCase()
+        .replace(/[^\w\s-]/g, '') // Remove special characters
+        .replace(/\s+/g, '-')     // Replace spaces with hyphens
+        .replace(/-+/g, '-')      // Replace multiple hyphens with single
+        .trim();
+}
+
+// Check if running locally (file:// protocol)
+function isLocalFileProtocol() {
+    return window.location.protocol === 'file:';
+}
+
+// Get current page URL with slug
+function getCurrentPageUrl(postId, postTitle) {
+    if (isLocalFileProtocol()) {
+        // For local development, use query parameter format
+        return `post.html?id=${postId}`;
+    }
+    const baseUrl = window.location.href.split('?')[0].split('/').slice(0, -1).join('/');
+    if (postTitle) {
+        const slug = createSlug(postTitle);
+        return `${baseUrl}/post/${slug}`;
+    }
+    return `${baseUrl}/post.html?id=${postId}`;
+}
+
+// Get post ID from URL (supports both formats)
+function getPostIdFromUrl() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlId = urlParams.get('id');
+    if (urlId && !isNaN(parseInt(urlId))) {
+        return { type: 'id', value: urlId };
+    }
+    
+    // Only check for slug format if not on local file protocol
+    if (!isLocalFileProtocol()) {
+        const path = window.location.pathname;
+        const slugMatch = path.match(/\/post\/([^/?]+)/);
+        if (slugMatch) {
+            return { type: 'slug', value: slugMatch[1] };
+        }
+    }
+    
+    return null;
+}
+
+// Find post by slug
+function findPostBySlug(slug, posts) {
+    return posts.find(post => createSlug(post.title) === slug);
+}
+
+// Update browser URL with slug (only works on web server, not local files)
+function updateBrowserUrl(postId, postTitle) {
+    // Skip URL update if running on local file protocol
+    if (isLocalFileProtocol()) {
+        console.log('Local file protocol detected - skipping URL update');
+        return;
+    }
+    
+    try {
+        const slug = createSlug(postTitle);
+        const newUrl = `${window.location.origin}${window.location.pathname.split('/').slice(0, -1).join('/')}/post/${slug}`;
+        window.history.pushState({ postId: postId, slug: slug }, '', newUrl);
+    } catch (error) {
+        console.warn('Could not update browser URL:', error.message);
+        // Silently fail - this is expected on local file protocol
+    }
+}
+
 // Get text to read (title + author details + content without HTML) with sentence splitting
 function getTTSContent() {
     const titleElement = document.querySelector('.blog-title');
@@ -90,8 +162,6 @@ function getTTSContent() {
             authorText += ` :: ${authorDesignation}. `;
         }
     } else if (authorName === 'Anonymous') {
-        // Skip saying "Posted by Anonymous" as it sounds odd
-        // Just add a short pause
         authorText = '';
     }
     
@@ -109,7 +179,7 @@ function getTTSContent() {
         text += authorText;
     }
     
-    // Add a brief pause before content (using a short sentence)
+    // Add a brief pause before content
     text += ' "".."".. ';
     
     // Add main content
@@ -120,7 +190,7 @@ function getTTSContent() {
     // Clean up extra spaces
     text = text.replace(/\s+/g, ' ').trim();
     
-    console.log('TTS Text generated:', text.substring(0, 200) + '...'); // Debug log
+    console.log('TTS Text generated:', text.substring(0, 200) + '...');
     
     // Split into sentences for highlighting
     ttsSentences = text.match(/[^.!?]+[.!?]+/g) || [text];
@@ -129,14 +199,12 @@ function getTTSContent() {
     return text;
 }
 
-// Refresh TTS content when needed (call after DOM is fully ready)
+// Refresh TTS content when needed
 function refreshTTSContent() {
     ttsText = getTTSContent();
     updateTTSDuration();
     
-    // If currently playing, restart with new content
     if (isPlaying) {
-        const wasPlaying = isPlaying;
         const progressBar = document.getElementById('ttsProgressBar');
         const currentProgress = progressBar ? parseFloat(progressBar.value) : 0;
         stopTTSPlayback();
@@ -154,7 +222,6 @@ function highlightCurrentSentence(index) {
     const contentElement = document.querySelector('.blog-content');
     if (!contentElement) return;
     
-    // Remove all existing highlights
     document.querySelectorAll('.tts-sentence-highlight').forEach(el => {
         el.classList.remove('tts-sentence-highlight');
     });
@@ -164,9 +231,7 @@ function highlightCurrentSentence(index) {
     const sentenceToFind = ttsSentences[index];
     if (!sentenceToFind) return;
     
-    // For author details (which are not in the content), we don't highlight anything
     if (sentenceToFind.includes('Posted by') || sentenceToFind.includes('Published on') || sentenceToFind.includes('Now reading the article')) {
-        // Skip highlighting for non-content sentences
         return;
     }
     
@@ -224,7 +289,6 @@ function populateVoiceList(voices) {
     
     voiceSelect.innerHTML = '<option value="">Select Voice</option>';
     
-    // Filter English voices and sort by name
     const englishVoices = voices.filter(voice => voice.lang.startsWith('en'));
     
     englishVoices.forEach((voice, index) => {
@@ -237,7 +301,6 @@ function populateVoiceList(voices) {
         voiceSelect.appendChild(option);
     });
     
-    // Set default voice if none selected
     if (!currentVoice && englishVoices.length > 0) {
         currentVoice = englishVoices[0];
         if (voiceSelect) voiceSelect.value = 0;
@@ -250,7 +313,6 @@ function setVoice(voiceIndex) {
         localStorage.setItem('ttsVoiceIndex', voiceIndex);
         localStorage.setItem('ttsVoiceName', currentVoice.name);
         
-        // If currently playing, restart with new voice
         if (isPlaying) {
             stopTTSPlayback();
             startTTSPlayback();
@@ -277,16 +339,6 @@ function loadVoicePreference() {
     }
 }
 
-// Speed presets
-const speedPresets = [
-    { value: 0.75, label: '0.75x (Slow)' },
-    { value: 1.0, label: '1x (Normal)' },
-    { value: 1.15, label: '1.15x (Default)' },
-    { value: 1.5, label: '1.5x' },
-    { value: 2.0, label: '2x' },
-    { value: 2.5, label: '2.5x (Fast)' }
-];
-
 function setSpeed(speedValue) {
     currentSpeed = parseFloat(speedValue);
     if (currentUtterance) {
@@ -301,7 +353,6 @@ function initTTSWidget() {
     if (!blogContentWrapper) return;
     if (document.querySelector('.tts-widget')) return;
     
-    // Simplified widget - only play button, progress bar, time, and settings button
     const ttsWidgetHtml = `
         <div class="tts-widget">
             <div class="tts-controls">
@@ -338,12 +389,9 @@ function initTTSWidget() {
         settingsBtn.addEventListener('click', openTTSSettings);
     }
     
-    // Initial TTS content fetch
     ttsText = getTTSContent();
     updateTTSDuration();
     
-    // Set up a MutationObserver to watch for DOM changes and refresh TTS content
-    // This ensures author details are captured if they load after initial render
     setTimeout(() => {
         refreshTTSContent();
     }, 500);
@@ -360,7 +408,6 @@ function initTTSSettingsModal() {
                     <button class="tts-settings-close" onclick="closeTTSSettings()">&times;</button>
                 </div>
                 <div class="tts-settings-body">
-                    <!-- Voice Selection -->
                     <div class="tts-setting-group">
                         <label><i class="bi bi-mic"></i> Voice Selection</label>
                         <select id="voiceSelect" class="tts-select-full">
@@ -368,7 +415,6 @@ function initTTSSettingsModal() {
                         </select>
                     </div>
                     
-                    <!-- Speed Control -->
                     <div class="tts-setting-group">
                         <label><i class="bi bi-speedometer2"></i> Reading Speed</label>
                         <div class="speed-control">
@@ -385,7 +431,6 @@ function initTTSSettingsModal() {
                         </div>
                     </div>
                     
-                    <!-- Auto-scroll Toggle -->
                     <div class="tts-setting-group">
                         <div class="form-switch">
                             <input class="form-check-input" type="checkbox" id="autoScrollToggle" checked>
@@ -402,7 +447,6 @@ function initTTSSettingsModal() {
     
     document.body.insertAdjacentHTML('beforeend', modalHtml);
     
-    // Voice selection event listener
     const voiceSelect = document.getElementById('voiceSelect');
     if (voiceSelect) {
         voiceSelect.addEventListener('change', function() {
@@ -412,7 +456,6 @@ function initTTSSettingsModal() {
         });
     }
     
-    // Speed slider event listener
     const speedSlider = document.getElementById('speedSlider');
     const speedValue = document.getElementById('speedValue');
     
@@ -425,7 +468,6 @@ function initTTSSettingsModal() {
         });
     }
     
-    // Speed preset buttons
     const presetBtns = document.querySelectorAll('.speed-preset-btn');
     presetBtns.forEach(btn => {
         btn.addEventListener('click', function() {
@@ -437,7 +479,6 @@ function initTTSSettingsModal() {
         });
     });
     
-    // Auto-scroll toggle
     const autoScrollToggle = document.getElementById('autoScrollToggle');
     if (autoScrollToggle) {
         autoScrollToggle.addEventListener('change', function() {
@@ -446,7 +487,6 @@ function initTTSSettingsModal() {
         });
     }
     
-    // Load saved preferences
     loadVoicePreference();
     
     const savedAutoScroll = localStorage.getItem('ttsAutoScroll');
@@ -455,10 +495,8 @@ function initTTSSettingsModal() {
         if (autoScrollToggle) autoScrollToggle.checked = autoScrollEnabled;
     }
     
-    // Set active speed preset
     updateActiveSpeedPreset(currentSpeed);
     
-    // Populate voices after they're loaded
     setTimeout(() => {
         if (availableVoices.length > 0) {
             populateVoiceList(availableVoices);
@@ -536,7 +574,6 @@ function toggleTTSPlayback() {
 }
 
 function startTTSPlayback() {
-    // Refresh content before starting to ensure latest author details
     refreshTTSContent();
     
     if (!ttsText || ttsText.trim().length === 0) {
@@ -544,12 +581,10 @@ function startTTSPlayback() {
         return;
     }
     
-    // Stop any ongoing speech
     if (speechSynthesis.speaking) {
         speechSynthesis.cancel();
     }
     
-    // Clear any pending progress interval
     if (progressInterval) {
         clearInterval(progressInterval);
         progressInterval = null;
@@ -664,7 +699,6 @@ function setupScrollTracking() {
     window.addEventListener('touchmove', () => { lastUserScrollTime = Date.now(); });
 }
 
-// Stop TTS when page is unloaded (closed, refreshed, or navigated away)
 function setupPageUnloadHandler() {
     window.addEventListener('beforeunload', () => {
         if (speechSynthesis.speaking) {
@@ -672,7 +706,6 @@ function setupPageUnloadHandler() {
         }
     });
     
-    // Also handle page visibility change (tab switch)
     document.addEventListener('visibilitychange', () => {
         if (document.hidden && speechSynthesis.speaking) {
             speechSynthesis.cancel();
@@ -698,27 +731,12 @@ function showToastMessage(msg, isError = false) {
     setTimeout(() => { toastEl.style.opacity = '0'; }, 2500);
 }
 
-function getCurrentPageUrl(postId) {
-    const baseUrl = window.location.href.split('?')[0];
-    return `${baseUrl}?id=${postId}`;
-}
-
-function updateBrowserUrl(postId) {
-    const newUrl = getCurrentPageUrl(postId);
-    window.history.pushState({ postId: postId }, '', newUrl);
-}
-
-function getPostIdFromUrl() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const urlId = urlParams.get('id');
-    if (urlId && !isNaN(parseInt(urlId))) {
-        return urlId;
-    }
-    return null;
-}
-
 function navigateToCategory(category) {
     window.location.href = `category.html?category=${encodeURIComponent(category)}`;
+}
+
+function navigateToTag(tag) {
+    window.location.href = `tag.html?tag=${encodeURIComponent(tag)}`;
 }
 
 function navigateToAuthor(authorName, authorDesignation) {
@@ -730,7 +748,13 @@ function navigateToAuthor(authorName, authorDesignation) {
 }
 
 function navigateToPost(postId) {
-    window.location.href = `post.html?id=${postId}`;
+    const post = allPostsMaster.find(p => String(p.id) === String(postId));
+    if (post && !isLocalFileProtocol()) {
+        const slug = createSlug(post.title);
+        window.location.href = `post/${slug}`;
+    } else {
+        window.location.href = `post.html?id=${postId}`;
+    }
 }
 
 function navigateToHome() {
@@ -749,10 +773,30 @@ function stripHtml(html) {
     return temp.textContent || temp.innerText || "";
 }
 
-function updateSocialMetaTags(post) {
-    const shareUrl = getCurrentPageUrl(post.id);
-    const featuredImg = extractFirstImage(post.content);
+// Parse tags from content
+function parseTags(tagsString, content) {
+    let tags = [];
+    
+    // First try to get from tags field
+    if (tagsString && tagsString.trim()) {
+        tags = tagsString.split(',').map(t => t.trim()).filter(t => t);
+    }
+    
+    // If no tags in field, try to extract hashtags from content
+    if (tags.length === 0 && content) {
+        const hashtagMatches = content.match(/#[\w\u0590-\u05fe]+/g);
+        if (hashtagMatches) {
+            tags = [...new Set(hashtagMatches.map(t => t.substring(1)))];
+        }
+    }
+    
+    return tags;
+}
+
+function updateSocialMetaTags(post, featuredImg) {
+    const shareUrl = isLocalFileProtocol() ? `post.html?id=${post.id}` : getCurrentPageUrl(post.id, post.title);
     const description = stripHtml(post.content).substring(0, 200) + '...';
+    const imageToUse = featuredImg || extractFirstImage(post.content) || '';
     
     let ogTitle = document.querySelector('meta[property="og:title"]');
     let ogDescription = document.querySelector('meta[property="og:description"]');
@@ -764,11 +808,11 @@ function updateSocialMetaTags(post) {
     
     if (ogTitle) ogTitle.setAttribute('content', post.title + ' | NOC Blog');
     if (ogDescription) ogDescription.setAttribute('content', description);
-    if (ogImage && featuredImg) ogImage.setAttribute('content', featuredImg);
+    if (ogImage && imageToUse) ogImage.setAttribute('content', imageToUse);
     if (ogUrl) ogUrl.setAttribute('content', shareUrl);
     if (twitterTitle) twitterTitle.setAttribute('content', post.title + ' | NOC Blog');
     if (twitterDescription) twitterDescription.setAttribute('content', description);
-    if (twitterImage && featuredImg) twitterImage.setAttribute('content', featuredImg);
+    if (twitterImage && imageToUse) twitterImage.setAttribute('content', imageToUse);
     
     let metaDescription = document.querySelector('meta[name="description"]');
     if (!metaDescription) {
@@ -1012,6 +1056,25 @@ function escapeHtml(str) {
     return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m] || m)); 
 }
 
+// Render tags section
+function renderTagsSection(tags) {
+    if (!tags || tags.length === 0) return '';
+    
+    return `
+        <div class="tags-section mt-4 pt-2">
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <i class="bi bi-tags-fill text-muted"></i>
+                <span class="text-muted small">Tags:</span>
+                ${tags.map(tag => `
+                    <span class="tag-badge" data-tag="${escapeHtml(tag)}" style="cursor: pointer; background: #eef2ff; color: #4f46e5; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; transition: all 0.2s;">
+                        #${escapeHtml(tag)}
+                    </span>
+                `).join('')}
+            </div>
+        </div>
+    `;
+}
+
 // ======================== COMMENTS FUNCTIONS ========================
 function renderCommentsSection() {
     const wrapper = document.getElementById("postContentWrapper");
@@ -1249,17 +1312,24 @@ async function renderPostPage(post, comments) {
     document.getElementById("loadingSpinner").style.display = "none";
     document.getElementById("postContentWrapper").style.display = "block";
 
-    updateSocialMetaTags(post);
+    const featuredImg = extractFirstImage(post.content);
+    updateSocialMetaTags(post, featuredImg);
     document.title = `${post.title} | NOC / blog`;
-    updateBrowserUrl(post.id);
+    
+    // Only update browser URL if not on local file protocol
+    if (!isLocalFileProtocol()) {
+        updateBrowserUrl(post.id, post.title);
+    }
     
     const avatarLetter = (post.author.charAt(0) || 'A').toUpperCase();
-    const featuredImg = extractFirstImage(post.content);
     const authorProfile = await fetchAuthorProfile(post.author);
     let contentWithoutFirstImage = post.content;
     if (featuredImg) {
         contentWithoutFirstImage = removeFirstImageFromContent(post.content);
     }
+    
+    // Parse tags
+    const tags = parseTags(post.tags, post.content);
     
     let authorAvatarHtml = '';
     if (authorProfile.imageUrl) {
@@ -1276,7 +1346,7 @@ async function renderPostPage(post, comments) {
                            </div>`;
     }
     
-    const shareUrl = getCurrentPageUrl(post.id);
+    const shareUrl = isLocalFileProtocol() ? `post.html?id=${post.id}` : getCurrentPageUrl(post.id, post.title);
     
     let contentHtml = `<div class="blog-header">
         <div class="text-muted small mb-2">
@@ -1308,6 +1378,7 @@ async function renderPostPage(post, comments) {
     
     contentHtml += `<div class="blog-content-wrapper">
         <div class="blog-content">${contentWithoutFirstImage}</div>
+        ${renderTagsSection(tags)}
     </div>
     <div class="action-bar">
         <button id="likeButton" class="action-btn like-btn"><i class="bi bi-hand-thumbs-up"></i> <span id="likeCountSpan">${post.likeCount}</span> likes</button>
@@ -1317,6 +1388,14 @@ async function renderPostPage(post, comments) {
     
     document.getElementById("postContentWrapper").innerHTML = contentHtml;
     renderCommentsSection();
+    
+    // Add tag click handlers
+    document.querySelectorAll('.tag-badge').forEach(badge => {
+        badge.addEventListener('click', () => {
+            const tag = badge.getAttribute('data-tag');
+            navigateToTag(tag);
+        });
+    });
     
     initTTSWidget();
     setupScrollTracking();
@@ -1419,20 +1498,35 @@ async function initPostPage() {
     loadTTSPreferences();
     await loadVoices();
     
-    let postId = getPostIdFromUrl();
-    if(!postId) {
+    const urlInfo = getPostIdFromUrl();
+    
+    if(!urlInfo) {
         document.getElementById("loadingSpinner").innerHTML = `<div class="error-box alert alert-danger">
             <i class="bi bi-exclamation-triangle-fill"></i><br>
             <strong>No post ID found!</strong><br>
             Please use a valid post URL like:<br>
-            <code>post.html?id=1</code>
+            <code>post.html?id=1</code> or <code>post/my-post-title</code>
         </div>`;
         return;
     }
     
-    currentPostId = postId;
     try {
         allPostsMaster = await fetchAllPosts();
+        
+        let postId = null;
+        
+        if (urlInfo.type === 'id') {
+            postId = urlInfo.value;
+        } else if (urlInfo.type === 'slug') {
+            const post = findPostBySlug(urlInfo.value, allPostsMaster);
+            if (post) {
+                postId = post.id;
+            } else {
+                throw new Error(`Post with slug "${urlInfo.value}" not found`);
+            }
+        }
+        
+        currentPostId = postId;
         const { post, comments } = await fetchPostData(postId);
         currentPost = post;
         await renderPostPage(post, comments);
@@ -1448,8 +1542,8 @@ async function initPostPage() {
 
 // ======================== EVENT LISTENERS ========================
 window.addEventListener('popstate', function(event) {
-    const postId = getPostIdFromUrl();
-    if (postId && postId !== currentPostId) {
+    const urlInfo = getPostIdFromUrl();
+    if (urlInfo) {
         window.location.reload();
     }
 });
