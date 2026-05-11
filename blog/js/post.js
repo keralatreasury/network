@@ -35,13 +35,18 @@ function createSlug(title) {
         .trim();
 }
 
-// Check if running locally (file:// protocol)
-function isLocalFileProtocol() {
-    return window.location.protocol === 'file:';
+// Get the full absolute URL for sharing
+function getFullShareUrl(postId) {
+    // Get the current origin (protocol + domain)
+    const origin = window.location.origin;
+    // Get the current path without filename
+    const path = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+    // Construct the full URL
+    return `${origin}${path}post.html?id=${postId}`;
 }
 
-// Get current page URL (always use ID-based URL)
-function getCurrentPageUrl(postId, postTitle) {
+// Get current page URL (for meta tags)
+function getCurrentPageUrl(postId) {
     return `post.html?id=${postId}`;
 }
 
@@ -674,7 +679,6 @@ function navigateToCategory(category) {
 }
 
 function navigateToTag(tag) {
-    // Fixed: Remove extra "post/" from tag navigation
     window.location.href = `tag.html?tag=${encodeURIComponent(tag)}`;
 }
 
@@ -724,7 +728,8 @@ function parseTags(tagsString, content) {
 }
 
 function updateSocialMetaTags(post, featuredImg) {
-    const shareUrl = getCurrentPageUrl(post.id, post.title);
+    // Use full absolute URL for sharing
+    const shareUrl = getFullShareUrl(post.id);
     const description = stripHtml(post.content).substring(0, 200) + '...';
     const imageToUse = featuredImg || extractFirstImage(post.content) || '';
     
@@ -1269,7 +1274,8 @@ async function renderPostPage(post, comments) {
                            </div>`;
     }
     
-    const shareUrl = getCurrentPageUrl(post.id, post.title);
+    // Use full absolute URL for sharing
+    const shareUrl = getFullShareUrl(post.id);
     
     let contentHtml = `<div class="blog-header">
         <div class="text-muted small mb-2">
