@@ -1,6 +1,7 @@
 // Google Sheets configuration
 const SPREADSHEET_ID = '1jd1xZe9x2mrZm5KAwGT12vMNYjbrnynsmelNKeK95jc';
 const API_KEY = 'AIzaSyBB1V3vJpNZ9X1GIF-YOwoa6YSt_iXMLo0';
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxYAM6iuUmr0Sr72N6s7XClG05gOV8mwINpc5f-Ju5ZrmbBD_CZfjfaQeOy3ZoVUX1_/exec';
 const MENU_SHEET = 'Menu';
 const ICON_SHEET = 'icons';
 const LOGIN_SHEET = 'Login';
@@ -208,6 +209,104 @@ if (savedSoundPref !== null) {
     soundEnabled = savedSoundPref === 'true';
 }
 
+
+// ========================  Function to update login timestamp ========================
+
+
+
+// JSONP method - Most reliable for cross-origin requests
+function updateLoginTimestampJSONP(username) {
+  return new Promise((resolve, reject) => {
+    try {
+      const timestamp = new Date().toISOString();
+      const callbackName = 'callback_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      
+      // Create script element
+      const script = document.createElement('script');
+      const url = `${WEB_APP_URL}?action=updateLoginTime&username=${encodeURIComponent(username)}&timestamp=${encodeURIComponent(timestamp)}&callback=${callbackName}`;
+      
+      // Define the callback function
+      window[callbackName] = function(response) {
+        delete window[callbackName];
+        document.body.removeChild(script);
+        
+        if (response && response.success) {
+          console.log('✓ Login timestamp recorded for', username);
+          resolve(true);
+        } else {
+          console.error('✗ Failed to update timestamp:', response ? response.error : 'Unknown error');
+          resolve(false);
+        }
+      };
+      
+      // Handle errors
+      script.onerror = function() {
+        delete window[callbackName];
+        document.body.removeChild(script);
+        console.error('✗ JSONP request failed for', username);
+        resolve(false);
+      };
+      
+      script.src = url;
+      document.body.appendChild(script);
+      
+    } catch (error) {
+      console.error('✗ Error in JSONP request:', error);
+      resolve(false);
+    }
+  });
+}
+
+// Use this in your handleLogin function
+// Replace updateLoginTimestamp(username) with:
+// updateLoginTimestampJSONP(username).catch(err => console.warn('Timestamp update failed:', err));
+
+function updateLoginTimestamp(username) {
+  return new Promise((resolve) => {
+    try {
+      const timestamp = new Date().toISOString();
+      const callbackName = 'cb_' + Date.now() + '_' + Math.random().toString(36).substr(2, 8);
+      
+      const script = document.createElement('script');
+      const url = `${WEB_APP_URL}?action=updateLoginTime&username=${encodeURIComponent(username)}&timestamp=${encodeURIComponent(timestamp)}&callback=${callbackName}`;
+      
+      window[callbackName] = function(response) {
+        delete window[callbackName];
+        document.body.removeChild(script);
+        
+        if (response && response.success) {
+          console.log('✓ Login timestamp recorded for', username);
+        } else {
+          console.warn('⚠ Timestamp update failed:', response?.error);
+        }
+        resolve(true);
+      };
+      
+      script.onerror = () => {
+        delete window[callbackName];
+        document.body.removeChild(script);
+        console.warn('⚠ Timestamp update request failed');
+        resolve(false);
+      };
+      
+      script.src = url;
+      document.body.appendChild(script);
+      
+    } catch (error) {
+      console.error('Error:', error);
+      resolve(false);
+    }
+  });
+}
+// Add this test function to debug
+async function testTimestampUpdateManually() {
+  const username = prompt('Enter username to test (e.g., BR0001):');
+  if (username) {
+    console.log('Testing timestamp update for:', username);
+    const result = await updateLoginTimestamp(username);
+    console.log('Update result:', result ? 'Success' : 'Failed');
+  }
+}
 // ======================== THEME FUNCTIONS ========================
 function initTheme() {
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -552,77 +651,83 @@ async function validateLogin(username, password) {
 }
 
 async function handleLogin() {
-    const username = document.getElementById('username').value.trim();
-    const password = document.getElementById('password').value.trim();
-    const loginBtn = document.getElementById('loginBtn');
-    const loginSpinner = document.getElementById('loginSpinner');
-    const loginText = document.getElementById('loginText');
-    const loginOverlay = document.getElementById('loginOverlay');
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value.trim();
+  const loginBtn = document.getElementById('loginBtn');
+  const loginSpinner = document.getElementById('loginSpinner');
+  const loginText = document.getElementById('loginText');
+  const loginOverlay = document.getElementById('loginOverlay');
+  
+  hideLoginError();
+  
+  if (!username || !password) {
+    showLoginError('Please enter both username and password');
+    return;
+  }
+  
+  loginBtn.disabled = true;
+  loginSpinner.classList.remove('d-none');
+  loginText.textContent = 'Verifying...';
+  document.activeElement.blur();
+  
+  try {
+    const userData = await validateLogin(username, password);
     
-    hideLoginError();
-    
-    if (!username || !password) {
-        showLoginError('Please enter both username and password');
-        return;
+    if (userData) {
+      isAuthenticated = true;
+      currentUser = userData;
+      
+      // Update global variables
+      window.isAuthenticated = true;
+      window.currentUser = userData;
+      
+      // ========== ADD THIS LINE ==========
+      // Record login timestamp in Google Sheet (runs in background)
+      updateLoginTimestamp(username).catch(err => {
+        console.warn('Could not update login timestamp:', err);
+      });
+      // ====================================
+      
+      localStorage.setItem('currentUser', JSON.stringify({
+        username: userData.username,
+        loginTime: new Date().toISOString(),
+        menuSheet: userData.menuSheet
+      }));
+      
+      sessionStorage.setItem('currentUser', JSON.stringify({
+        username: userData.username,
+        loginTime: new Date().toISOString(),
+        menuSheet: userData.menuSheet
+      }));
+      
+      loginOverlay.style.opacity = '0';
+      
+      setTimeout(() => {
+        loginOverlay.style.display = 'none';
+        document.getElementById('dashboardContainer').style.display = 'block';
+        loadMenuData(userData.menuSheet);
+        setTimeout(() => {
+          fetchAndDisplayFlashNews();
+          initNotificationSystem();
+        }, 100);
+      }, 500);
+    } else {
+      loginBtn.disabled = false;
+      loginSpinner.classList.add('d-none');
+      loginText.textContent = 'Login';
+      document.getElementById('password').value = '';
+      showLoginError('Invalid username or password');
+      document.getElementById('username').focus();
     }
-    
-    loginBtn.disabled = true;
-    loginSpinner.classList.remove('d-none');
-    loginText.textContent = 'Verifying...';
-    document.activeElement.blur();
-    
-    try {
-        const userData = await validateLogin(username, password);
-        
-        if (userData) {
-            isAuthenticated = true;
-            currentUser = userData;
-            
-            // Update global variables
-            window.isAuthenticated = true;
-            window.currentUser = userData;
-            
-            localStorage.setItem('currentUser', JSON.stringify({
-                username: userData.username,
-                loginTime: new Date().toISOString(),
-                menuSheet: userData.menuSheet
-            }));
-            
-            sessionStorage.setItem('currentUser', JSON.stringify({
-                username: userData.username,
-                loginTime: new Date().toISOString(),
-                menuSheet: userData.menuSheet
-            }));
-            
-            loginOverlay.style.opacity = '0';
-            
-            setTimeout(() => {
-                loginOverlay.style.display = 'none';
-                document.getElementById('dashboardContainer').style.display = 'block';
-                loadMenuData(userData.menuSheet);
-                setTimeout(() => {
-                    fetchAndDisplayFlashNews();
-                    initNotificationSystem();
-                }, 100);
-            }, 500);
-        } else {
-            loginBtn.disabled = false;
-            loginSpinner.classList.add('d-none');
-            loginText.textContent = 'Login';
-            document.getElementById('password').value = '';
-            showLoginError('Invalid username or password');
-            document.getElementById('username').focus();
-        }
-    } catch (error) {
-        console.error('Login error:', error);
-        loginBtn.disabled = false;
-        loginSpinner.classList.add('d-none');
-        loginText.textContent = 'Login';
-        showLoginError('Unable to verify credentials. Please try again.');
-        document.getElementById('username').focus();
-    }
+  } catch (error) {
+    console.error('Login error:', error);
+    loginBtn.disabled = false;
+    loginSpinner.classList.add('d-none');
+    loginText.textContent = 'Login';
+    showLoginError('Unable to verify credentials. Please try again.');
+    document.getElementById('username').focus();
+  }
 }
-
 function logout() {
     stopUnreadCheckInterval();
     
