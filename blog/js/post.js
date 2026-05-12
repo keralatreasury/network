@@ -130,7 +130,7 @@ function getTTSContent() {
         text += authorText;
     }
     
-    text += ' "".."".. ';
+    text += ' :: ';
     
     if (contentElement) {
         text += contentElement.innerText.trim();
