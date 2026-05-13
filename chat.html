@@ -3,12 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Branch Communication Hub | NOC Chat</title>
+    <title>Branch Communication Hub | NOC Chat with Delete</title>
     
     <!-- Bootstrap 5.3 + icons -->
-    <link rel="stylesheet" href="./css/bootstrap.min.css">
-    <link rel="stylesheet" href="./css/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="./css/sweetalert2.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <style>
         * {
@@ -34,7 +36,6 @@
             box-shadow: none;
         }
         
-        /* WhatsApp iPhone Style Header */
         .chat-header {
             background: #ffffff;
             color: #1f2c34;
@@ -187,7 +188,6 @@
             background-size: 20px 20px;
         }
         
-        /* Custom scrollbar */
         .chat-messages::-webkit-scrollbar {
             width: 6px;
         }
@@ -205,6 +205,7 @@
             margin-bottom: 12px;
             display: flex;
             animation: fadeInUp 0.2s ease;
+            position: relative;
         }
         
         @keyframes fadeInUp {
@@ -235,27 +236,23 @@
             box-shadow: 0 1px 0.5px rgba(0,0,0,0.05);
         }
         
-        /* WhatsApp iPhone style - own messages (green) */
         .message-own .message-bubble {
             background: #dcf8c5;
             color: #111b21;
             border-bottom-right-radius: 4px;
         }
         
-        /* WhatsApp iPhone style - other messages (light gray) */
         .message-other .message-bubble {
             background: #ffffff;
             color: #111b21;
             border-bottom-left-radius: 4px;
         }
         
-        /* Admin message highlight */
         .admin-message .message-bubble {
             background: #fff3e0;
             border-left: 3px solid #ff9800;
         }
         
-        /* @All mention highlight */
         .all-mention-highlight {
             background: #ff9800;
             color: white;
@@ -310,14 +307,6 @@
             color: #34b7f1;
         }
         
-        .tick-delivered {
-            color: #8696a0;
-        }
-        
-        .tick-sent {
-            color: #8696a0;
-        }
-        
         .reply-indicator {
             background: rgba(0,0,0,0.04);
             padding: 5px 8px;
@@ -343,6 +332,78 @@
         .reply-btn:hover {
             opacity: 1;
             background: rgba(0,0,0,0.04);
+        }
+        
+        .message-menu-btn {
+            background: none;
+            border: none;
+            font-size: 1rem;
+            cursor: pointer;
+            color: #667781;
+            opacity: 0.5;
+            transition: opacity 0.2s;
+            line-height: 1;
+            padding: 0 4px;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .message-menu-btn:hover {
+            opacity: 1;
+            background: rgba(0,0,0,0.08);
+        }
+        
+        .message-dropdown {
+            position: fixed;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            z-index: 10000;
+            min-width: 140px;
+            overflow: hidden;
+            animation: fadeInScale 0.15s ease;
+        }
+        
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        
+        .dropdown-item-custom {
+            padding: 10px 16px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: background 0.2s;
+            border-bottom: 1px solid #f0f2f5;
+        }
+        
+        .dropdown-item-custom:last-child {
+            border-bottom: none;
+        }
+        
+        .dropdown-item-custom:hover {
+            background: #f5f5f5;
+        }
+        
+        .dropdown-item-custom.delete-item {
+            color: #dc3545;
+        }
+        
+        .dropdown-item-custom.delete-item i {
+            color: #dc3545;
         }
         
         .chat-input-area {
@@ -399,7 +460,6 @@
             outline: none;
         }
         
-        /* WhatsApp iPhone style send button */
         .send-btn {
             border-radius: 50% !important;
             width: 44px;
@@ -407,7 +467,6 @@
             padding: 0;
             background: #007bff;
             border-color: #007bff;
-           
             display: flex;
             align-items: center;
             justify-content: center;
@@ -580,34 +639,6 @@
             color: #54656f;
             margin-left: 4px;
         }
-        
-        /* Typing indicator style */
-        .typing-indicator {
-            display: inline-flex;
-            align-items: center;
-            gap: 3px;
-            padding: 4px 8px;
-            background: #e9edef;
-            border-radius: 16px;
-            font-size: 0.7rem;
-            color: #54656f;
-        }
-        
-        .typing-dot {
-            width: 5px;
-            height: 5px;
-            background: #54656f;
-            border-radius: 50%;
-            animation: typingPulse 1.4s infinite;
-        }
-        
-        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
-        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
-        
-        @keyframes typingPulse {
-            0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
-            30% { opacity: 1; transform: translateY(-3px); }
-        }
     </style>
 </head>
 <body>
@@ -672,16 +703,13 @@
     </div>
 </div>
 
-<script src="./js/jquery.min.js"></script>
-<script src="./js/bootstrap.bundle.min.js"></script>
-<script src="./js/sweetalert2.min.js"></script>
-
 <script>
     // ======================== CONFIGURATION ========================
     const SPREADSHEET_ID = "1fkiFo1i60NxA_ujl1GhPmNnSLKI6seb3YiMVhPxZjgM";
     const SHEET_NAME = "Chats";
     const API_KEY = "AIzaSyBAuS3Brpsw5JOJnjNJii1UlFa7ClXf8d4";
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzrcCh9tqIOKAw2mp7yc9-r3leLxlN80lsGdolzzEx37-Avphrdk-tV2KL0uSTOK4jXHg/exec";
+    // IMPORTANT: Update this URL with your deployed Apps Script URL
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx2GQE3P0II0drjw7ENXlKsYN7wL29W9H86hNXQno6i287ptbt0wIAJA7buXC1EkKB9Yg/exec";
     
     // Global variables
     let branchCode = null;
@@ -698,6 +726,7 @@
     let currentRefreshInterval = 8;
     let isLoading = false;
     let initialLoadDone = false;
+    let activeDropdown = null;
     
     // ======================== NOTIFICATION SOUND ========================
     function initNotificationSound() {
@@ -713,15 +742,12 @@
     
     function playNotificationSound() {
         if (!soundEnabled) return;
-        
         try {
             if (notificationSound) {
                 notificationSound.currentTime = 0;
                 notificationSound.play().catch(() => {});
             }
-        } catch(e) {
-            console.log("Sound play error:", e);
-        }
+        } catch(e) {}
     }
     
     // ======================== BRANCH MANAGEMENT WITH CACHE ========================
@@ -732,57 +758,10 @@
     }
     
     function getBranchFromStorage() {
-        console.log("Fetching branch from cache...");
-        
         let branch = localStorage.getItem('branchCode');
-        if (branch && isValidBranch(branch)) {
-            console.log("Branch found in localStorage:", branch);
-            $('#cacheIndicator').attr('title', 'Loaded from localStorage').css('opacity', '1');
-            return branch.toUpperCase();
-        }
-        
+        if (branch && isValidBranch(branch)) return branch.toUpperCase();
         branch = localStorage.getItem('selectedBranch');
-        if (branch && isValidBranch(branch)) {
-            console.log("Branch found in selectedBranch:", branch);
-            localStorage.setItem('branchCode', branch);
-            $('#cacheIndicator').attr('title', 'Loaded from selectedBranch').css('opacity', '1');
-            return branch.toUpperCase();
-        }
-        
-        const sessionUser = sessionStorage.getItem('currentUser');
-        if (sessionUser) {
-            try {
-                const userData = JSON.parse(sessionUser);
-                branch = userData.username || userData.branch || userData.branchCode;
-                if (branch && isValidBranch(branch)) {
-                    console.log("Branch found in sessionStorage:", branch);
-                    localStorage.setItem('branchCode', branch);
-                    $('#cacheIndicator').attr('title', 'Loaded from sessionStorage').css('opacity', '1');
-                    return branch.toUpperCase();
-                }
-            } catch (e) {
-                console.error('Error parsing session user:', e);
-            }
-        }
-        
-        const localUser = localStorage.getItem('currentUser');
-        if (localUser) {
-            try {
-                const userData = JSON.parse(localUser);
-                branch = userData.username || userData.branch || userData.branchCode;
-                if (branch && isValidBranch(branch)) {
-                    console.log("Branch found in localStorage currentUser:", branch);
-                    localStorage.setItem('branchCode', branch);
-                    $('#cacheIndicator').attr('title', 'Loaded from currentUser').css('opacity', '1');
-                    return branch.toUpperCase();
-                }
-            } catch (e) {
-                console.error('Error parsing local user:', e);
-            }
-        }
-        
-        console.log("No branch found in cache");
-        $('#cacheIndicator').attr('title', 'No cached branch found').css('opacity', '0.5');
+        if (branch && isValidBranch(branch)) return branch.toUpperCase();
         return null;
     }
     
@@ -791,85 +770,135 @@
             const upperBranch = branch.toUpperCase();
             localStorage.setItem('branchCode', upperBranch);
             localStorage.setItem('selectedBranch', upperBranch);
-            console.log("Branch saved to cache:", upperBranch);
-            $('#cacheIndicator').attr('title', 'Saved to cache').css('opacity', '1').fadeOut(100).fadeIn(100);
             return upperBranch;
         }
         return null;
     }
     
-    // ======================== HEARTBEAT ========================
-    async function updateHeartbeat() {
-        if (!branchCode) return;
+    // ======================== DELETE MESSAGE FUNCTION (Using no-cors) ========================
+    async function deleteMessageFromSheet(messageId) {
+        if (!branchCode) {
+            Swal.fire('Error', 'Please set your branch code first', 'warning');
+            return false;
+        }
         
         try {
-            await fetch(APPS_SCRIPT_URL, {
+            // Use no-cors mode for Google Apps Script
+            const response = await fetch(APPS_SCRIPT_URL, {
                 method: "POST",
                 mode: "no-cors",
-                headers: { "Content-Type": "application/json" },
+                headers: { 
+                    "Content-Type": "application/json"
+                },
                 body: JSON.stringify({
-                    action: "HEARTBEAT",
+                    action: "DELETE_MESSAGE",
+                    messageId: messageId,
                     branchCode: branchCode,
-                    timestamp: new Date().toISOString(),
-                    isActive: isWindowActive
+                    timestamp: new Date().toISOString()
                 })
             });
+            
+            // With no-cors, we can't read the response, but the request is sent
+            // Wait a moment for the server to process
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // Reload messages to confirm deletion
+            await loadMessages();
+            return true;
+            
         } catch (error) {
-            console.error("Heartbeat error:", error);
+            console.error("Delete error:", error);
+            Swal.fire('Error', 'Failed to delete message. Please try again.', 'error');
+            return false;
         }
     }
     
-    // ======================== GET ACTIVE BRANCHES ========================
-    async function getActiveBranches() {
-        try {
-            const range = `ActiveBranches!A:C`;
-            const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?key=${API_KEY}`;
-            const response = await fetch(url);
-            const data = await response.json();
+    // ======================== CLOSE DROPDOWN ========================
+    function closeDropdown() {
+        if (activeDropdown) {
+            $(activeDropdown).remove();
+            activeDropdown = null;
+        }
+    }
+    
+    // ======================== SHOW DROPDOWN MENU ========================
+    function showMessageMenu(event, messageId, messageBranch) {
+        event.stopPropagation();
+        closeDropdown();
+        
+        // Only allow deletion: either own message OR admin branch
+        const canDelete = (messageBranch === branchCode) || (branchCode === 'ADMIN');
+        if (!canDelete) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Cannot Delete',
+                text: 'You can only delete your own messages',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 2000
+            });
+            return;
+        }
+        
+        const button = $(event.currentTarget);
+        const offset = button.offset();
+        
+        const $dropdown = $(`
+            <div class="message-dropdown" style="top: ${offset.top + 30}px; left: ${offset.left - 100}px;">
+                <div class="dropdown-item-custom delete-item" data-msg-id="${messageId}" data-msg-branch="${messageBranch}">
+                    <i class="bi bi-trash3"></i> Delete Chat
+                </div>
+            </div>
+        `);
+        
+        $('body').append($dropdown);
+        activeDropdown = $dropdown[0];
+        
+        // Handle delete click
+        $dropdown.find('.delete-item').on('click', async function(e) {
+            e.stopPropagation();
+            const msgId = parseInt($(this).data('msg-id'));
+            const msgBranch = $(this).data('msg-branch');
+            closeDropdown();
             
-            const now = new Date();
-            const activeThreshold = 12000;
+            // Double-check permission
+            if (msgBranch !== branchCode && branchCode !== 'ADMIN') {
+                Swal.fire('Error', 'You do not have permission to delete this message', 'error');
+                return;
+            }
             
-            if (data.values && data.values.length > 1) {
-                activeBranches.clear();
-                for (let i = 1; i < data.values.length; i++) {
-                    const row = data.values[i];
-                    if (row.length >= 2) {
-                        const lastSeen = new Date(row[1]);
-                        if (now - lastSeen < activeThreshold) {
-                            activeBranches.set(row[0], { lastSeen: lastSeen });
-                        }
-                    }
+            const confirmResult = await Swal.fire({
+                title: 'Delete Message?',
+                text: 'This message will be permanently removed from the chat for everyone.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                confirmButtonText: 'Yes, delete it!',
+                cancelButtonText: 'Cancel'
+            });
+            
+            if (confirmResult.isConfirmed) {
+                const success = await deleteMessageFromSheet(msgId);
+                if (success) {
+                    Swal.fire('Deleted!', 'Message has been deleted.', 'success', { toast: true, timer: 2000, showConfirmButton: false, position: 'top-end' });
                 }
             }
-            updateActiveUsersDisplay();
-        } catch (error) {
-            console.error("Error getting active branches:", error);
-        }
-    }
-    
-    function updateActiveUsersDisplay() {
-        const activeList = $('#activeUsersList');
-        const activeCount = $('#activeCount');
+        });
         
-        let activeListArray = [];
-        for (let branch of activeBranches.keys()) {
-            if (branch !== branchCode) {
-                const isAdmin = branch === 'ADMIN';
-                activeListArray.push(`<span class="active-user ${isAdmin ? 'admin' : ''}"><span class="active-dot"></span>${escapeHtml(branch)}</span>`);
-            }
-        }
-        
-        activeCount.text(activeListArray.length);
-        activeList.html(activeListArray.join(' '));
+        // Close when clicking outside
+        setTimeout(() => {
+            $(document).one('click', function() {
+                closeDropdown();
+            });
+        }, 100);
     }
     
     // ======================== READ MESSAGES FROM SHEET ========================
     async function readMessagesFromSheet() {
         if (!branchCode) return [];
-        
         try {
-            const range = `${SHEET_NAME}!A:K`; // Added column K for @All read tracking
+            const range = `${SHEET_NAME}!A:K`;
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?key=${API_KEY}`;
             const response = await fetch(url);
             const data = await response.json();
@@ -886,13 +915,11 @@
                     const id = parseInt(row[0]);
                     if (!isNaN(id)) {
                         let messageText = row[2] || "";
-                        
                         let displayMessage = messageText;
                         const replyPrefixMatch = messageText.match(/^\[REPLY TO #\d+\]\s*/i);
                         if (replyPrefixMatch) {
                             displayMessage = messageText.substring(replyPrefixMatch[0].length);
                         }
-                        
                         const msg = {
                             id: id,
                             branchCode: (row[1] || "").toUpperCase(),
@@ -905,7 +932,7 @@
                             delivered: row[7] === "TRUE",
                             read: row[8] === "TRUE",
                             readBy: row[9] || "",
-                            allMentionReadBy: row[10] || "" // Column K - Track which branches have seen @All mention
+                            allMentionReadBy: row[10] || ""
                         };
                         allMessages.push(msg);
                         newMessageIds.add(msg.id);
@@ -919,11 +946,8 @@
                 for (let newMsg of newMsgs) {
                     const isMentioned = newMsg.message.toLowerCase().includes(`@${branchCode.toLowerCase()}`);
                     const isAllMention = newMsg.message.toLowerCase().includes('@all');
-                    const hasNotSeenAllMention = isAllMention && !newMsg.allMentionReadBy.includes(branchCode);
-                    
-                    if (isMentioned || hasNotSeenAllMention) {
+                    if (isMentioned || isAllMention) {
                         playNotificationSound();
-                        showMentionNotification(newMsg, isAllMention);
                     }
                 }
             }
@@ -931,7 +955,6 @@
             lastMessageIds = newMessageIds;
             allMessages.sort((a, b) => a.id - b.id);
             
-            // Filter messages for current branch
             const relevantMessages = allMessages.filter(msg => {
                 const isOwn = msg.branchCode === branchCode;
                 const isReply = msg.replyToId > 0;
@@ -941,22 +964,8 @@
                 const isMentioned = !isOwn && msg.message.toLowerCase().includes(`@${branchCode.toLowerCase()}`);
                 const isAllMention = !isOwn && msg.message.toLowerCase().includes('@all');
                 const isAdmin = branchCode === 'ADMIN';
-                
                 return isOwn || isReplyToMe || isNewFromOther || isMentioned || isAllMention || isAdmin;
             });
-            
-            // Mark messages as read (both regular read and @All mention read)
-            for (let msg of relevantMessages) {
-                // Regular read marking
-                if (msg.branchCode !== branchCode && !msg.read && !msg.readBy.includes(branchCode)) {
-                    await markAsRead(msg.id);
-                }
-                
-                // @All mention read marking
-                if (msg.message.toLowerCase().includes('@all') && !msg.allMentionReadBy.includes(branchCode)) {
-                    await markAllMentionAsRead(msg.id, branchCode);
-                }
-            }
             
             return relevantMessages.map(msg => ({
                 ...msg,
@@ -975,78 +984,11 @@
         }
     }
     
-    async function markAllMentionAsRead(messageId, branch) {
-        try {
-            await fetch(APPS_SCRIPT_URL, {
-                method: "POST",
-                mode: "no-cors",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    action: "MARK_ALL_MENTION_READ",
-                    messageId: messageId,
-                    branchCode: branch,
-                    timestamp: new Date().toISOString()
-                })
-            });
-        } catch (error) {
-            console.error("Mark all mention as read error:", error);
-        }
-    }
-    
     function getMessageStatus(message) {
         if (message.branchCode !== branchCode) return null;
-        
-        if (message.read && message.readBy) {
-            return { type: 'read', icon: 'bi-check2-all', color: '#34b7f1', text: 'Seen' };
-        } else if (message.delivered) {
-            return { type: 'delivered', icon: 'bi-check2-all', color: '#8696a0', text: 'Delivered' };
-        } else {
-            return { type: 'sent', icon: 'bi-check2', color: '#8696a0', text: 'Sent' };
-        }
-    }
-    
-    async function markAsRead(messageId) {
-        try {
-            await fetch(APPS_SCRIPT_URL, {
-                method: "POST",
-                mode: "no-cors",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    action: "MARK_READ",
-                    messageId: messageId,
-                    branchCode: branchCode,
-                    timestamp: new Date().toISOString()
-                })
-            });
-        } catch (error) {
-            console.error("Mark as read error:", error);
-        }
-    }
-    
-    function showMentionNotification(msg, isAllMention = false) {
-        if (!soundEnabled) return;
-        
-        const title = isAllMention ? `📢 @All mention from ${msg.branchCode}` : `📢 Mention from ${msg.branchCode}`;
-        
-        if (document.hidden) {
-            if (Notification.permission === "granted") {
-                new Notification(title, {
-                    body: msg.message.substring(0, 100),
-                    icon: "https://cdn.jsdelivr.net/npm/bootstrap-icons/icons/chat-dots-fill.svg"
-                });
-            }
-        }
-        
-        Swal.fire({
-            icon: 'info',
-            title: title,
-            text: msg.message.substring(0, 100),
-            toast: true,
-            position: 'top-end',
-            showConfirmButton: false,
-            timer: 3000,
-            background: isAllMention ? '#fff3e0' : '#e8f5e9'
-        });
+        if (message.read && message.readBy) return { type: 'read', icon: 'bi-check2-all', color: '#34b7f1', text: 'Seen' };
+        else if (message.delivered) return { type: 'delivered', icon: 'bi-check2-all', color: '#8696a0', text: 'Delivered' };
+        else return { type: 'sent', icon: 'bi-check2', color: '#8696a0', text: 'Sent' };
     }
     
     // ======================== SEND MESSAGE ========================
@@ -1056,36 +998,24 @@
             Swal.fire('Error', 'Please set your branch code first', 'warning');
             return false;
         }
-        
         const action = replyToId ? "REPLY_MESSAGE" : "SEND_MESSAGE";
-        
-        const payload = {
-            action: action,
-            branchCode: branchCode,
-            message: message.trim(),
-            timestamp: new Date().toISOString()
-        };
-        
+        const payload = { action, branchCode, message: message.trim(), timestamp: new Date().toISOString() };
         if (replyToId) payload.replyToId = replyToId;
         
         const sendBtn = $('#sendBtn');
         sendBtn.prop('disabled', true).html('<i class="bi bi-hourglass-split"></i>');
-        
         try {
-            await fetch(APPS_SCRIPT_URL, {
-                method: "POST",
+            await fetch(APPS_SCRIPT_URL, { 
+                method: "POST", 
                 mode: "no-cors",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
+                headers: { "Content-Type": "application/json" }, 
+                body: JSON.stringify(payload) 
             });
-            
             $('#messageInput').val('');
             cancelReply();
             await loadMessages();
             return true;
-            
         } catch (error) {
-            console.error("Send error:", error);
             Swal.fire('Error', 'Unable to send message', 'error');
             return false;
         } finally {
@@ -1093,17 +1023,14 @@
         }
     }
     
-    // ======================== MESSAGE RENDERING ========================
+    // ======================== RENDER MESSAGES WITH DROPDOWN BUTTON ========================
     function formatDateTime(timestamp) {
         if (!timestamp) return 'Just now';
         const date = new Date(timestamp);
         const now = new Date();
-        const diffMs = now - date;
-        const diffMins = Math.floor(diffMs / 60000);
-        
+        const diffMins = Math.floor((now - date) / 60000);
         if (diffMins < 1) return 'Just now';
         if (diffMins < 60) return `${diffMins} min ago`;
-        
         const day = date.getDate().toString().padStart(2, '0');
         const month = (date.getMonth() + 1).toString().padStart(2, '0');
         let hours = date.getHours();
@@ -1114,25 +1041,26 @@
     }
     
     function highlightMentions(text, currentBranch) {
-        // Highlight @All mentions specially
         let highlighted = text.replace(/@ALL/gi, match => `<span class="all-mention-highlight">${match}</span>`);
-        
         const mentionRegex = /@(BR\d{4}|ADMIN)/gi;
         highlighted = highlighted.replace(mentionRegex, (match, branch) => {
-            if (branch.toUpperCase() === currentBranch) {
-                return `<span class="mention-highlight">${match}</span>`;
-            }
+            if (branch.toUpperCase() === currentBranch) return `<span class="mention-highlight">${match}</span>`;
             return match;
         });
-        
         return highlighted;
+    }
+    
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) { 
+            return m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;'; 
+        });
     }
     
     function renderMessages() {
         const container = $('#chatMessages');
-        
         if (!messages || messages.length === 0) {
-            container.html(`<div class="text-center text-muted" style="padding: 50px;"><i class="bi bi-chat-square-text" style="font-size: 48px; color: #cbd5e1;"></i><h6 class="mt-3" style="color: #8696a0;">No messages yet</h6><small style="color: #8696a0;">Be the first to start a conversation!</small></div>`);
+            container.html(`<div class="text-center text-muted" style="padding: 50px;"><i class="bi bi-chat-square-text" style="font-size: 48px; color: #cbd5e1;"></i><h6 class="mt-3" style="color: #8696a0;">No messages yet</h6></div>`);
             return;
         }
         
@@ -1155,15 +1083,16 @@
             const branchDisplay = message.branchCode === 'ADMIN' ? '<span class="admin-branch"><i class="bi bi-star-fill"></i> ADMIN</span>' : escapeHtml(message.branchCode);
             
             html += `
-                <div class="message ${isOwn ? 'message-own' : 'message-other'} ${adminClass}">
+                <div class="message ${isOwn ? 'message-own' : 'message-other'} ${adminClass}" data-msg-id="${message.id}">
                     <div class="message-bubble">
                         <div class="message-branch">
                             <span><i class="bi bi-building"></i> ${branchDisplay}</span>
-                            <span class="message-id">#${message.id}</span>
-                            ${message.status === 'Replied' ? '<span class="status-badge replied-badge">Replied</span>' : ''}
-                            ${!isOwn && message.canReply ? '<span class="status-badge new-badge">Reply</span>' : ''}
-                            ${message.isMention ? '<span class="status-badge" style="background:#ff9800;">@Mention</span>' : ''}
-                            ${message.isAllMention && !message.hasSeenAllMention && !isOwn ? '<span class="status-badge all-mention-badge">@All</span>' : ''}
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <span class="message-id">#${message.id}</span>
+                                <button class="message-menu-btn" onclick="event.stopPropagation(); showMessageMenu(event, ${message.id}, '${escapeHtml(message.branchCode)}')">
+                                    <i class="bi bi-three-dots-vertical"></i>
+                                </button>
+                            </div>
                         </div>
                         ${isReply ? `<div class="reply-indicator"><i class="bi bi-reply-fill"></i> Reply to #${message.replyToId}: "${escapeHtml(originalMessageText.substring(0, 80))}"</div>` : ''}
                         <div class="message-text">${highlightedMessage}</div>
@@ -1181,155 +1110,139 @@
         scrollToBottom();
     }
     
-    // ======================== MENTION HANDLING ========================
-    function setupMentionDetection() {
-        $('#messageInput').on('input', function() {
-            const value = $(this).val();
-            const lastWord = value.split(' ').pop();
-            
-            if (lastWord.startsWith('@')) {
-                const searchTerm = lastWord.substring(1).toLowerCase();
-                const allBranches = [...activeBranches.keys()];
-                if (!allBranches.includes('ADMIN')) allBranches.push('ADMIN');
-                // Add @All option
-                const suggestions = ['All', ...allBranches]
-                    .filter(b => b !== branchCode && b.toLowerCase().includes(searchTerm))
-                    .slice(0, 8);
-                
-                if (suggestions.length > 0) {
-                    const inputRect = $(this).get(0).getBoundingClientRect();
-                    
-                    $('#mentionSuggestions').html(suggestions.map(s => 
-                        `<div class="mention-suggestion-item" data-branch="${s}">@${s} ${s === 'ADMIN' ? '⭐' : s === 'All' ? '🌐' : ''}</div>`
-                    )).css({
-                        display: 'block',
-                        position: 'fixed',
-                        top: Math.min(inputRect.bottom + 5, window.innerHeight - 150),
-                        left: inputRect.left
-                    });
-                    
-                    $('.mention-suggestion-item').off('click').on('click', function() {
-                        const branch = $(this).data('branch');
-                        const text = $('#messageInput').val();
-                        const newText = text.replace(/@\w*$/, `@${branch} `);
-                        $('#messageInput').val(newText);
-                        $('#mentionSuggestions').hide();
-                        $('#messageInput').focus();
-                    });
-                } else {
-                    $('#mentionSuggestions').hide();
-                }
-            } else {
-                $('#mentionSuggestions').hide();
-            }
-        });
-        
-        $(document).on('click', function(e) {
-            if (!$(e.target).closest('#mentionSuggestions').length) {
-                $('#mentionSuggestions').hide();
-            }
-        });
+    function scrollToBottom() {
+        const container = document.getElementById('chatMessages');
+        if (container) container.scrollTop = container.scrollHeight;
     }
     
-    function quickMention(branch) {
-        const currentText = $('#messageInput').val();
-        $('#messageInput').val(currentText + (currentText ? ' ' : '') + `@${branch} `);
-        $('#messageInput').focus();
-    }
-    
-    // ======================== LOAD & REFRESH ========================
+    // ======================== OTHER FUNCTIONS ========================
     async function loadMessages() {
         if (!branchCode || isLoading) return;
-        
         isLoading = true;
-        
         try {
             const newMessages = await readMessagesFromSheet();
             messages = newMessages;
             renderMessages();
             updateConnectionStatus(true);
             await getActiveBranches();
-            
             if (!initialLoadDone) {
                 $('#initialLoading').hide();
                 initialLoadDone = true;
             }
         } catch (error) {
-            console.error("Load error:", error);
             updateConnectionStatus(false);
         } finally {
             isLoading = false;
         }
     }
     
-    function scrollToBottom() {
-        const container = document.getElementById('chatMessages');
-        if (container) container.scrollTop = container.scrollHeight;
-    }
-    
-    function updateConnectionStatus(isOnline) {
-        const statusDiv = $('#connectionStatus');
-        if (isOnline) {
-            statusDiv.html('🟢 Online').css('background', '#25d366');
-            $('#onlineStatusText').text('Online');
-        } else {
-            statusDiv.html('🔴 Offline').css('background', '#dc3545');
-            $('#onlineStatusText').text('Offline');
+    async function getActiveBranches() {
+        try {
+            const range = `ActiveBranches!A:C`;
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?key=${API_KEY}`;
+            const response = await fetch(url);
+            const data = await response.json();
+            const now = new Date();
+            const activeThreshold = 12000;
+            if (data.values && data.values.length > 1) {
+                activeBranches.clear();
+                for (let i = 1; i < data.values.length; i++) {
+                    const row = data.values[i];
+                    if (row.length >= 2) {
+                        const lastSeen = new Date(row[1]);
+                        if (now - lastSeen < activeThreshold) activeBranches.set(row[0], { lastSeen });
+                    }
+                }
+            }
+            updateActiveUsersDisplay();
+        } catch (error) {
+            console.error("Error getting active branches:", error);
         }
-        setTimeout(() => statusDiv.fadeOut(2000, function() { $(this).fadeIn(2000); }), 3000);
     }
     
-    function escapeHtml(str) {
-        if (!str) return '';
-        return str.replace(/[&<>]/g, function(m) {
-            return m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;';
-        });
+    function updateActiveUsersDisplay() {
+        const activeList = $('#activeUsersList');
+        let activeListArray = [];
+        for (let branch of activeBranches.keys()) {
+            if (branch !== branchCode) {
+                const isAdmin = branch === 'ADMIN';
+                activeListArray.push(`<span class="active-user ${isAdmin ? 'admin' : ''}"><span class="active-dot"></span>${escapeHtml(branch)}</span>`);
+            }
+        }
+        $('#activeCount').text(activeListArray.length);
+        activeList.html(activeListArray.join(' '));
     }
     
-    function startReply(messageId, branch, preview) {
-        replyingTo = messageId;
+    function startReply(id, branch, preview) {
+        replyingTo = id;
         $('#replyPreview').addClass('active');
         $('#replyToBranch').text(branch);
         $('#replyToMessage').text(preview);
         $('#messageInput').focus();
     }
     
-    function cancelReply() {
-        replyingTo = null;
-        $('#replyPreview').removeClass('active');
+    function cancelReply() { 
+        replyingTo = null; 
+        $('#replyPreview').removeClass('active'); 
     }
     
-    // ======================== AUTO REFRESH ========================
+    function quickMention(branch) { 
+        const cur = $('#messageInput').val(); 
+        $('#messageInput').val(cur + (cur ? ' ' : '') + `@${branch} `).focus(); 
+    }
+    
+    function updateConnectionStatus(isOnline) { 
+        const status = $('#connectionStatus'); 
+        status.html(isOnline ? '🟢 Online' : '🔴 Offline').css('background', isOnline ? '#25d366' : '#dc3545'); 
+        $('#onlineStatusText').text(isOnline ? 'Online' : 'Offline');
+        setTimeout(() => status.fadeOut(2000, function() { $(this).fadeIn(2000); }), 3000); 
+    }
+    
     function startAutoRefresh() {
         if (refreshTimer) clearInterval(refreshTimer);
         if (countdownInterval) clearInterval(countdownInterval);
-        
         const intervalSeconds = currentRefreshInterval;
         let countdown = intervalSeconds;
-        
-        refreshTimer = setInterval(async () => {
-            await loadMessages();
-            countdown = intervalSeconds;
-            $('#countdownDisplay').text(`${countdown}s`);
-        }, intervalSeconds * 1000);
-        
-        countdownInterval = setInterval(() => {
-            countdown--;
-            if (countdown >= 0) {
-                $('#countdownDisplay').text(`${countdown}s`);
-            }
-            if (countdown <= 0) countdown = intervalSeconds;
-        }, 1000);
-        
+        refreshTimer = setInterval(async () => { await loadMessages(); countdown = intervalSeconds; $('#countdownDisplay').text(`${countdown}s`); }, intervalSeconds * 1000);
+        countdownInterval = setInterval(() => { countdown--; if (countdown >= 0) $('#countdownDisplay').text(`${countdown}s`); if (countdown <= 0) countdown = intervalSeconds; }, 1000);
         $('#countdownDisplay').text(`${countdown}s`);
     }
     
-    function updateRefreshInterval() {
-        const newInterval = parseInt($('#refreshIntervalInput').val());
-        if (!isNaN(newInterval) && newInterval >= 1 && newInterval <= 59) {
-            currentRefreshInterval = newInterval;
-            localStorage.setItem('refreshInterval', currentRefreshInterval);
-            startAutoRefresh();
+    function setupMentionDetection() {
+        $('#messageInput').on('input', function() {
+            const val = $(this).val();
+            const lastWord = val.split(' ').pop();
+            if (lastWord.startsWith('@')) {
+                const term = lastWord.substring(1).toLowerCase();
+                const allBranches = [...activeBranches.keys()];
+                if (!allBranches.includes('ADMIN')) allBranches.push('ADMIN');
+                const suggestions = ['All', ...allBranches].filter(b => b !== branchCode && b.toLowerCase().includes(term)).slice(0, 8);
+                if (suggestions.length) {
+                    const rect = $(this).get(0).getBoundingClientRect();
+                    $('#mentionSuggestions').html(suggestions.map(s => `<div class="mention-suggestion-item" data-branch="${s}">@${s} ${s === 'ADMIN' ? '⭐' : s === 'All' ? '🌐' : ''}</div>`)).css({ display: 'block', position: 'fixed', top: Math.min(rect.bottom + 5, window.innerHeight - 150), left: rect.left });
+                    $('.mention-suggestion-item').off('click').on('click', function() { const br = $(this).data('branch'); const txt = $('#messageInput').val(); $('#messageInput').val(txt.replace(/@\w*$/, `@${br} `)); $('#mentionSuggestions').hide(); $('#messageInput').focus(); });
+                } else $('#mentionSuggestions').hide();
+            } else $('#mentionSuggestions').hide();
+        });
+        $(document).on('click', function(e) { if (!$(e.target).closest('#mentionSuggestions').length) $('#mentionSuggestions').hide(); });
+    }
+    
+    async function updateHeartbeat() {
+        if (!branchCode) return;
+        try {
+            await fetch(APPS_SCRIPT_URL, {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    action: "HEARTBEAT",
+                    branchCode: branchCode,
+                    timestamp: new Date().toISOString(),
+                    isActive: isWindowActive
+                })
+            });
+        } catch (error) {
+            console.error("Heartbeat error:", error);
         }
     }
     
@@ -1337,106 +1250,6 @@
         if (heartbeatTimer) clearInterval(heartbeatTimer);
         updateHeartbeat();
         heartbeatTimer = setInterval(() => updateHeartbeat(), 5000);
-    }
-    
-    // ======================== INITIALIZATION ========================
-    async function init() {
-        initNotificationSound();
-        
-        if (Notification.permission === "default") {
-            Notification.requestPermission();
-        }
-        
-        const savedInterval = localStorage.getItem('refreshInterval');
-        if (savedInterval) {
-            currentRefreshInterval = parseInt(savedInterval);
-            $('#refreshIntervalInput').val(currentRefreshInterval);
-        } else {
-            currentRefreshInterval = 8;
-            $('#refreshIntervalInput').val(8);
-        }
-        
-        const savedBranch = getBranchFromStorage();
-        if (savedBranch) {
-            branchCode = savedBranch;
-            $('#branchCodeInput').val(branchCode);
-            console.log("Branch loaded from cache:", branchCode);
-        } else {
-            console.log("No cached branch found, waiting for user input");
-            $('#chatMessages').html(`
-                <div class="text-center text-muted" style="padding: 50px;">
-                    <i class="bi bi-chat-square-text" style="font-size: 48px; color: #cbd5e1;"></i>
-                    <h5 class="mt-3" style="color: #1f2c34;">Welcome to NOC Chat</h5>
-                    <p style="color: #8696a0;">Please enter your branch code above to start chatting.</p>
-                    <small class="text-success">Format: "BR"& 4 digit treasury code. ex: BR0101, BR1001 etc</small>
-                </div>
-            `);
-            $('#initialLoading').hide();
-            initialLoadDone = true;
-        }
-        
-        $('#branchCodeInput').on('change', function() {
-            const newBranch = $(this).val().toUpperCase().trim();
-            if (isValidBranch(newBranch)) {
-                branchCode = saveBranchToStorage(newBranch);
-                initialLoadDone = false;
-                $('#initialLoading').show();
-                loadMessages().then(() => {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Branch Set',
-                        text: `Welcome ${branchCode}!`,
-                        toast: true,
-                        position: 'top-end',
-                        showConfirmButton: false,
-                        timer: 2000
-                    });
-                });
-            } else if (newBranch) {
-                Swal.fire('Invalid Format', 'Use BR1001 (BR + 4 digits) or ADMIN', 'warning');
-                $(this).val(branchCode || '');
-            }
-        });
-        
-        $('#refreshIntervalInput').on('change', updateRefreshInterval);
-        
-        if (branchCode) {
-            await loadMessages();
-        }
-        
-        startAutoRefresh();
-        startHeartbeat();
-        setupMentionDetection();
-        setupWindowFocusTracking();
-        
-        $('#sendBtn').on('click', async () => {
-            const message = $('#messageInput').val();
-            if (replyingTo) {
-                await sendMessage(message, replyingTo);
-            } else {
-                await sendMessage(message);
-            }
-        });
-        
-        $('#messageInput').on('keypress', function(e) {
-            if (e.which === 13 && !e.shiftKey) {
-                e.preventDefault();
-                $('#sendBtn').click();
-            }
-        });
-        
-        $('#toggleToneBtn').on('click', function() {
-            soundEnabled = !soundEnabled;
-            $(this).html(soundEnabled ? '<i class="bi bi-volume-up-fill"></i>' : '<i class="bi bi-volume-mute-fill"></i>');
-            localStorage.setItem('soundEnabled', soundEnabled);
-            Swal.fire('Notification', soundEnabled ? 'Sound enabled' : 'Sound disabled', 'info', { toast: true, timer: 1500, showConfirmButton: false });
-        });
-        
-        const savedSound = localStorage.getItem('soundEnabled');
-        if (savedSound !== null) {
-            soundEnabled = savedSound === 'true';
-            $('#toggleToneBtn').html(soundEnabled ? '<i class="bi bi-volume-up-fill"></i>' : '<i class="bi bi-volume-mute-fill"></i>');
-        }
     }
     
     function setupWindowFocusTracking() {
@@ -1455,7 +1268,83 @@
         });
     }
     
+    async function init() {
+        initNotificationSound();
+        if (Notification.permission === "default") Notification.requestPermission();
+        
+        const savedInterval = localStorage.getItem('refreshInterval');
+        if (savedInterval) { currentRefreshInterval = parseInt(savedInterval); $('#refreshIntervalInput').val(currentRefreshInterval); }
+        
+        const savedBranch = getBranchFromStorage();
+        if (savedBranch) { 
+            branchCode = savedBranch; 
+            $('#branchCodeInput').val(branchCode); 
+            await loadMessages();
+        } else { 
+            $('#chatMessages').html(`<div class="text-center text-muted" style="padding:50px;"><i class="bi bi-chat-square-text" style="font-size:48px;"></i><h5>Welcome to NOC Chat</h5><p>Please enter your branch code.</p></div>`); 
+            $('#initialLoading').hide(); 
+            initialLoadDone = true; 
+        }
+        
+        $('#branchCodeInput').on('change', async function() { 
+            const nb = $(this).val().toUpperCase().trim(); 
+            if (isValidBranch(nb)) { 
+                branchCode = saveBranchToStorage(nb); 
+                initialLoadDone = false; 
+                $('#initialLoading').show(); 
+                await loadMessages();
+                Swal.fire({ icon:'success', title:'Branch Set', text:`Welcome ${branchCode}!`, toast:true, timer:2000, showConfirmButton:false });
+            } else if (nb) { 
+                Swal.fire('Invalid Format', 'Use BR1001 or ADMIN', 'warning'); 
+                $(this).val(branchCode || ''); 
+            } 
+        });
+        
+        $('#refreshIntervalInput').on('change', function() { 
+            const newVal = parseInt($(this).val()); 
+            if (!isNaN(newVal) && newVal>=1 && newVal<=59) { 
+                currentRefreshInterval = newVal; 
+                localStorage.setItem('refreshInterval', currentRefreshInterval); 
+                startAutoRefresh(); 
+            } 
+        });
+        
+        startAutoRefresh();
+        startHeartbeat();
+        setupMentionDetection();
+        setupWindowFocusTracking();
+        
+        $('#sendBtn').on('click', async () => { 
+            const msg = $('#messageInput').val(); 
+            if (replyingTo) await sendMessage(msg, replyingTo); 
+            else await sendMessage(msg); 
+        });
+        
+        $('#messageInput').on('keypress', function(e) { 
+            if (e.which === 13 && !e.shiftKey) { 
+                e.preventDefault(); 
+                $('#sendBtn').click(); 
+            } 
+        });
+        
+        $('#toggleToneBtn').on('click', function() { 
+            soundEnabled = !soundEnabled; 
+            $(this).html(soundEnabled ? '<i class="bi bi-volume-up-fill"></i>' : '<i class="bi bi-volume-mute-fill"></i>'); 
+            localStorage.setItem('soundEnabled', soundEnabled); 
+            Swal.fire('Notification', soundEnabled ? 'Sound enabled' : 'Sound disabled', 'info', { toast: true, timer: 1500 }); 
+        });
+        
+        const savedSound = localStorage.getItem('soundEnabled'); 
+        if (savedSound !== null) { 
+            soundEnabled = savedSound === 'true'; 
+            $('#toggleToneBtn').html(soundEnabled ? '<i class="bi bi-volume-up-fill"></i>' : '<i class="bi bi-volume-mute-fill"></i>'); 
+        }
+        
+        window.addEventListener('click', () => closeDropdown());
+    }
+    
     // Make functions globally accessible
+    window.showMessageMenu = showMessageMenu;
     window.startReply = startReply;
     window.cancelReply = cancelReply;
     window.quickMention = quickMention;
