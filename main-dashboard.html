@@ -349,7 +349,7 @@
             // Render the icon as actual HTML element
             const iconHtml = renderIcon(card.icon, card.textColor);
             const hasLink = card.link && card.link.trim() !== '';
-            const linkTarget = hasLink ? `href="${escapeHtml(card.link)}" target="_blank" rel="noopener noreferrer"` : '';
+            const linkTarget = hasLink ? `href="${escapeHtml(card.link)}" rel="noopener noreferrer"` : '';
             
             const rawCountValue = card.rawCount;
             const numericTarget = getNumericCount(rawCountValue);
