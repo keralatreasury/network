@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>NOC · User & Branch Login Directory</title>
+    <!-- LOCAL CSS & JS (using ./css and ./js paths) -->
+    <link rel="stylesheet" href="./css/bootstrap.min.css">
+    <link rel="stylesheet" href="./css/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="./css/dataTables.bootstrap5.min.css">
+   
+    <style>
+        :root {
+            --primary: #0f5b9c;
+            --primary-dark: #1a4b7a;
+            --primary-light: #e8f0fe;
+            --success: #10b981;
+            --danger: #ef4444;
+            --dark: #1e293b;
+            --light: #f8fafc;
+            --border: #e9ecef;
+        }
+        
+        body {
+            background: #f0f5fa;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            padding: 28px 24px;
+            color: var(--dark);
+        }
+        
+        .dashboard-container {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+        
+        .page-header {
+            background: white;
+            border-radius: 24px;
+            padding: 20px 28px;
+            margin-bottom: 28px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        
+        .title-section h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin: 0;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .title-section h1 i {
+            background: none;
+            color: var(--primary);
+        }
+        
+        .stats-badge {
+            display: flex;
+            gap: 20px;
+            background: var(--light);
+            padding: 8px 20px;
+            border-radius: 60px;
+            border: 1px solid var(--border);
+        }
+        
+        .stats-badge span {
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        
+        .stats-badge i {
+            margin-right: 6px;
+            color: var(--primary);
+        }
+        
+        .table-card {
+            background: white;
+            border-radius: 24px;
+            padding: 20px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.05);
+            border: 1px solid var(--border);
+            overflow-x: auto;
+        }
+        
+        .table thead th {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            font-weight: 600;
+            font-size: 0.85rem;
+            padding: 14px 12px;
+            white-space: nowrap;
+            border-bottom: none;
+        }
+        
+        .table td {
+            padding: 12px 12px;
+            vertical-align: middle;
+            font-size: 0.85rem;
+            color: #334155;
+        }
+        
+        .table tbody tr:hover {
+            background-color: #f8fafc;
+        }
+        
+        .branch-badge {
+            background: #e8f0fe;
+            color: var(--primary);
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 0.75rem;
+            font-family: monospace;
+            display: inline-block;
+        }
+        
+        .user-badge {
+            background: #e6f7e6;
+            color: #0b5e42;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-weight: 500;
+            font-size: 0.75rem;
+        }
+        
+        .login-time {
+            font-family: monospace;
+            font-size: 0.75rem;
+            color: #5b6e8c;
+        }
+        
+        .badge-active {
+            background-color: #10b981 !important;
+            padding: 5px 10px;
+            font-weight: 500;
+        }
+        
+        .badge-inactive {
+            background-color: #94a3b8 !important;
+        }
+        
+        .error-message {
+            background: #fee9e7;
+            color: var(--danger);
+            padding: 20px;
+            border-radius: 16px;
+            text-align: center;
+            border-left: 4px solid var(--danger);
+        }
+        
+        .dataTables_wrapper .dataTables_filter input {
+            border-radius: 30px;
+            padding: 6px 15px;
+            border: 1px solid var(--border);
+            background: white;
+        }
+        
+        .dataTables_wrapper .dataTables_length select {
+            border-radius: 20px;
+            padding: 4px 8px;
+        }
+        
+        @media (max-width: 768px) {
+            body { padding: 16px; }
+            .page-header { flex-direction: column; align-items: flex-start; }
+            .table-card { padding: 12px; }
+            .table td, .table th { padding: 8px 6px; font-size: 0.75rem; }
+        }
+        
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white !important;
+        }
+        
+        .spinner-sm {
+            width: 32px;
+            height: 32px;
+            border: 3px solid #e2e8f0;
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: inline-block;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .table td code {
+            background: #f1f5f9;
+            padding: 3px 8px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+        }
+    </style>
+</head>
+<body>
+<div class="dashboard-container">
+    <div class="page-header">
+        <div class="title-section">
+            <h1><i class="bi bi-people-fill"></i> User & Branch List</h1>
+        </div>
+        <div class="stats-badge">
+            <span><i class="bi bi-person-badge"></i> <span id="totalUsers">—</span> Users</span>
+            <span><i class="bi bi-building"></i> <span id="totalBranches">—</span> Branches</span>
+            <span><i class="bi bi-calendar-check"></i> <span id="activeToday">—</span> Logged in today</span>
+        </div>
+    </div>
+    
+    <div class="table-card">
+        <div id="tableLoader" style="text-align:center; padding:60px;">
+            <div class="spinner-sm"></div>
+            <p class="mt-3 text-muted">Loading login records from sheet...</p>
+        </div>
+        <div id="tableWrapper" style="display:none;">
+            <table id="loginTable" class="table table-hover" style="width:100%">
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>ID / Branch Code</th>
+                        <th>Name</th>
+                        <th>Menu Access</th>
+                        <th>Email ID</th>
+                        <th>Last Login</th>
+                        <th>Logged Today</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                </tbody>
+            </table>
+        </div>
+        <div id="errorContainer" style="display:none;"></div>
+    </div>
+</div>
+
+<script src="./js/jquery.min.js"></script>
+<script src="./js/bootstrap.bundle.min.js"></script>
+<script src="./js/jquery.dataTables.min.js"></script>
+<script src="./js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+
+<script>
+    const SPREADSHEET_ID = '1jd1xZe9x2mrZm5KAwGT12vMNYjbrnynsmelNKeK95jc';
+    const SHEET_NAME = 'Login';
+    const API_KEY = 'AIzaSyBB1V3vJpNZ9X1GIF-YOwoa6YSt_iXMLo0';
+    
+    let allRecords = [];
+    let dataTable = null;
+    
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+    
+    function getTodayDateComponents() {
+        const today = new Date();
+        // Returns { day, month, year } in numbers
+        return {
+            day: today.getDate(),
+            month: today.getMonth() + 1, // JS months are 0-indexed
+            year: today.getFullYear()
+        };
+    }
+    
+    // Parse Indian date format: dd/mm/yyyy
+    function parseIndianDate(dateStr) {
+        if (!dateStr || dateStr.trim() === '') return null;
+        const parts = dateStr.split('/');
+        if (parts.length === 3) {
+            const day = parseInt(parts[0], 10);
+            const month = parseInt(parts[1], 10);
+            const year = parseInt(parts[2], 10);
+            if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+                return { day, month, year };
+            }
+        }
+        return null;
+    }
+    
+    // Check if the timestamp (dd/mm/yyyy hh:mm:ss) is from today
+    function isLoginToday(timestampStr) {
+        if (!timestampStr || timestampStr.trim() === '') return false;
+        
+        // Timestamp format example: "14/05/2026 10:26:34"
+        const spaceIndex = timestampStr.indexOf(' ');
+        let dateStr = timestampStr;
+        if (spaceIndex !== -1) {
+            dateStr = timestampStr.substring(0, spaceIndex);
+        }
+        
+        const loginDate = parseIndianDate(dateStr);
+        if (!loginDate) return false;
+        
+        const today = getTodayDateComponents();
+        
+        return loginDate.day === today.day && 
+               loginDate.month === today.month && 
+               loginDate.year === today.year;
+    }
+    
+    function formatTimestamp(timestampStr) {
+        if (!timestampStr || timestampStr.trim() === '') return '—';
+        return timestampStr.toString().trim();
+    }
+    
+    function isBranch(code) {
+        if (!code) return false;
+        const upper = code.toString().trim().toUpperCase();
+        return upper.startsWith('BR') && /^BR\d+/.test(upper);
+    }
+    
+    function processLoginData(rows) {
+        if (!rows || rows.length < 2) return [];
+        
+        const records = [];
+        
+        for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            if (!row || row.length < 4) continue;
+            
+            const branchUser = row[0] ? row[0].toString().trim() : '';
+            const userId = row[1] ? row[1].toString().trim() : '';
+            const menuAccess = row[3] ? row[3].toString().trim() : '';
+            const email = row[4] ? row[4].toString().trim() : '';
+            const loginTimestamp = row[6] ? row[6].toString().trim() : '';
+            
+            if (branchUser === '' && userId === '') continue;
+            
+            const isBranchRecord = isBranch(branchUser) || isBranch(userId);
+            const displayCode = isBranchRecord ? (branchUser || userId) : (userId || branchUser);
+            const displayName = !isBranchRecord ? (branchUser || userId) : (branchUser || 'Branch User');
+            const type = isBranchRecord ? '🏢 Branch' : '👤 User';
+            const activeToday = isLoginToday(loginTimestamp);
+            
+            records.push({
+                type: type,
+                code: displayCode,
+                name: displayName,
+                menu: menuAccess || '—',
+                email: email || '—',
+                lastLogin: formatTimestamp(loginTimestamp),
+                activeToday: activeToday
+            });
+        }
+        
+        return records;
+    }
+    
+    function renderTable(records) {
+        const tbody = $('#tableBody');
+        tbody.empty();
+        
+        if (!records || records.length === 0) {
+            $('#tableWrapper').hide();
+            $('#tableLoader').hide();
+            $('#errorContainer').html('<div class="error-message"><i class="bi bi-info-circle"></i> No login records found in the sheet.</div>').show();
+            return;
+        }
+        
+        $('#errorContainer').hide();
+        
+        let userCount = 0;
+        let branchCount = 0;
+        let activeTodayCount = 0;
+        
+        records.forEach(rec => {
+            if (rec.type === '👤 User') userCount++;
+            else branchCount++;
+            if (rec.activeToday) activeTodayCount++;
+            
+            const statusBadge = rec.activeToday 
+                ? '<span class="badge badge-active"><i class="bi bi-check-circle-fill"></i> Yes</span>'
+                : '<span class="badge badge-inactive"><i class="bi bi-clock"></i> No</span>';
+            
+            const row = `
+                <tr>
+                    <td><span class="${rec.type === '👤 User' ? 'user-badge' : 'branch-badge'}">${rec.type}</span></td>
+                    <td><code>${escapeHtml(rec.code)}</code></td>
+                    <td><strong>${escapeHtml(rec.name)}</strong></div></td>
+                    <td><span class="badge bg-light text-dark">${escapeHtml(rec.menu)}</span></div></td>
+                    <td><small>${escapeHtml(rec.email)}</small></div></td>
+                    <td class="login-time">${rec.lastLogin !== '—' ? escapeHtml(rec.lastLogin) : '<span class="text-muted">—</span>'}</div></td>
+                    <td>${statusBadge}</div></td>
+                </tr>
+            `;
+            tbody.append(row);
+        });
+        
+        $('#totalUsers').text(userCount);
+        $('#totalBranches').text(branchCount);
+        $('#activeToday').text(activeTodayCount);
+        
+        if (dataTable) {
+            dataTable.clear();
+            dataTable.destroy();
+            dataTable = null;
+        }
+        
+        dataTable = $('#loginTable').DataTable({
+            pageLength: 25,
+            lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+            order: [[1, 'asc']],
+            language: {
+                search: "Search:",
+                searchPlaceholder: "Type name, branch, email...",
+                lengthMenu: "Show _MENU_ entries",
+                info: "Showing _START_ to _END_ of _TOTAL_ entries",
+                infoEmpty: "No entries",
+                paginate: {
+                    first: '<i class="bi bi-chevron-double-left"></i>',
+                    previous: '<i class="bi bi-chevron-left"></i>',
+                    next: '<i class="bi bi-chevron-right"></i>',
+                    last: '<i class="bi bi-chevron-double-right"></i>'
+                }
+            }
+        });
+        
+        $('#tableWrapper').show();
+        $('#tableLoader').hide();
+    }
+    
+    async function fetchLoginData() {
+        $('#tableLoader').show();
+        $('#tableWrapper').hide();
+        $('#errorContainer').hide();
+        
+        try {
+            const range = encodeURIComponent(`${SHEET_NAME}!A:G`);
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?key=${API_KEY}`;
+            
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            if (!data.values || data.values.length < 2) {
+                throw new Error('No login data found in the Login sheet');
+            }
+            
+            const records = processLoginData(data.values);
+            if (records.length === 0) {
+                throw new Error('No valid user/branch entries found');
+            }
+            
+            allRecords = records;
+            renderTable(allRecords);
+            
+        } catch (err) {
+            console.error('Sheet fetch error:', err);
+            $('#tableLoader').hide();
+            $('#errorContainer').html(`
+                <div class="error-message">
+                    <i class="bi bi-exclamation-triangle-fill fs-4"></i>
+                    <strong>Failed to load login directory</strong><br>
+                    ${escapeHtml(err.message)}<br>
+                    <small class="text-muted">Verify spreadsheet ID, API key, and sheet name "Login". Ensure read access is enabled.</small>
+                </div>
+            `).show();
+        }
+    }
+    
+    $(document).ready(function() {
+        fetchLoginData();
+    });
+    
+    window.addEventListener('beforeunload', function() {
+        if (dataTable) {
+            dataTable.destroy();
+        }
+    });
+</script>
+
+<style>
+    .badge-active {
+        background-color: #10b981 !important;
+        padding: 5px 10px;
+        font-weight: 500;
+        font-size: 0.7rem;
+    }
+    .badge-inactive {
+        background-color: #94a3b8 !important;
+        padding: 5px 10px;
+        font-weight: 500;
+        font-size: 0.7rem;
+    }
+    .badge.bg-light.text-dark {
+        background-color: #f1f5f9 !important;
+        color: #1e293b !important;
+        font-family: monospace;
+        font-size: 0.7rem;
+        font-weight: 500;
+    }
+    .table td code {
+        background: #f1f5f9;
+        padding: 3px 8px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+    }
+    .dataTables_filter input {
+        border-radius: 40px;
+        border: 1px solid #cbd5e1;
+        padding: 6px 16px;
+        width: 260px;
+    }
+    .dataTables_length select {
+        border-radius: 30px;
+        padding: 4px 24px 4px 12px;
+    }
+    .user-badge, .branch-badge {
+        font-size: 0.7rem;
+    }
+    .login-time {
+        font-family: monospace;
+        font-size: 0.72rem;
+    }
+</style>
+</body>
+</html>
