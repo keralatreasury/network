@@ -30,7 +30,7 @@
         }
         
         .dashboard-container {
-            max-width: 100%;
+            max-width:100%;
             margin: 0 auto;
         }
         
@@ -62,7 +62,6 @@
             font-size: 0.85rem;
         }
         
-        /* Tabs */
         .nav-tabs {
             border-bottom: 2px solid var(--border);
             margin-bottom: 25px;
@@ -88,7 +87,6 @@
             border-bottom: 3px solid var(--primary);
         }
         
-        /* Form Card */
         .form-card, .table-card {
             background: white;
             border-radius: 24px;
@@ -131,19 +129,10 @@
             transform: translateY(-1px);
         }
         
-        .btn-success {
-            background: var(--success);
-            border: none;
-            padding: 10px 24px;
-            border-radius: 40px;
-            font-weight: 500;
-        }
-        
         .btn-outline-secondary {
             border-radius: 40px;
         }
         
-        /* Table Styles */
         .table thead th {
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             color: white;
@@ -222,16 +211,33 @@
             body { padding: 16px; }
             .form-card, .table-card { padding: 18px; }
         }
+        
+        /* DataTables pagination styling */
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white !important;
+        }
+        
+        .dataTables_wrapper .dataTables_length select {
+            border-radius: 20px;
+            padding: 4px 8px;
+        }
+        
+        .dataTables_wrapper .dataTables_filter input {
+            border-radius: 30px;
+            padding: 6px 15px;
+            border: 1px solid var(--border);
+        }
     </style>
 </head>
 <body>
 <div class="dashboard-container">
     <div class="page-header">
         <h1><i class="bi bi-people"></i> User & Branch Management</h1>
-        
+        <p>Add new users or edit existing user</p>
     </div>
     
-    <!-- Tabs -->
     <ul class="nav nav-tabs" id="userTabs" role="tablist">
         <li class="nav-item" role="presentation">
             <button class="nav-link active" id="add-tab" data-bs-toggle="tab" data-bs-target="#addPanel" type="button" role="tab">
@@ -283,12 +289,12 @@
                         </div>
                         <div class="col-md-12">
                             <div class="alert alert-info small">
-                                <i class="bi bi-info-circle"></i> Password will be set by the user via "Forgot Password" or first login. Default credentials will be notified via email.
+                                <i class="bi bi-info-circle"></i> Password will be set by the user via "Forgot Password" or first login.
                             </div>
                         </div>
                         <div class="col-12">
                             <button type="submit" class="btn btn-primary" id="submitAddBtn">
-                                <i class="bi bi-save"></i> Add User 
+                                <i class="bi bi-save"></i> Add User
                             </button>
                             <button type="button" class="btn btn-outline-secondary ms-2" id="resetAddBtn">Reset</button>
                         </div>
@@ -341,12 +347,13 @@
             <div class="modal-body">
                 <form id="editUserForm">
                     <input type="hidden" id="editOriginalId">
+                    <input type="hidden" id="editRowIndex">
                     <div class="mb-3">
                         <label class="form-label">User ID (cannot change)</label>
                         <input type="text" class="form-control" id="editUserId" readonly disabled>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Display Name</label>
+                        <label class="form-label required">Display Name</label>
                         <input type="text" class="form-control" id="editName" required>
                     </div>
                     <div class="mb-3">
@@ -378,7 +385,6 @@
 <script src="./js/bootstrap.bundle.min.js"></script>
 <script src="./js/jquery.dataTables.min.js"></script>
 <script src="./js/dataTables.bootstrap5.min.js"></script>
-<script src="./js/dataTables.buttons.min.js"></script>
 
 <script>
     // ==================== CONFIGURATION ====================
@@ -386,18 +392,12 @@
     const SHEET_NAME = 'Login';
     const API_KEY = 'AIzaSyBB1V3vJpNZ9X1GIF-YOwoa6YSt_iXMLo0';
     
-    // Apps Script Web App URL (DO POST with no-cors mode, using google.script.run or fetch? But user asked "app script url with no cores method")
-    // Replace with YOUR Google Apps Script deployment URL that handles doPost()
+    // REPLACE WITH YOUR ACTUAL APPS SCRIPT URL
     const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw-aen0yqPxLuiqK3KDvt0fVLlr_VQBaQvdjzEwh0_9i14WCdsaoSaM0Ux8NBha_NAn/exec';
-    
-    // IMPORTANT: You must deploy your own Apps Script with doPost() to handle add/edit.
-    // For demo, we will use fetch with mode: 'no-cors' but actual update requires a valid script.
-    // Provide instructions to replace the URL.
     
     let usersDataTable = null;
     let allUsersData = [];
     
-    // Helper: show toast message
     function showMessage(message, type = 'success') {
         const alertDiv = $('<div class="alert alert-dismissible fade show alert-message" role="alert">' +
             '<i class="bi ' + (type === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle') + '"></i> ' + message +
@@ -410,7 +410,6 @@
         setTimeout(() => alertDiv.fadeOut(500, function() { $(this).remove(); }), 4000);
     }
     
-    // Fetch all users from Google Sheet (read-only for listing)
     async function fetchAllUsers() {
         try {
             const range = encodeURIComponent(`${SHEET_NAME}!A:G`);
@@ -453,10 +452,20 @@
         }
     }
     
-    // Render Edit Table
+    // Destroy DataTable properly
+    function destroyDataTable() {
+        if (usersDataTable) {
+            usersDataTable.destroy();
+            usersDataTable = null;
+        }
+        $('#usersTableBody').empty();
+    }
+    
+    // Load and render table
     async function loadEditTable() {
         $('#editTableLoader').show();
         $('#editTableWrapper').hide();
+        destroyDataTable();
         
         allUsersData = await fetchAllUsers();
         
@@ -468,40 +477,46 @@
         const tbody = $('#usersTableBody');
         tbody.empty();
         
-        allUsersData.forEach(user => {
+        allUsersData.forEach((user, idx) => {
             const typeLabel = user.type === 'branch' ? '<span class="badge bg-primary bg-opacity-10 text-primary">🏢 Branch</span>' : '<span class="badge bg-success bg-opacity-10 text-success">👤 User</span>';
             const row = `
                 <tr>
-                    <td>${typeLabel}</div></div></div></div></div></div>
+                    <td>${typeLabel}</div>
                     <td><code>${escapeHtml(user.userId)}</code></div>
                     <td>${escapeHtml(user.name)}</div>
                     <td><small>${escapeHtml(user.email)}</small></div>
                     <td><span class="badge bg-light text-dark">${escapeHtml(user.menu)}</span></div>
-                    <td><button class="edit-btn" data-id="${escapeHtml(user.userId)}" data-name="${escapeHtml(user.name)}" data-email="${escapeHtml(user.email)}" data-menu="${escapeHtml(user.menu)}" data-type="${user.type}"><i class="bi bi-pencil"></i> Edit</button></div>
+                    <td><button class="edit-btn" data-rowindex="${user.rowIndex}" data-id="${escapeHtml(user.userId)}" data-name="${escapeHtml(user.name)}" data-email="${escapeHtml(user.email)}" data-menu="${escapeHtml(user.menu)}" data-type="${user.type}"><i class="bi bi-pencil"></i> Edit</button></div>
                 </tr>
             `;
             tbody.append(row);
         });
         
-        if (usersDataTable) usersDataTable.destroy();
+        // Initialize DataTable with pagination (25 rows per page)
         usersDataTable = $('#usersTable').DataTable({
-            pageLength: -1,
+            pageLength: 25,
+            lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
             order: [[1, 'asc']],
-            language: { search: "Search:", lengthMenu: "Show _MENU_ entries" }
+            language: { 
+                search: "Search:", 
+                lengthMenu: "Show _MENU_ entries",
+                info: "Showing _START_ to _END_ of _TOTAL_ entries"
+            }
         });
         
         $('#editTableLoader').hide();
         $('#editTableWrapper').show();
         
-        // Attach edit button events
-        $('.edit-btn').on('click', function() {
+        // Use event delegation for edit buttons (works for all pages)
+        $('#usersTable').off('click', '.edit-btn').on('click', '.edit-btn', function() {
             const userId = $(this).data('id');
             const name = $(this).data('name');
             const email = $(this).data('email');
             const menu = $(this).data('menu');
-            const type = $(this).data('type');
+            const rowIndex = $(this).data('rowindex');
             
             $('#editOriginalId').val(userId);
+            $('#editRowIndex').val(rowIndex);
             $('#editUserId').val(userId);
             $('#editName').val(name);
             $('#editEmail').val(email);
@@ -510,11 +525,9 @@
         });
     }
     
-    // Function to call Apps Script (no-cors mode)
+    // Call Apps Script
     async function callAppsScript(action, data) {
         const payload = { action: action, data: data, sheetId: SPREADSHEET_ID };
-        // Using no-cors mode (limited response, but request will be sent)
-        // For production, you need to deploy an Apps Script web app with doPost()
         try {
             const response = await fetch(APPS_SCRIPT_URL, {
                 method: 'POST',
@@ -522,7 +535,6 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
-            // With no-cors, response is opaque, we can't read it. Assume success if no network error.
             return { success: true, message: 'Request sent to server.' };
         } catch (err) {
             console.error(err);
@@ -530,13 +542,12 @@
         }
     }
     
-    // Check if User ID already exists (for Add)
-    async function isUserIdExists(userId) {
+    async function isUserIdExists(userId, excludeUserId = null) {
         const users = await fetchAllUsers();
-        return users.some(u => u.userId.toLowerCase() === userId.toLowerCase());
+        return users.some(u => u.userId.toLowerCase() === userId.toLowerCase() && u.userId !== excludeUserId);
     }
     
-    // Add User (via Apps Script)
+    // ADD USER
     $('#addUserForm').on('submit', async function(e) {
         e.preventDefault();
         
@@ -551,13 +562,11 @@
             return;
         }
         
-        // Validate branch code format
         if (userType === 'branch' && !/^BR\d{4}$/i.test(userId)) {
             showMessage('Branch code should be format: BR0101, BR0201 etc.', 'warning');
             return;
         }
         
-        // Check duplicate
         const exists = await isUserIdExists(userId);
         if (exists) {
             showMessage('User ID already exists! Please use a different ID.', 'danger');
@@ -568,23 +577,23 @@
         const originalHtml = submitBtn.html();
         submitBtn.html('<span class="spinner-sm"></span> Processing...').prop('disabled', true);
         
-        // Prepare data for Apps Script (row structure: Branch/User, User ID, Password(blank), Menu, Email, OTP(blank), Login Time)
         const rowData = [
-            userType === 'branch' ? userId : name,  // Branch/User column
-            userId,                                   // User ID
-            '',                                       // Password (user sets later)
-            menu,                                     // Menu Access
-            email,                                    // Email
-            '',                                       // OTP
-            ''                                        // Login Timestamp
+            userType === 'branch' ? userId : name,
+            userId,
+            '',
+            menu,
+            email,
+            '',
+            ''
         ];
         
         const result = await callAppsScript('add', { row: rowData });
         
         if (result.success) {
-            showMessage('User added successfully! Password setup will be notified to user.', 'success');
+            showMessage('User added successfully!', 'success');
             $('#addUserForm')[0].reset();
-            if ($('#edit-tab').hasClass('active')) loadEditTable();
+            // Refresh the edit table if it's currently visible or will be shown
+            await loadEditTable();
         } else {
             showMessage('Error: ' + result.message, 'danger');
         }
@@ -592,9 +601,10 @@
         submitBtn.html(originalHtml).prop('disabled', false);
     });
     
-    // Edit User (via Apps Script)
+    // EDIT USER
     $('#confirmEditBtn').on('click', async function() {
         const originalId = $('#editOriginalId').val();
+        const rowIndex = $('#editRowIndex').val();
         const newName = $('#editName').val().trim();
         const newEmail = $('#editEmail').val().trim();
         const newMenu = $('#editMenu').val();
@@ -608,23 +618,8 @@
         const originalText = btn.html();
         btn.html('<span class="spinner-sm"></span> Saving...').prop('disabled', true);
         
-        // Find original record to locate row index
-        const users = await fetchAllUsers();
-        const targetUser = users.find(u => u.userId === originalId);
-        if (!targetUser) {
-            showMessage('User not found in sheet.', 'danger');
-            btn.html(originalText).prop('disabled', false);
-            $('#editModal').modal('hide');
-            return;
-        }
-        
-        const rowIndex = targetUser.rowIndex;
-        
-        // Prepare update data: we need to update columns B (User ID?), actually column mapping:
-        // Col A: Branch/User, Col B: User ID, Col D: Menu, Col E: Email, Col C: Password(keep), etc.
-        // We'll send updates for Name (A or B based on type) + Email + Menu
         const updateData = {
-            row: rowIndex,
+            row: parseInt(rowIndex),
             name: newName,
             email: newEmail,
             menu: newMenu,
@@ -636,7 +631,8 @@
         if (result.success) {
             showMessage('User details updated successfully!', 'success');
             $('#editModal').modal('hide');
-            await loadEditTable(); // refresh table
+            // Refresh the table completely
+            await loadEditTable();
         } else {
             showMessage('Update failed: ' + result.message, 'danger');
         }
@@ -644,9 +640,11 @@
         btn.html(originalText).prop('disabled', false);
     });
     
-    // Refresh table button
-    $('#refreshTableBtn').on('click', function() {
-        loadEditTable();
+    // Refresh button
+    $('#refreshTableBtn').on('click', async function() {
+        $(this).html('<i class="bi bi-arrow-repeat spinner-sm"></i>').prop('disabled', true);
+        await loadEditTable();
+        $(this).html('<i class="bi bi-arrow-repeat"></i> Refresh').prop('disabled', false);
     });
     
     $('#resetAddBtn').on('click', function() {
@@ -663,24 +661,13 @@
         });
     }
     
-    // Load edit table when tab is shown
-    $('#edit-tab').on('shown.bs.tab', function() {
-        if (!usersDataTable) loadEditTable();
+    // Load table when edit tab is shown
+    $('#edit-tab').on('shown.bs.tab', async function() {
+        await loadEditTable();
     });
     
-    // Initial load for edit tab data (preload)
+    // Initial load
     loadEditTable();
-    
-    // Important warning about Apps Script URL
-    if (APPS_SCRIPT_URL.includes('DUMMY_PLEASE_REPLACE')) {
-        console.warn('⚠️ Please replace APPS_SCRIPT_URL with your actual Google Apps Script Web App URL');
-        setTimeout(() => {
-            showMessage('⚠️ Setup Required: Replace APPS_SCRIPT_URL with your Apps Script deployment URL for add/edit to work.', 'warning');
-        }, 1000);
-    }
-    
-    // Instruction note in console
-    console.log('To enable add/edit: Deploy an Apps Script with doPost() that handles "add" and "edit" actions to modify the Login sheet.');
 </script>
 </body>
 </html>
