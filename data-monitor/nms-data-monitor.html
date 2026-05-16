@@ -132,21 +132,7 @@
         .compact-card h6 i {
             color: var(--primary);
         }
-         .iframe-wrapper {
-            background: #f8fafc;
-            border-radius: 16px;
-            border: 1px solid #e2e8f0;
-            overflow: hidden;
-            margin-top: 8px;
-        }
         
-        iframe {
-            width: 100%;
-            height: 520px;
-            border: none;
-            background: #fff;
-        }
-
         .form-label {
             font-weight: 600;
             color: #1e293b;
@@ -155,6 +141,11 @@
             display: flex;
             align-items: center;
             gap: 6px;
+        }
+        
+        .form-label i {
+            color: var(--primary);
+            font-size: 0.9rem;
         }
         
         .form-control, .form-select {
@@ -208,66 +199,216 @@
             background: rgba(15, 91, 156, 0.05);
         }
         
-        .global-date-section {
-            background: linear-gradient(135deg, #eef2ff 0%, #ffffff 100%);
-            border-radius: 20px;
-            padding: 16px 20px;
-            margin-bottom: 24px;
-            border: 1px solid #cbd5e1;
-        }
-        
-        .manual-table {
-            width: 100%;
-            border-collapse: collapse;
-            background: white;
+        .iframe-wrapper {
+            background: #f8fafc;
             border-radius: 16px;
+            border: 1px solid #e2e8f0;
             overflow: hidden;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            margin-top: 8px;
         }
         
-        .manual-table th {
-            background: #f1f5f9;
-            padding: 12px 12px;
-            font-size: 0.8rem;
+        iframe {
+            width: 100%;
+            height: 520px;
+            border: none;
+            background: #fff;
+        }
+        
+        .status-badge {
+            padding: 4px 14px;
+            border-radius: 40px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .status-running {
+            background: #e0f2fe;
+            color: #0369a1;
+        }
+        
+        .status-stopped {
+            background: #ffe4e2;
+            color: #b91c1c;
+        }
+        
+        .value-badge {
+            background: #eef2ff;
+            color: var(--primary);
+            padding: 6px 16px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .date-range-panel {
+            background: #f8fbfe;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 24px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .flatpickr-input {
+            background-color: #fff;
+            border-radius: 40px !important;
+            padding: 8px 18px !important;
+            font-size: 0.9rem;
+            border: 1px solid #e2e8f0;
+            width: 100%;
+        }
+        
+        .btn-generate {
+            background: linear-gradient(135deg, #0f5b9c, #1a4b7a);
+            border: none;
+            border-radius: 40px;
+            padding: 8px 28px;
+            font-weight: 600;
+            color: white;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-generate:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(15, 91, 156, 0.3);
+        }
+        
+        .chart-container {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 24px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        
+        .chart-header h6 {
+            margin: 0;
             font-weight: 700;
             color: #1e293b;
-            border-bottom: 2px solid #e2e8f0;
         }
         
-        .manual-table td {
-            padding: 10px 12px;
-            border-bottom: 1px solid #e9ecef;
-            vertical-align: middle;
-        }
-        
-        .manual-table input, .manual-table select {
-            width: 100%;
-            border-radius: 30px;
+        .btn-download-chart {
+            background: #f1f5f9;
             border: 1px solid #e2e8f0;
-            padding: 6px 12px;
-            font-size: 0.85rem;
+            border-radius: 40px;
+            padding: 6px 18px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #475569;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
         }
         
-        .delete-row-btn {
-            background: #fee2e2;
-            border: none;
-            border-radius: 30px;
-            padding: 5px 12px;
-            color: #b91c1c;
-            font-size: 0.75rem;
-            transition: 0.2s;
+        .btn-download-chart:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
         }
         
-        .delete-row-btn:hover {
-            background: #fecaca;
+        canvas {
+            max-height: 350px;
+            width: 100%;
         }
         
-        .action-buttons {
+        /* Stats Summary Cards */
+        .stats-summary {
             display: flex;
-            gap: 12px;
-            justify-content: flex-end;
-            margin-top: 20px;
+            gap: 20px;
             flex-wrap: wrap;
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid #e2e8f0;
+            justify-content: center;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+            border-radius: 20px;
+            padding: 16px 24px;
+            flex: 1;
+            min-width: 140px;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            border-color: var(--primary);
+        }
+        
+        .stat-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            font-weight: 700;
+            color: #64748b;
+            margin-bottom: 8px;
+        }
+        
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--primary);
+            line-height: 1.2;
+        }
+        
+        .stat-sub {
+            font-size: 0.7rem;
+            color: #94a3b8;
+            margin-top: 4px;
+        }
+        
+        .stat-card.success .stat-value { color: #10b981; }
+        .stat-card.warning .stat-value { color: #f59e0b; }
+        .stat-card.info .stat-value { color: #0f5b9c; }
+        
+        .dataTables_wrapper .dataTables_filter input,
+        .dataTables_wrapper .dataTables_length select {
+            border-radius: 40px;
+            padding: 6px 16px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .dataTables_wrapper .dataTables_filter input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(15, 91, 156, 0.1);
+        }
+        
+        .table thead th {
+            background: linear-gradient(135deg, #1a4b7a 0%, #1a4b7a 100%);
+            color: white;
+            font-weight: 500;
+            font-size: 0.85rem;
+            padding: 12px;
+        }
+        
+        .table td {
+            padding: 10px 12px;
+            vertical-align: middle;
+            font-size: 0.85rem;
         }
         
         .toast-notify {
@@ -292,6 +433,17 @@
             opacity: 1;
         }
         
+        .interval-group {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        
+        .interval-group > div {
+            flex: 1;
+            min-width: 80px;
+        }
+        
         .loading-spinner {
             display: inline-block;
             width: 1rem;
@@ -308,18 +460,31 @@
             100% { transform: rotate(360deg); }
         }
         
-        .global-date-label {
-            font-weight: 700;
-            color: var(--primary);
-            margin-right: 12px;
+        .dataTable thead th.sorting,
+        .dataTable thead th.sorting_asc,
+        .dataTable thead th.sorting_desc {
+            cursor: default;
+        }
+        
+        .dataTable thead th.sorting:before,
+        .dataTable thead th.sorting:after,
+        .dataTable thead th.sorting_asc:before,
+        .dataTable thead th.sorting_asc:after,
+        .dataTable thead th.sorting_desc:before,
+        .dataTable thead th.sorting_desc:after {
+            display: none !important;
         }
         
         @media (max-width: 768px) {
             body { padding: 12px; }
-            .manual-table th, .manual-table td { padding: 8px 6px; font-size: 0.75rem; }
-            .action-buttons { justify-content: center; }
+            iframe { height: 350px; }
+            .tab-content { padding: 16px !important; }
+            canvas { max-height: 250px; }
+            .stat-card { min-width: 120px; padding: 12px 16px; }
+            .stat-value { font-size: 1.3rem; }
         }
     </style>
+
 </head>
 <body>
 <div class="main-wrapper">
@@ -460,7 +625,7 @@
                         <button id="resetRowsBtn" class="btn-outline-custom"><i class="bi bi-arrow-repeat"></i> Reset</button>
                     </div>
                     <div class="mt-3 small text-muted">
-                      
+                        <i class="bi bi-info-circle"></i> <strong>Value formatting:</strong> If you don't add "%", it will be added automatically. Example: "85" → "85%", "92.5" → "92.5%". Each row submitted individually to Apps Script.
                     </div>
                 </div>
             </div>
