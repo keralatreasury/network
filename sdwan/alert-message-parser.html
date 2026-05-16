@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Network Monitoring - Alert Parser</title>
+    <title>Network Monitoring - Smart Alert Parser</title>
     <style>
         * {
             box-sizing: border-box;
@@ -19,7 +19,7 @@
             min-height: 100vh;
         }
         .container {
-            max-width: 800px;
+            max-width: 100%;
             width: 100%;
             background: white;
             border-radius: 20px;
@@ -128,17 +128,26 @@
             padding: 2px 8px;
             border-radius: 20px;
         }
+        .info-note {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 8px 12px;
+            margin-top: 12px;
+            font-size: 12px;
+            border-radius: 8px;
+            color: #856404;
+        }
     </style>
 </head>
 <body>
 <div class="container">
     <h2>📡 Network Alert Parser</h2>
     <p>Paste the email/alert content. The system will auto-detect fields: <strong>Message, Hostname, Resource name, Circuit ID, Event Time</strong>.<br>
-    <span class="status-badge"></span></p>
+    <span class="status-badge">🔧 Auto-fill: Missing Resource → eth2/eth1 | Missing Time → current timestamp</span></p>
 
     <div class="radio-group">
         <label>
-            <input type="radio" name="sheetTarget" value="Railtel" checked>Railtel
+            <input type="radio" name="sheetTarget" value="Railtel" checked> Railtel
         </label>
         <label>
             <input type="radio" name="sheetTarget" value="BSNL"> BSNL
@@ -146,7 +155,16 @@
     </div>
 
     <label for="emailText"><strong>✉️ Email / Alert Text:</strong></label>
-    <textarea id="emailText" rows="10" placeholder=''></textarea>
+    <textarea id="emailText" rows="10" placeholder='Example:
+Dear Railtel Team,
+
+Message: Link Down
+Hostname: BR0199
+Resource name: 
+Circuit ID: CKT-2234
+Event Time: 
+
+OR leave fields empty, parser will fill defaults.'></textarea>
 
     <div class="button-group">
         <button id="submitBtn">Submit</button>
@@ -155,6 +173,7 @@
 
     <div id="resultArea" class="result"></div>
     <div id="previewArea" class="preview" style="display: none;"></div>
+    <div id="infoNote" class="info-note" style="display: none;"></div>
 </div>
 
 <script>
@@ -179,8 +198,56 @@
         if (firstLine.match(/dear\s+bsnl\s+team/i)) return 'BSNL';
         return null; // not detected
     }
-
-    // Main parse function
+    
+    // Helper: Get current timestamp in mm/DD/yyyy, HH:MM:SS format (12-hour with AM/PM)
+    function getCurrentTimestampFormatted() {
+        const now = new Date();
+        // Month (mm) - getMonth returns 0-11, add 1 and pad with leading zero
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        // Day (DD)
+        const day = String(now.getDate()).padStart(2, '0');
+        // Year (yyyy)
+        const year = now.getFullYear();
+        
+        // Time part: HH:MM:SS with AM/PM
+        let hours = now.getHours();
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12;
+        hours = hours ? hours : 12; // convert hour '0' to '12'
+        const formattedHours = String(hours).padStart(2, '0');
+        
+        return `${month}/${day}/${year}, ${formattedHours}:${minutes}:${seconds} ${ampm}`;
+    }
+    
+    // Apply default rules based on selected sheet and current time
+    // This function takes parsed data and the active sheet name, returns enriched data with defaults filled.
+    function applyDefaultValues(parsedData, sheetName) {
+        // Make a copy to avoid mutation side effects if needed
+        let enriched = { ...parsedData };
+        
+        // 1. Rule for Resource name: if empty, set to "eth2" for Railtel, "eth1" for BSNL
+        if (!enriched.resourceName || enriched.resourceName.trim() === '') {
+            if (sheetName === 'Railtel') {
+                enriched.resourceName = 'eth2';
+                enriched._resourceDefaultApplied = true;
+            } else if (sheetName === 'BSNL') {
+                enriched.resourceName = 'eth1';
+                enriched._resourceDefaultApplied = true;
+            }
+        }
+        
+        // 2. Rule for Event Time: if empty, set current timestamp in mm/DD/yyyy, HH:MM:SS format
+        if (!enriched.eventTime || enriched.eventTime.trim() === '') {
+            enriched.eventTime = getCurrentTimestampFormatted();
+            enriched._timeDefaultApplied = true;
+        }
+        
+        return enriched;
+    }
+    
+    // Improved parse function that also attempts to capture more variants
     function parseAlert(emailBody) {
         // Default empty values
         let result = {
@@ -190,29 +257,33 @@
             circuitId: '',
             eventTime: ''
         };
-
-        // Try exact matches from known labels
+        
+        // Try exact matches from known labels (case insensitive)
         result.message = extractField(emailBody, 'Message');
         result.hostname = extractField(emailBody, 'Hostname');
         result.resourceName = extractField(emailBody, 'Resource name');
         result.circuitId = extractField(emailBody, 'Circuit ID');
         result.eventTime = extractField(emailBody, 'Event Time');
-
-        // Fallback: sometimes "Resource name" may be written as "Resource Name" — handled by case-insensitive
+        
+        // Fallback: sometimes "Resource name" may be written as "Resource Name" or "Resource"
         if (!result.resourceName) {
             result.resourceName = extractField(emailBody, 'Resource Name');
         }
-
-        // Additional: if Circuit ID shows "None", keep as "None"
+        if (!result.resourceName) {
+            result.resourceName = extractField(emailBody, 'Resource');
+        }
+        
+        // Additional: if Circuit ID shows "None" or empty, keep as is (we don't force default)
         if (!result.circuitId) result.circuitId = '';
         
-        // Event time fallback: try to find any date pattern if missing (optional)
+        // Event time fallback: try to find any date pattern if missing (optional but we'll still process later)
         if (!result.eventTime) {
+            // Look for patterns like "Jan 12, 2024 10:30 AM" or similar
             const dateRegex = /(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2},\s+\d{4}\s+\d{1,2}:\d{2}\s+(AM|PM)/i;
             const dateMatch = emailBody.match(dateRegex);
             if (dateMatch) result.eventTime = dateMatch[0];
         }
-
+        
         return result;
     }
 
@@ -234,6 +305,11 @@
         const previewDiv = document.getElementById('previewArea');
         previewDiv.style.display = 'none';
         previewDiv.innerHTML = '';
+        
+        // Hide info note
+        const infoNote = document.getElementById('infoNote');
+        infoNote.style.display = 'none';
+        infoNote.innerHTML = '';
         
         // Optional: Show a temporary reset confirmation
         resultDiv.style.display = 'block';
@@ -271,12 +347,30 @@
             });
             // With 'no-cors' we can't read response body reliably,
             // but we assume success if no network error. 
-            // Alternatively change to cors & proper response.
             return { success: true, message: 'Request sent. Check sheet for new row.' };
         } catch (error) {
             console.error('Submit error:', error);
             return { success: false, message: `Network error: ${error.message}` };
         }
+    }
+    
+    // Build preview HTML with highlight of auto-filled fields
+    function buildPreviewHTML(enrichedData, sheetName, resourceDefaultApplied, timeDefaultApplied) {
+        let resourceNote = '';
+        if (resourceDefaultApplied) {
+            resourceNote = ` <span style="background:#ffeaa7; padding:2px 6px; border-radius:12px; font-size:11px;">🔧 Auto-filled (${sheetName === 'Railtel' ? 'eth2' : 'eth1'})</span>`;
+        }
+        let timeNote = '';
+        if (timeDefaultApplied) {
+            timeNote = ` <span style="background:#ffeaa7; padding:2px 6px; border-radius:12px; font-size:11px;">⏱️ Auto-filled (current timestamp)</span>`;
+        }
+        
+        return `<strong>📋 Extracted Data (will send to ${sheetName}):</strong><br>
+        Message: ${enrichedData.message || '(empty)'}<br>
+        Hostname: ${enrichedData.hostname || '(empty)'}<br>
+        Resource name: ${enrichedData.resourceName || '(empty)'}${resourceNote}<br>
+        Circuit ID: ${enrichedData.circuitId || '(empty)'}<br>
+        Event Time: ${enrichedData.eventTime || '(empty)'}${timeNote}<br>`;
     }
 
     // Main click handler for submit
@@ -284,6 +378,7 @@
         const emailText = document.getElementById('emailText').value.trim();
         const resultDiv = document.getElementById('resultArea');
         const previewDiv = document.getElementById('previewArea');
+        const infoNote = document.getElementById('infoNote');
         
         if (!emailText) {
             resultDiv.className = 'result error';
@@ -291,8 +386,8 @@
             return;
         }
 
-        // 1. Parse fields
-        const parsed = parseAlert(emailText);
+        // 1. Parse fields from raw text
+        let parsed = parseAlert(emailText);
         
         // 2. Determine target sheet (radio button)
         let selectedSheet = document.querySelector('input[name="sheetTarget"]:checked').value;
@@ -305,31 +400,57 @@
             document.querySelector(`input[value="${detectedSheet}"]`).checked = true;
         }
         
-        // Validation: ensure at least Message or Hostname is present? optional
-        if (!parsed.message && !parsed.hostname) {
+        // 4. Apply default values for Resource name (if empty) and Event Time (if empty) based on selectedSheet
+        //    This uses the finalized sheet selection (either from radio or auto-detected)
+        const enrichedData = applyDefaultValues(parsed, selectedSheet);
+        
+        // Capture flags to display in preview
+        const resourceDefaultApplied = enrichedData._resourceDefaultApplied || false;
+        const timeDefaultApplied = enrichedData._timeDefaultApplied || false;
+        
+        // Clean up temporary flags (no need to send to sheet)
+        delete enrichedData._resourceDefaultApplied;
+        delete enrichedData._timeDefaultApplied;
+        
+        // Validation: ensure at least Message or Hostname is present? optional but better to have something
+        if (!enrichedData.message && !enrichedData.hostname) {
             resultDiv.className = 'result error';
             resultDiv.innerHTML = '⚠️ Could not extract "Message" or "Hostname". Ensure format like "Message: Link Down" and "Hostname: BR0199"';
             return;
         }
 
-        // Show preview before submit
+        // Show preview before submit with notes about default values
         previewDiv.style.display = 'block';
-        previewDiv.innerHTML = `<strong>📋 Extracted Data (will send to ${selectedSheet}):</strong><br>
-        Message: ${parsed.message || '(empty)'}<br>
-        Hostname: ${parsed.hostname || '(empty)'}<br>
-        Resource name: ${parsed.resourceName || '(empty)'}<br>
-        Circuit ID: ${parsed.circuitId || '(empty)'}<br>
-        Event Time: ${parsed.eventTime || '(empty)'}<br>`;
+        previewDiv.innerHTML = buildPreviewHTML(enrichedData, selectedSheet, resourceDefaultApplied, timeDefaultApplied);
+        
+        // Show additional info note if any defaults were applied
+        if (resourceDefaultApplied || timeDefaultApplied) {
+            let noteMessages = [];
+            if (resourceDefaultApplied) {
+                noteMessages.push(`⚙️ Resource name was empty → set to "${enrichedData.resourceName}" (based on ${selectedSheet} selection)`);
+            }
+            if (timeDefaultApplied) {
+                noteMessages.push(`⏰ Event Time was empty → set to current timestamp "${enrichedData.eventTime}"`);
+            }
+            infoNote.style.display = 'block';
+            infoNote.innerHTML = `<strong>ℹ️ Auto-fill applied:</strong><br> ${noteMessages.join('<br> ')}`;
+        } else {
+            infoNote.style.display = 'none';
+        }
         
         resultDiv.className = 'result';
         resultDiv.innerHTML = '⏳ Submitting to Google Sheet...';
         
-        // 4. Submit
-        const submitResult = await submitToSheet(selectedSheet, parsed);
+        // 5. Submit enriched data to Google Sheets
+        const submitResult = await submitToSheet(selectedSheet, enrichedData);
         
         if (submitResult.success) {
             resultDiv.className = 'result success';
-            resultDiv.innerHTML = `✅ Success! Data sent to "${selectedSheet}" sheet.<br> Row added: ${parsed.message} | ${parsed.hostname}`;
+            let defaultInfoText = '';
+            if (resourceDefaultApplied || timeDefaultApplied) {
+                defaultInfoText = ' (with auto-filled fields)';
+            }
+            resultDiv.innerHTML = `✅ Success! Data sent to "${selectedSheet}" sheet${defaultInfoText}.<br> ➤ ${enrichedData.message} | ${enrichedData.hostname} | Resource: ${enrichedData.resourceName} | Time: ${enrichedData.eventTime}`;
         } else {
             resultDiv.className = 'result error';
             resultDiv.innerHTML = `❌ Submission failed: ${submitResult.message}<br> Check Apps Script deployment & URL.`;
@@ -338,6 +459,24 @@
 
     // Reset button handler
     document.getElementById('resetBtn').addEventListener('click', resetForm);
+    
+    // Additional: Example default demo hint - populate example text for user testing
+    // (Optional but helpful: uncomment if you want to prefill with a sample that has empty fields)
+    // For better UX, we can add a small helper but not mandatory. 
+    // We'll also handle real-time radio change note (cosmetic)
+    const radioRailtel = document.querySelector('input[value="Railtel"]');
+    const radioBSNL = document.querySelector('input[value="BSNL"]');
+    function updateResourceHint() {
+        const selected = document.querySelector('input[name="sheetTarget"]:checked').value;
+        const resourceHint = selected === 'Railtel' ? 'eth2' : 'eth1';
+        const hintSpan = document.querySelector('.status-badge');
+        if (hintSpan) {
+            hintSpan.innerHTML = `🔧 Auto-fill: Missing Resource → ${resourceHint} | Missing Time → current timestamp (mm/dd/yyyy, HH:MM:SS)`;
+        }
+    }
+    radioRailtel.addEventListener('change', updateResourceHint);
+    radioBSNL.addEventListener('change', updateResourceHint);
+    updateResourceHint(); // set initial hint
 </script>
 </body>
 </html>
