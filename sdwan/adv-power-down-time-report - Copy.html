@@ -159,6 +159,24 @@
             outline: none;
             box-shadow: none;
         }
+        .radio-group-inline {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .radio-group-inline .form-check {
+            margin: 0;
+            padding-left: 18px;
+        }
+        .radio-group-inline .form-check-label {
+            font-size: 0.75rem;
+            margin-left: 2px;
+        }
+        .form-check-input {
+            width: 12px;
+            height: 12px;
+            margin-top: 2px;
+        }
         .summary-stats {
             background: linear-gradient(135deg, #e8f0fe 0%, #dbeafe 100%);
             border-radius: 12px;
@@ -238,11 +256,7 @@
             padding: 2px 8px;
             border-radius: 20px;
             font-size: 0.7rem;
-            display: inline-block;
         }
-        .badge-down { background-color: #ef4444; color: white; }
-        .badge-up { background-color: #10b981; color: white; }
-        .badge-ongoing { background-color: #f59e0b; color: white; }
         .datetime-display {
             font-family: monospace;
             font-size: 0.75rem;
@@ -251,8 +265,6 @@
             padding: 2px 8px;
             border-radius: 20px;
             font-size: 0.7rem;
-            background: #e8f0fe;
-            color: #0f5b9c;
         }
         .loading-overlay {
             position: fixed;
@@ -284,6 +296,10 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+        .filter-disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
         @media (max-width: 992px) {
             .filter-group { flex-direction: column; align-items: stretch; }
             .filter-item { justify-content: space-between; }
@@ -298,6 +314,7 @@
                     <i class="bi bi-graph-up"></i>
                     <div>
                         <h1>Power Down Hours Report Advanced</h1>
+                  
                     </div>
                 </div>
                 <div class="export-buttons">
@@ -387,7 +404,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr><td colspan="6" class="text-center py-3">Loading data...请稍等</td></tr>
+                            <tr><td colspan="6" class="text-center py-3">Select date range and click View</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -427,7 +444,6 @@
         let flatpickrFrom, flatpickrTo;
         let dataTable = null;
         let currentEventsData = [];
-        let currentFilterInfo = {};
         
         // ======================== UTILITY FUNCTIONS ========================
         function parseDMY(dateStr) {
@@ -478,21 +494,6 @@
             return parts.join(' ');
         }
         
-        function formatDurationLong(seconds) {
-            if (seconds < 0) seconds = 0;
-            if (seconds === 0) return "0 Seconds";
-            const days = Math.floor(seconds / 86400);
-            const hours = Math.floor((seconds % 86400) / 3600);
-            const minutes = Math.floor((seconds % 3600) / 60);
-            const secs = seconds % 60;
-            const parts = [];
-            if (days > 0) parts.push(`${days} day${days !== 1 ? 's' : ''}`);
-            if (hours > 0) parts.push(`${hours} hour${hours !== 1 ? 's' : ''}`);
-            if (minutes > 0) parts.push(`${minutes} minute${minutes !== 1 ? 's' : ''}`);
-            if (secs > 0 || parts.length === 0) parts.push(`${secs} second${secs !== 1 ? 's' : ''}`);
-            return parts.join(' ');
-        }
-        
         function formatDurationShort(seconds) {
             if (seconds < 0) seconds = 0;
             if (seconds === 0) return "0h";
@@ -508,14 +509,6 @@
         }
         
         function hideLoading() { $('#global-loading-overlay').remove(); }
-        
-        function destroyDataTable() {
-            if (dataTable) {
-                dataTable.destroy();
-                dataTable = null;
-            }
-            $('#downtimeTable tbody').empty();
-        }
 
         // ======================== FETCH & PROCESS ========================
         async function generateReport() {
@@ -529,12 +522,6 @@
             
             showLoading('Loading data...');
             
-            // Destroy existing DataTable before loading new data
-            destroyDataTable();
-            
-            // Hide summary and footer until data loads
-            $('#summaryStats, #totalFooter').hide();
-            
             const range = `${DATA_SHEET_NAME}!A:G`;
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${DATA_SHEET_ID}/values/${range}?key=${API_KEY}`;
             
@@ -544,7 +531,6 @@
                 
                 if (!data.values || data.values.length < 2) {
                     hideLoading();
-                    $('#downtimeTable tbody').html('<tr><td colspan="6" class="text-center py-3">No power data found</td></tr>');
                     Swal.fire({ icon: 'info', title: 'No Data', text: 'No power data found', confirmButtonColor: '#0f5b9c' });
                     return;
                 }
@@ -562,17 +548,6 @@
                 const toTimeStr = $('#toTime').val() || "17:15:00";
                 const fromTimeSec = (() => { const t = fromTimeStr.split(':'); return parseInt(t[0])*3600 + parseInt(t[1])*60 + parseInt(t[2]||0); })();
                 const toTimeSec = (() => { const t = toTimeStr.split(':'); return parseInt(t[0])*3600 + parseInt(t[1])*60 + parseInt(t[2]||0); })();
-                
-                // Store filter info for PDF
-                currentFilterInfo = {
-                    fromDate: fromDateStr,
-                    toDate: toDateStr,
-                    enableTime: enableTime,
-                    fromTime: fromTimeStr,
-                    toTime: toTimeStr,
-                    enableConfirm: enableConfirm,
-                    confirmStatus: confirmValue === 'all' ? 'All' : (confirmValue === 'confirmed' ? 'Confirmed (Yes)' : 'Not Confirmed (Blank)')
-                };
                 
                 let allRecords = [];
                 for (let i = startIdx; i < sheetRows.length; i++) {
@@ -656,7 +631,7 @@
                 $('#totalDowntime').text(formatDurationShort(totalDurationSeconds));
                 $('#ongoingIncidents').text(ongoingCount);
                 $('#summaryStats').show();
-                $('#totalDuration').text(formatDurationLong(totalDurationSeconds));
+                $('#totalDuration').text(formatDuration(totalDurationSeconds));
                 $('#totalFooter').show();
                 
                 renderTable(downtimeEvents);
@@ -668,77 +643,43 @@
             } catch (err) {
                 console.error(err);
                 hideLoading();
-                $('#downtimeTable tbody').html('<tr><td colspan="6" class="text-center py-3">Error loading data. Please check connection.</td></tr>');
                 Swal.fire({ icon: 'error', title: 'Error', text: 'Could not fetch data', confirmButtonColor: '#0f5b9c' });
             }
         }
 
         function renderTable(events) {
             const tbody = $("#downtimeTable tbody");
-            
-            // Clear and destroy existing DataTable
-            if (dataTable) {
-                dataTable.destroy();
-                dataTable = null;
-            }
-            tbody.empty();
-            
+            if (dataTable) { dataTable.destroy(); tbody.empty(); }
             if (events.length === 0) {
-                tbody.html('<tr><td colspan="6" class="text-center py-3">No events found</td></tr>');
+                tbody.html('<td><td colspan="6" class="text-center py-3">No events found</td></tr>');
                 return;
             }
-            
             let html = '';
             for (let i = 0; i < events.length; i++) {
                 const e = events[i];
-                let statusBadge = e.status === "Resolved" ? '<span class="badge-up">✓ Resolved</span>' : '<span class="badge-ongoing">⚠ Ongoing</span>';
-                let downDisplay = `<span class="badge-down">DOWN</span> ${e.downDate} ${e.downTime}`;
-                let upDisplay = e.upTime === "Ongoing" ? '<span class="badge-ongoing">?</span> No restoration' : `<span class="badge-up">UP</span> ${e.upDate} ${e.upTime}`;
-                let durationDisplay = e.status === "Resolved" ? `<span class="duration-badge">⏱ ${formatDuration(e.duration)}</span>` : '<span class="duration-badge">— Excluded</span>';
-                html += `<tr>
-                            <td>${i+1}</td>
-                            <td><strong>${escapeHtml(e.branch)}</strong></td>
-                            <td>${downDisplay}</td>
-                            <td>${upDisplay}</td>
-                            <td>${statusBadge}</td>
-                            <td>${durationDisplay}</td>
-                         </tr>`;
+                let statusBadge = e.status === "Resolved" ? `<span class="badge-up">✓ Resolved</span>` : `<span class="badge-ongoing">⚠ Ongoing</span>`;
+                let downDisplay = `<span class="badge-down" style="background:#ef4444; padding:2px 6px; border-radius:12px; font-size:0.65rem;">DOWN</span> ${e.downDate} ${e.downTime}`;
+                let upDisplay = e.upTime === "Ongoing" ? `<span class="badge-ongoing" style="background:#f59e0b; padding:2px 6px; border-radius:12px;">?</span> No restoration` : `<span class="badge-up" style="background:#10b981; padding:2px 6px; border-radius:12px;">UP</span> ${e.upDate} ${e.upTime}`;
+                let durationDisplay = e.status === "Resolved" ? `<span class="duration-badge">⏱ ${formatDuration(e.duration)}</span>` : `<span class="duration-badge">— Excluded</span>`;
+                html += `<tr><td>${i+1}</td><td><strong>${escapeHtml(e.branch)}</strong></td><td>${downDisplay}</td><td>${upDisplay}</td><td>${statusBadge}</td><td>${durationDisplay}</td></tr>`;
             }
             tbody.html(html);
-            
-            // Initialize new DataTable
-            dataTable = $("#downtimeTable").DataTable({ 
-                paging: false, 
-                searching: true, 
-                ordering: true, 
-                info: true, 
-                language: { 
-                    search: "Filter:", 
-                    info: "Showing _START_ to _END_ of _TOTAL_ entries" 
-                },
-                destroy: true
-            });
+            dataTable = $("#downtimeTable").DataTable({ paging: false, searching: true, ordering: true, info: true, language: { search: "Filter:", info: "Showing _START_ to _END_ of _TOTAL_" } });
         }
 
-        function escapeHtml(str) { 
-            if (!str) return ''; 
-            return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m])); 
-        }
+        function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m])); }
 
         // ======================== EXPORTS ========================
         function getExportData() {
             return currentEventsData.map((e, i) => ({
-                "#": i+1, 
-                "Treasury": e.branch, 
-                "Down Time": `${e.downDate} ${e.downTime}`,
+                "#": i+1, "Treasury": e.branch, "Down Time": `${e.downDate} ${e.downTime}`,
                 "Up Time": e.upTime === "Ongoing" ? "No Up Record" : `${e.upDate} ${e.upTime}`,
-                "Status": e.status, 
-                "Duration": e.status === "Resolved" ? formatDuration(e.duration) : "Excluded"
+                "Status": e.status, "Duration": e.status === "Resolved" ? formatDuration(e.duration) : "Excluded"
             }));
         }
         
         function exportToExcel() {
-            if (!currentEventsData.length) { Swal.fire('No Data', 'No data to export', 'info'); return; }
+            if (!currentEventsData.length) { Swal.fire('No Data', '', 'info'); return; }
             const ws = XLSX.utils.json_to_sheet(getExportData());
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Downtime_Report");
@@ -746,77 +687,20 @@
         }
         
         function exportToCSV() {
-            if (!currentEventsData.length) { Swal.fire('No Data', 'No data to export', 'info'); return; }
+            if (!currentEventsData.length) { Swal.fire('No Data', '', 'info'); return; }
             const csv = XLSX.utils.sheet_to_csv(XLSX.utils.json_to_sheet(getExportData()));
             saveAs(new Blob(["\uFEFF" + csv], {type:"text/csv;charset=utf-8"}), `downtime_${new Date().toISOString().slice(0,10)}.csv`);
         }
         
         function exportToPDF() {
-            if (!currentEventsData.length) { Swal.fire('No Data', 'No data to export', 'info'); return; }
+            if (!currentEventsData.length) { Swal.fire('No Data', '', 'info'); return; }
             const { jsPDF } = window.jspdf;
-            // Use portrait orientation
-            const doc = new jsPDF({ orientation: 'portrait', unit: 'mm' });
-            
-            const tableData = currentEventsData.map((e, i) => [
-                i+1, 
-                e.branch, 
-                `${e.downDate} ${e.downTime}`, 
-                e.upTime === "Ongoing" ? "Missing" : `${e.upDate} ${e.upTime}`, 
-                e.status, 
-                e.status === "Resolved" ? formatDuration(e.duration) : "Excluded"
-            ]);
-            
-            // Calculate total resolved duration
-            const totalResolvedSecs = currentEventsData.filter(e => e.status === "Resolved").reduce((s, e) => s + e.duration, 0);
-            
-            // Header with title
-            doc.setFontSize(16);
-            doc.text("Power Down Hours Report", 14, 15);
-            
-            // Filter criteria section
-            doc.setFontSize(9);
-            let yPos = 25;
-            doc.text(`Period: ${currentFilterInfo.fromDate || $('#fromDate').val()} to ${currentFilterInfo.toDate || $('#toDate').val()}`, 14, yPos);
-            yPos += 6;
-            
-            if (currentFilterInfo.enableTime) {
-                doc.text(`Time Filter: ${currentFilterInfo.fromTime} - ${currentFilterInfo.toTime} (24h)`, 14, yPos);
-                yPos += 6;
-            }
-            
-            if (currentFilterInfo.enableConfirm) {
-                doc.text(`Confirmation Filter: ${currentFilterInfo.confirmStatus}`, 14, yPos);
-                yPos += 6;
-            }
-            
-            doc.text(`Note: Only resolved incidents (with Up timestamp) contribute to total downtime.`, 14, yPos + 3);
-            
-            // AutoTable
-            doc.autoTable({ 
-                head: [["#", "Treasury", "Down Time", "Up Time", "Status", "Duration"]], 
-                body: tableData, 
-                startY: yPos + 10, 
-                theme: 'striped', 
-                headStyles: { fillColor: [15, 91, 156], textColor: 255 },
-                columnStyles: {
-                    0: { cellWidth: 10 },
-                    1: { cellWidth: 35 },
-                    2: { cellWidth: 35 },
-                    3: { cellWidth: 35 },
-                    4: { cellWidth: 20 },
-                    5: { cellWidth: 25 }
-                }
-            });
-            
-            const finalY = doc.lastAutoTable.finalY + 8;
-            doc.setFontSize(10);
-            doc.text(`Total Downtime (Resolved incidents only): ${formatDurationLong(totalResolvedSecs)}`, 14, finalY);
-            
-            // Add footer with generation date
-            doc.setFontSize(8);
-            doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, doc.internal.pageSize.height - 10);
-            
-            doc.save(`downtime_report_${new Date().toISOString().slice(0,10)}.pdf`);
+            const doc = new jsPDF({ orientation: 'landscape', unit: 'mm' });
+            const tableData = currentEventsData.map((e, i) => [i+1, e.branch, `${e.downDate} ${e.downTime}`, e.upTime==="Ongoing"?"Missing":`${e.upDate} ${e.upTime}`, e.status, e.status==="Resolved"?formatDuration(e.duration):"Excluded"]);
+            doc.setFontSize(12); doc.text("Power Down Report", 14, 12);
+            doc.setFontSize(8); doc.text(`Period: ${$('#fromDate').val()} to ${$('#toDate').val()}`, 14, 20);
+            doc.autoTable({ head: [["#","Treasury","Down Time","Up Time","Status","Duration"]], body: tableData, startY: 25, theme: 'striped', headStyles: { fillColor: [15,91,156] } });
+            doc.save(`downtime_${new Date().toISOString().slice(0,10)}.pdf`);
         }
 
         // ======================== DATE & FILTER CONTROLS ========================
@@ -842,37 +726,25 @@
             setDefaultDates();
             $('#enableTimeFilter').on('change', toggleTimeFilter);
             $('#enableConfirmFilter').on('change', toggleConfirmFilter);
-            
-            // View button click - always fetch fresh data
-            $('#generateReportBtn').on('click', function() {
+            $('#generateReportBtn, #currentMonthBtn, #previousMonthBtn').on('click', function() {
+                if (this.id === 'currentMonthBtn') {
+                    const now = new Date();
+                    flatpickrFrom.setDate(new Date(now.getFullYear(), now.getMonth(), 1));
+                    flatpickrTo.setDate(new Date(now.getFullYear(), now.getMonth() + 1, 0));
+                } else if (this.id === 'previousMonthBtn') {
+                    const now = new Date();
+                    flatpickrFrom.setDate(new Date(now.getFullYear(), now.getMonth() - 1, 1));
+                    flatpickrTo.setDate(new Date(now.getFullYear(), now.getMonth(), 0));
+                }
                 generateReport();
             });
-            
-            // Month buttons
-            $('#currentMonthBtn').on('click', function() {
-                const now = new Date();
-                flatpickrFrom.setDate(new Date(now.getFullYear(), now.getMonth(), 1));
-                flatpickrTo.setDate(new Date(now.getFullYear(), now.getMonth() + 1, 0));
-                generateReport();
+            $('#exportExcelBtn, #exportCsvBtn, #exportPdfBtn').on('click', function() {
+                if (this.id === 'exportExcelBtn') exportToExcel();
+                else if (this.id === 'exportCsvBtn') exportToCSV();
+                else exportToPDF();
             });
-            
-            $('#previousMonthBtn').on('click', function() {
-                const now = new Date();
-                flatpickrFrom.setDate(new Date(now.getFullYear(), now.getMonth() - 1, 1));
-                flatpickrTo.setDate(new Date(now.getFullYear(), now.getMonth(), 0));
-                generateReport();
-            });
-            
-            // Export buttons
-            $('#exportExcelBtn').on('click', exportToExcel);
-            $('#exportCsvBtn').on('click', exportToCSV);
-            $('#exportPdfBtn').on('click', exportToPDF);
-            
-            // Initialize filter states
             toggleTimeFilter();
             toggleConfirmFilter();
-            
-            // Initial load
             setTimeout(() => generateReport(), 300);
         });
     </script>
