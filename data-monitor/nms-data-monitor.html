@@ -143,11 +143,6 @@
             gap: 6px;
         }
         
-        .form-label i {
-            color: var(--primary);
-            font-size: 0.9rem;
-        }
-        
         .form-control, .form-select {
             border-radius: 40px;
             border: 1px solid #e2e8f0;
@@ -199,216 +194,66 @@
             background: rgba(15, 91, 156, 0.05);
         }
         
-        .iframe-wrapper {
-            background: #f8fafc;
+        .global-date-section {
+            background: linear-gradient(135deg, #eef2ff 0%, #ffffff 100%);
+            border-radius: 20px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+            border: 1px solid #cbd5e1;
+        }
+        
+        .manual-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
             border-radius: 16px;
-            border: 1px solid #e2e8f0;
             overflow: hidden;
-            margin-top: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
         
-        iframe {
-            width: 100%;
-            height: 520px;
-            border: none;
-            background: #fff;
-        }
-        
-        .status-badge {
-            padding: 4px 14px;
-            border-radius: 40px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-        
-        .status-running {
-            background: #e0f2fe;
-            color: #0369a1;
-        }
-        
-        .status-stopped {
-            background: #ffe4e2;
-            color: #b91c1c;
-        }
-        
-        .value-badge {
-            background: #eef2ff;
-            color: var(--primary);
-            padding: 6px 16px;
-            border-radius: 40px;
-            font-weight: 600;
-            font-size: 0.85rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .date-range-panel {
-            background: #f8fbfe;
-            border-radius: 20px;
-            padding: 20px;
-            margin-bottom: 24px;
-            border: 1px solid #e2e8f0;
-        }
-        
-        .flatpickr-input {
-            background-color: #fff;
-            border-radius: 40px !important;
-            padding: 8px 18px !important;
-            font-size: 0.9rem;
-            border: 1px solid #e2e8f0;
-            width: 100%;
-        }
-        
-        .btn-generate {
-            background: linear-gradient(135deg, #0f5b9c, #1a4b7a);
-            border: none;
-            border-radius: 40px;
-            padding: 8px 28px;
-            font-weight: 600;
-            color: white;
-            transition: 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .btn-generate:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(15, 91, 156, 0.3);
-        }
-        
-        .chart-container {
-            background: #ffffff;
-            border-radius: 20px;
-            padding: 20px;
-            margin-bottom: 24px;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-        }
-        
-        .chart-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 12px;
-        }
-        
-        .chart-header h6 {
-            margin: 0;
+        .manual-table th {
+            background: #f1f5f9;
+            padding: 12px 12px;
+            font-size: 0.8rem;
             font-weight: 700;
             color: #1e293b;
+            border-bottom: 2px solid #e2e8f0;
         }
         
-        .btn-download-chart {
-            background: #f1f5f9;
-            border: 1px solid #e2e8f0;
-            border-radius: 40px;
-            padding: 6px 18px;
-            font-size: 0.8rem;
-            font-weight: 500;
-            color: #475569;
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-        
-        .btn-download-chart:hover {
-            background: var(--primary);
-            border-color: var(--primary);
-            color: white;
-        }
-        
-        canvas {
-            max-height: 350px;
-            width: 100%;
-        }
-        
-        /* Stats Summary Cards */
-        .stats-summary {
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-            margin-top: 20px;
-            padding-top: 16px;
-            border-top: 1px solid #e2e8f0;
-            justify-content: center;
-        }
-        
-        .stat-card {
-            background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
-            border-radius: 20px;
-            padding: 16px 24px;
-            flex: 1;
-            min-width: 140px;
-            text-align: center;
-            border: 1px solid #e2e8f0;
-            transition: all 0.2s;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-        }
-        
-        .stat-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-            border-color: var(--primary);
-        }
-        
-        .stat-label {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            font-weight: 700;
-            color: #64748b;
-            margin-bottom: 8px;
-        }
-        
-        .stat-value {
-            font-size: 1.8rem;
-            font-weight: 800;
-            color: var(--primary);
-            line-height: 1.2;
-        }
-        
-        .stat-sub {
-            font-size: 0.7rem;
-            color: #94a3b8;
-            margin-top: 4px;
-        }
-        
-        .stat-card.success .stat-value { color: #10b981; }
-        .stat-card.warning .stat-value { color: #f59e0b; }
-        .stat-card.info .stat-value { color: #0f5b9c; }
-        
-        .dataTables_wrapper .dataTables_filter input,
-        .dataTables_wrapper .dataTables_length select {
-            border-radius: 40px;
-            padding: 6px 16px;
-            border: 1px solid #e2e8f0;
-        }
-        
-        .dataTables_wrapper .dataTables_filter input:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 2px rgba(15, 91, 156, 0.1);
-        }
-        
-        .table thead th {
-            background: linear-gradient(135deg, #1a4b7a 0%, #1a4b7a 100%);
-            color: white;
-            font-weight: 500;
-            font-size: 0.85rem;
-            padding: 12px;
-        }
-        
-        .table td {
+        .manual-table td {
             padding: 10px 12px;
+            border-bottom: 1px solid #e9ecef;
             vertical-align: middle;
+        }
+        
+        .manual-table input, .manual-table select {
+            width: 100%;
+            border-radius: 30px;
+            border: 1px solid #e2e8f0;
+            padding: 6px 12px;
             font-size: 0.85rem;
+        }
+        
+        .delete-row-btn {
+            background: #fee2e2;
+            border: none;
+            border-radius: 30px;
+            padding: 5px 12px;
+            color: #b91c1c;
+            font-size: 0.75rem;
+            transition: 0.2s;
+        }
+        
+        .delete-row-btn:hover {
+            background: #fecaca;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 20px;
+            flex-wrap: wrap;
         }
         
         .toast-notify {
@@ -433,17 +278,6 @@
             opacity: 1;
         }
         
-        .interval-group {
-            display: flex;
-            gap: 16px;
-            flex-wrap: wrap;
-        }
-        
-        .interval-group > div {
-            flex: 1;
-            min-width: 80px;
-        }
-        
         .loading-spinner {
             display: inline-block;
             width: 1rem;
@@ -460,28 +294,16 @@
             100% { transform: rotate(360deg); }
         }
         
-        .dataTable thead th.sorting,
-        .dataTable thead th.sorting_asc,
-        .dataTable thead th.sorting_desc {
-            cursor: default;
-        }
-        
-        .dataTable thead th.sorting:before,
-        .dataTable thead th.sorting:after,
-        .dataTable thead th.sorting_asc:before,
-        .dataTable thead th.sorting_asc:after,
-        .dataTable thead th.sorting_desc:before,
-        .dataTable thead th.sorting_desc:after {
-            display: none !important;
+        .global-date-label {
+            font-weight: 700;
+            color: var(--primary);
+            margin-right: 12px;
         }
         
         @media (max-width: 768px) {
             body { padding: 12px; }
-            iframe { height: 350px; }
-            .tab-content { padding: 16px !important; }
-            canvas { max-height: 250px; }
-            .stat-card { min-width: 120px; padding: 12px 16px; }
-            .stat-value { font-size: 1.3rem; }
+            .manual-table th, .manual-table td { padding: 8px 6px; font-size: 0.75rem; }
+            .action-buttons { justify-content: center; }
         }
     </style>
 </head>
@@ -490,8 +312,8 @@
     <div class="page-header d-flex align-items-center">
         <i class="bi bi-graph-up me-3"></i>
         <div>
-            <h2 class="mb-0">NMS Data Monitor- Logs</h2>
-                   </div>
+            <h2 class="mb-0">NMS Data Monitor - Logs</h2>
+        </div>
     </div>
 
     <div class="card-db">
@@ -507,8 +329,8 @@
                 </button>
             </li>
             <li class="nav-item">
-                <button class="nav-link" id="auto-tab" data-bs-toggle="tab" data-bs-target="#autoPane">
-                    <i class="bi bi-robot"></i> Auto Monitoring
+                <button class="nav-link " id="manualBackdate-tab" data-bs-toggle="tab" data-bs-target="#manualBackdatePane">
+                    <i class="bi bi-calendar-plus"></i> Manual Backdate
                 </button>
             </li>
             <li class="nav-item">
@@ -568,7 +390,6 @@
                         <button id="showPageBtn" class="btn-primary-custom"><i class="bi bi-play-fill"></i> Load</button>
                     </div>
                 </div>
-                
                 <div class="iframe-wrapper">
                     <div class="d-flex justify-content-between align-items-center p-2 border-bottom bg-light">
                         <div><span id="frameStatus" class="badge bg-secondary">Not loaded</span></div>
@@ -576,48 +397,56 @@
                     </div>
                     <iframe id="targetIframe" src="about:blank" title="Target Webpage" sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-modals allow-top-navigation-by-user-activation"></iframe>
                 </div>
-                
                 <div class="compact-card mt-3">
                     <h6><i class="bi bi-pencil-square"></i> Manual Value Entry</h6>
                     <div class="input-group">
                         <input type="text" id="manualValue" class="form-control" placeholder="Paste any value to log manually">
                         <button id="logManualValueBtn" class="btn-primary-custom">Add Log</button>
                     </div>
-                    <small class="text-muted">Use when auto-extraction fails due to cross-origin restrictions</small>
                     <div class="mt-2 text-end"><span id="lastValueDisplayManual" class="value-badge"><i class="bi bi-graph-up"></i> Last logged: —</span></div>
                 </div>
             </div>
 
-            <!-- AUTO MONITORING TAB -->
-            <div class="tab-pane fade" id="autoPane" role="tabpanel">
+            <!-- MANUAL BACKDATE DETAILS TAB - GLOBAL DATE PICKER -->
+            <div class="tab-pane fade " id="manualBackdatePane" role="tabpanel">
                 <div class="compact-card">
-                    <h6><i class="bi bi-code-square"></i> CSS Selector for Auto Extraction</h6>
-                    <div class="d-flex gap-2">
-                        <input type="text" id="autoSelector" class="form-control" value="CPU Utilization" placeholder="e.g., .price, #memory-value">
-                        <button id="testExtractBtn" class="btn-outline-custom">Test Extract</button>
+                    <h6><i class="bi bi-calendar-week"></i> Manual Backdate Record Submission</h6>
+                    <p class="small text-muted">Set a global date once, then add multiple rows with different times and values. All rows share the same date.</p>
+                    
+                    <!-- Global Date Picker Section -->
+                    <div class="global-date-section">
+                        <div class="row align-items-center">
+                            <div class="col-md-4">
+                                <label class="form-label"><i class="bi bi-calendar-fill"></i> Global Date (applies to all rows)</label>
+                                <input type="text" id="globalDatePicker" class="form-control flatpickr-input" placeholder="DD/MM/YYYY">
+                            </div>
+                            <div class="col-md-8">
+                                <div class="alert alert-info mb-0 py-2">
+                                    <i class="bi bi-info-circle-fill"></i> This date will be used for ALL rows below. Each row has its own time.
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <small class="text-muted">Element value will be auto-captured at each interval</small>
-                </div>
-                
-                <div class="compact-card">
-                    <h6><i class="bi bi-clock-history"></i> Monitoring Interval</h6>
-                    <div class="interval-group">
-                        <div><label class="small">Days</label><input type="number" id="intervalDays" class="form-control" min="0" value="0" step="1"></div>
-                        <div><label class="small">Hours</label><input type="number" id="intervalHours" class="form-control" min="0" max="23" value="0" step="1"></div>
-                        <div><label class="small">Minutes</label><input type="number" id="intervalMinutes" class="form-control" min="1" value="5" step="1"></div>
+                    
+                    <!-- Data Entry Table -->
+                    <div class="table-responsive">
+                        <table class="manual-table" id="backdateTable">
+                            <thead>
+                                <tr><th style="width: 20%">Time (HH:MM)</th><th style="width: 35%">Element / Selector</th><th style="width: 35%">Value (auto adds %)</th><th style="width: 10%">Action</th></tr>
+                            </thead>
+                            <tbody id="backdateTableBody">
+                                <!-- dynamic rows will appear here -->
+                            </tbody>
+                        </table>
                     </div>
-                </div>
-                
-                <div class="compact-card">
-                    <div class="d-flex gap-2 flex-wrap align-items-center">
-                        <button id="startAutoBtn" class="btn-primary-custom"><i class="bi bi-play-fill"></i> Start Monitoring</button>
-                        <button id="pauseAutoBtn" class="btn-outline-custom" disabled><i class="bi bi-pause-fill"></i> Pause</button>
-                        <button id="stopAutoBtn" class="btn-outline-custom" disabled><i class="bi bi-stop-fill"></i> Stop</button>
-                        <span id="autoStatusBadge" class="status-badge status-stopped"><i class="bi bi-stop-circle"></i> Stopped</span>
+                    
+                    <div class="action-buttons">
+                        <button id="addRowBtn" class="btn-primary-custom"><i class="bi bi-plus-circle"></i> Add Row</button>
+                        <button id="submitAllBtn" class="btn-primary-custom" style="background: #10b981;"><i class="bi bi-cloud-upload"></i> Submit All (One by One)</button>
+                        <button id="resetRowsBtn" class="btn-outline-custom"><i class="bi bi-arrow-repeat"></i> Reset</button>
                     </div>
-                    <div class="mt-3 pt-2 border-top">
-                        <span id="lastAutoValue" class="value-badge"><i class="bi bi-graph-up"></i> Last captured: —</span>
-                        <span id="nextRunInfo" class="small text-muted ms-3"></span>
+                    <div class="mt-3 small text-muted">
+                        <i class="bi bi-info-circle"></i> <strong>Value formatting:</strong> If you don't add "%", it will be added automatically. Example: "85" → "85%", "92.5" → "92.5%". Each row submitted individually to Apps Script.
                     </div>
                 </div>
             </div>
@@ -638,96 +467,52 @@
                             <button id="generateReportBtn" class="btn-generate w-100"><i class="bi bi-file-earmark-bar-graph"></i> Generate</button>
                         </div>
                     </div>
-                    <div class="row mt-3">
-                        <div class="col-12">
-                            <small class="text-muted"><i class="bi bi-info-circle"></i> Filter logs by date range. Graphical representation shows value trends over time.</small>
-                        </div>
-                    </div>
                 </div>
                 
-                <!-- Graphical Representation Section -->
                 <div class="chart-container" id="chartSection" style="display: none;">
                     <div class="chart-header">
                         <h6><i class="bi bi-bar-chart-steps"></i>Captured Log Trend Analysis</h6>
-                        <button id="downloadChartBtn" class="btn-download-chart"><i class="bi bi-camera"></i> Download Graph (PNG)</button>
+                        <button id="downloadChartBtn" class="btn-download-chart"><i class="bi bi-camera"></i> Download Graph</button>
                     </div>
-                    <canvas id="trendChart" width="400" height="200" style="max-height: 350px; width: 100%;"></canvas>
-                    
-                    <!-- Statistics Summary Cards (No Sum) -->
+                    <canvas id="trendChart" width="400" height="200" style="max-height: 350px;"></canvas>
                     <div class="stats-summary" id="statsSummary">
-                        <div class="stat-card info">
-                            <div class="stat-label"><i class="bi bi-database"></i> Total Records</div>
-                            <div class="stat-value" id="statCount">0</div>
-                            <div class="stat-sub">entries</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label"><i class="bi bi-calculator"></i> Average Value</div>
-                            <div class="stat-value" id="statAvg">0.00</div>
-                            <div class="stat-sub">mean</div>
-                        </div>
-                        <div class="stat-card success">
-                            <div class="stat-label"><i class="bi bi-arrow-up-circle"></i> Maximum Value</div>
-                            <div class="stat-value" id="statMax">0.00</div>
-                            <div class="stat-sub">peak</div>
-                        </div>
-                        <div class="stat-card warning">
-                            <div class="stat-label"><i class="bi bi-arrow-down-circle"></i> Minimum Value</div>
-                            <div class="stat-value" id="statMin">0.00</div>
-                            <div class="stat-sub">lowest</div>
-                        </div>
-                    </div>
-                    <div class="mt-3 text-center">
-                        <small class="text-muted"><i class="bi bi-info-circle"></i> Statistics calculated from numeric values in the Value column</small>
+                        <div class="stat-card info"><div class="stat-label">Total Records</div><div class="stat-value" id="statCount">0</div></div>
+                        <div class="stat-card"><div class="stat-label">Average Value</div><div class="stat-value" id="statAvg">0.00</div></div>
+                        <div class="stat-card success"><div class="stat-label">Maximum</div><div class="stat-value" id="statMax">0.00</div></div>
+                        <div class="stat-card warning"><div class="stat-label">Minimum</div><div class="stat-value" id="statMin">0.00</div></div>
                     </div>
                 </div>
-                
                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
                     <h5 class="mb-0"><i class="bi bi-database"></i>Captured Log Table</h5>
-                    <div class="btn-group">
-                        <button id="exportCsvBtn" class="btn btn-sm btn-success rounded-pill"><i class="bi bi-filetype-csv"></i> CSV</button>
-                        <button id="exportPdfBtn" class="btn btn-sm btn-danger rounded-pill"><i class="bi bi-filetype-pdf"></i> PDF</button>
-                        <button id="refreshTableBtn" class="btn btn-sm btn-primary-custom"><i class="bi bi-arrow-repeat"></i> Refresh</button>
-                    </div>
+                    <div><button id="exportCsvBtn" class="btn btn-sm btn-success rounded-pill">CSV</button> <button id="exportPdfBtn" class="btn btn-sm btn-danger rounded-pill">PDF</button> <button id="refreshTableBtn" class="btn btn-sm btn-primary-custom">Refresh</button></div>
                 </div>
-                
-                <div class="table-responsive">
-                    <table id="logsTable" class="table table-hover" style="width:100%">
-                        <thead>
-                            <tr><th>Date</th><th>Time</th><th>Selector</th><th>Value</th></tr>
-                        </thead>
-                        <tbody><tr><td colspan="4" class="text-center text-muted">Select date range and click Generate</td></tr>
-                    </tbody>
-                </table>
-                </div>
+                <div class="table-responsive"><table id="logsTable" class="table table-hover" style="width:100%"><thead><tr><th>Date</th><th>Time</th><th>Selector</th><th>Value</th></tr></thead><tbody><tr><td colspan="4" class="text-center">Select date range</td></tr></tbody></table></div>
             </div>
         </div>
     </div>
 </div>
-
 <div id="toastMsg" class="toast-notify"><i class="bi bi-info-circle-fill"></i> <span>Message</span></div>
 
 <script>
-// CONFIGURATION
+// Core configuration and manual backdate with GLOBAL DATE
+
 let config = { appScriptUrl: '', apiKey: '', sheetUrl: '', sheetName: 'Sheet1', dataRange: 'A2:D' };
-let monitoringIntervalId = null;
-let isMonitoring = false;
-let isPaused = false;
-let currentAutoSelector = '';
 let dataTable = null;
 let currentFilteredData = [];
 let trendChart = null;
+let globalFlatpickr = null;
 
-function showToast(message, type = 'info') {
-    const toastDiv = $('#toastMsg');
-    const icon = type === 'success' ? 'bi-check-circle-fill' : (type === 'error' ? 'bi-exclamation-triangle-fill' : 'bi-info-circle-fill');
-    toastDiv.html(`<i class="bi ${icon}"></i> <span>${message}</span>`);
-    toastDiv.addClass('show');
-    setTimeout(() => toastDiv.removeClass('show'), 3500);
+function showToast(msg, type='info') {
+    let toast = $('#toastMsg');
+    let icon = type==='success' ? 'bi-check-circle-fill' : (type==='error' ? 'bi-exclamation-triangle-fill' : 'bi-info-circle-fill');
+    toast.html(`<i class="bi ${icon}"></i> <span>${msg}</span>`);
+    toast.addClass('show');
+    setTimeout(()=>toast.removeClass('show'), 3500);
 }
 
 function loadConfigFromStorage() {
-    const saved = localStorage.getItem('webScraperConfig');
-    if (saved) { try { Object.assign(config, JSON.parse(saved)); } catch(e) {} }
+    let saved = localStorage.getItem('webScraperConfig');
+    if(saved) try { Object.assign(config, JSON.parse(saved)); } catch(e) {}
     $('#cfgAppScriptUrl').val(config.appScriptUrl);
     $('#cfgApiKey').val(config.apiKey);
     $('#cfgSheetUrl').val(config.sheetUrl);
@@ -759,7 +544,7 @@ function updateConfigStatusText() {
 }
 
 function loadPredefinedConfig() {
-    const predefined = {
+    let predefined = {
         appScriptUrl: "https://script.google.com/macros/s/AKfycbwwDk0uEt5HpWCZ6LLanTPBlQnZQ4qq2nyfeX4lGlgV3U7Sh8apiEbic8_DwxWU6NVc/exec",
         apiKey: "AIzaSyBB1V3vJpNZ9X1GIF-YOwoa6YSt_iXMLo0",
         sheetUrl: "https://docs.google.com/spreadsheets/d/1lKOxplbRL6mNj-t36g9OJKoJv3xBO-37-2BYUAvJrOY/edit?gid=0#gid=0",
@@ -773,594 +558,241 @@ function loadPredefinedConfig() {
     $('#cfgSheetName').val(predefined.sheetName);
     $('#cfgDataRange').val(predefined.dataRange);
     $('#targetUrl').val(predefined.targetUrl);
-    
     Object.assign(config, predefined);
     localStorage.setItem('webScraperConfig', JSON.stringify(config));
     updateConfigStatusText();
-    showToast('✅ Configuration loaded successfully!', 'success');
-    setTimeout(() => showPageInIframe(), 500);
+    showToast('Predefined config loaded', 'success');
 }
 
-function showPageInIframe() {
-    let url = $('#targetUrl').val().trim();
-    if (!url) url = "https://example.com";
-    if (!url.startsWith('http')) url = 'https://' + url;
-    $('#targetIframe').attr('src', url);
-    $('#frameStatus').text('Loading...').removeClass('bg-secondary').addClass('bg-warning');
-}
-
-function extractFromIframe(selector) {
-    if (!selector) return null;
-    try {
-        const iframe = document.getElementById('targetIframe');
-        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-        const element = iframeDoc.querySelector(selector);
-        if (element) return element.textContent?.trim() || element.innerText?.trim() || null;
-        return null;
-    } catch(e) { return null; }
-}
-
-function testExtract() {
-    const selector = $('#autoSelector').val().trim();
-    if (!selector) { showToast('Enter CSS selector', 'warning'); return; }
-    const value = extractFromIframe(selector);
-    if (value) { showToast(`✅ Extracted: ${value}`, 'success'); $('#lastAutoValue').html(`<i class="bi bi-graph-up"></i> Last captured: ${value}`); }
-    else showToast('❌ Extraction failed. Check selector or cross-origin.', 'error');
-}
-
-async function sendToSheet(dateStr, timeStr, selector, value) {
+// Send single row to Apps Script
+async function sendToSheetBackend(dateStr, timeStr, selector, value) {
     if (!config.appScriptUrl) { showToast('Apps Script URL missing', 'error'); return false; }
     try {
-        await fetch(config.appScriptUrl, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date: dateStr, time: timeStr, selector, value, timestamp: new Date().toISOString() }) });
+        await fetch(config.appScriptUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ date: dateStr, time: timeStr, selector: selector, value: value, timestamp: new Date().toISOString() })
+        });
         return true;
-    } catch(err) { return false; }
-}
-
-async function logManualValue() {
-    const value = $('#manualValue').val().trim();
-    if (!value) { showToast('Enter a value to log', 'warning'); return; }
-    const now = new Date();
-    const dateStr = now.toLocaleDateString('en-GB');
-    const timeStr = now.toLocaleTimeString('en-GB');
-    const selector = $('#autoSelector').val().trim() || 'manual-entry';
-    const success = await sendToSheet(dateStr, timeStr, selector, value);
-    if (success !== false) {
-        showToast(`✅ Logged: ${value}`, 'success');
-        $('#lastValueDisplayManual').html(`<i class="bi bi-graph-up"></i> Last logged: ${value}`);
-        $('#manualValue').val('');
-    } else showToast('Failed to log', 'error');
-}
-
-function parseDate(dateStr) {
-    if (!dateStr) return null;
-    const parts = dateStr.split('/');
-    if (parts.length === 3) {
-        return new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
-    }
-    return null;
-}
-
-function extractNumericValue(valueStr) {
-    if (!valueStr || valueStr === '') return null;
-    // Try to extract numeric value from string (handles values like "123", "45.67", "$123.45", "123 MB", etc.)
-    const match = valueStr.toString().match(/-?\d+(?:\.\d+)?/);
-    if (match) {
-        const num = parseFloat(match[0]);
-        return isNaN(num) ? null : num;
-    }
-    return null;
-}
-
-function calculateStatistics(dataRows) {
-    const numericValues = [];
-    let validCount = 0;
-    
-    dataRows.forEach(row => {
-        if (row.value && row.value !== '') {
-            const numVal = extractNumericValue(row.value);
-            if (numVal !== null) {
-                numericValues.push(numVal);
-                validCount++;
-            }
-        }
-    });
-    
-    if (numericValues.length === 0) {
-        return { 
-            count: dataRows.length, 
-            avg: 0, 
-            max: 0, 
-            min: 0,
-            numericCount: 0
-        };
-    }
-    
-    const sum = numericValues.reduce((a, b) => a + b, 0);
-    const avg = sum / numericValues.length;
-    const max = Math.max(...numericValues);
-    const min = Math.min(...numericValues);
-    
-    return {
-        count: dataRows.length,
-        avg: avg,
-        max: max,
-        min: min,
-        numericCount: numericValues.length
-    };
-}
-
-function updateStatisticsDisplay(stats) {
-    $('#statCount').text(stats.count);
-    
-    // Format with appropriate decimal places
-    if (stats.avg !== 0 && stats.numericCount > 0) {
-        $('#statAvg').text(stats.avg.toFixed(2));
-    } else {
-        $('#statAvg').text('0.00');
-    }
-    
-    if (stats.max !== 0 && stats.numericCount > 0) {
-        $('#statMax').text(stats.max.toFixed(2));
-    } else {
-        $('#statMax').text('0.00');
-    }
-    
-    if (stats.min !== 0 && stats.numericCount > 0) {
-        $('#statMin').text(stats.min.toFixed(2));
-    } else {
-        $('#statMin').text('0.00');
-    }
-    
-    // Add tooltip or info if no numeric values found
-    if (stats.numericCount === 0 && stats.count > 0) {
-        $('#statAvg').attr('title', 'No numeric values found in the Value column');
-        $('#statMax').attr('title', 'No numeric values found in the Value column');
-        $('#statMin').attr('title', 'No numeric values found in the Value column');
-    } else {
-        $('#statAvg').removeAttr('title');
-        $('#statMax').removeAttr('title');
-        $('#statMin').removeAttr('title');
+    } catch(err) { 
+        console.error(err);
+        return false; 
     }
 }
 
-function renderChart(dataRows) {
-    if (!dataRows || dataRows.length === 0) {
-        $('#chartSection').hide();
-        return;
+// Format value: add % if not present
+function ensurePercentSuffix(val) {
+    if(!val || val.trim() === '') return '';
+    let trimmed = val.trim();
+    if(trimmed.endsWith('%')) return trimmed;
+    return trimmed + '%';
+}
+
+// Get global date value
+function getGlobalDate() {
+    let globalDate = $('#globalDatePicker').val().trim();
+    if(!globalDate) {
+        showToast('Please set the global date first', 'warning');
+        return null;
     }
+    // validate DD/MM/YYYY format roughly
+    let parts = globalDate.split('/');
+    if(parts.length !== 3 || parts[0].length!==2 || parts[1].length!==2 || parts[2].length!==4) {
+        showToast('Date must be in DD/MM/YYYY format', 'error');
+        return null;
+    }
+    return globalDate;
+}
+
+// Add new row (no date column, only time, selector, value)
+function addBackdateRow(timeVal='', elementVal='CPU Utilization', valueVal='') {
+    let rowId = 'row_' + Date.now() + '_' + Math.random();
+    let newRow = $('<tr>').attr('data-rowid', rowId);
+    newRow.html(`
+        <td><input type="time" class="form-control backdate-time" value="${escapeHtml(timeVal)}" step="60" placeholder="HH:MM"></td>
+        <td><input type="text" class="form-control backdate-selector" value="${escapeHtml(elementVal)}" placeholder="e.g., CPU Utilization, Memory Usage"></td>
+        <td><input type="text" class="form-control backdate-value" value="${escapeHtml(valueVal)}" placeholder="e.g., 87.5 or 92%"></td>
+        <td class="text-center"><button type="button" class="delete-row-btn"><i class="bi bi-trash3"></i> Delete</button></td>
+    `);
+    $('#backdateTableBody').append(newRow);
+    newRow.find('.delete-row-btn').on('click', function() { $(this).closest('tr').remove(); });
+}
+
+function escapeHtml(str) { return String(str || '').replace(/[&<>]/g, function(m){ if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
+
+// Reset rows: clear all and add 3 default rows with empty values
+function resetAllRows() {
+    $('#backdateTableBody').empty();
+    addBackdateRow('09:00', 'CPU Utilization', '');
+    addBackdateRow('13:30', 'CPU Utilization', '');
+    addBackdateRow('17:45', 'CPU Utilization', '');
+    showToast('All rows reset to defaults', 'info');
+}
+
+// Validate and collect rows using global date
+function validateAndCollectRows() {
+    let globalDate = getGlobalDate();
+    if(!globalDate) return null;
     
-    // Calculate and display statistics
-    const stats = calculateStatistics(dataRows);
-    updateStatisticsDisplay(stats);
-    
-    // Prepare data for chart - extract numeric values
-    const chartData = [];
-    const chartLabels = [];
-    
-    dataRows.forEach(row => {
-        if (row.value && row.value !== '') {
-            const numVal = extractNumericValue(row.value);
-            if (numVal !== null) {
-                const dateTime = `${row.date} ${row.time}`;
-                chartLabels.push(dateTime);
-                chartData.push(numVal);
-            }
-        }
-    });
-    
-    if (chartData.length === 0) {
-        $('#chartSection').show();
-        // Show message in chart area
-        const ctx = document.getElementById('trendChart').getContext('2d');
-        if (trendChart) trendChart.destroy();
+    let rows = [];
+    let isValid = true;
+    $('#backdateTableBody tr').each(function(idx){
+        let time = $(this).find('.backdate-time').val().trim();
+        let selector = $(this).find('.backdate-selector').val().trim();
+        let rawValue = $(this).find('.backdate-value').val().trim();
         
-        // Create empty chart with message
-        trendChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: ['No numeric data'],
-                datasets: [{
-                    label: 'No numeric values found in selected range',
-                    data: [0],
-                    borderColor: '#cbd5e1',
-                    backgroundColor: 'rgba(203, 213, 225, 0.1)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: { display: false }
-                }
-            }
-        });
-        return;
-    }
-    
-    $('#chartSection').show();
-    
-    if (trendChart) {
-        trendChart.destroy();
-    }
-    
-    const ctx = document.getElementById('trendChart').getContext('2d');
-    trendChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: chartLabels,
-            datasets: [{
-                label: 'Captured Value (numeric)',
-                data: chartData,
-                borderColor: '#0f5b9c',
-                backgroundColor: 'rgba(15, 91, 156, 0.1)',
-                borderWidth: 2,
-                fill: true,
-                tension: 0.3,
-                pointBackgroundColor: '#1a4b7a',
-                pointBorderColor: '#fff',
-                pointRadius: 4,
-                pointHoverRadius: 6
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: {
-                    position: 'top',
-                    labels: {
-                        font: { size: 12 },
-                        color: '#1e293b'
-                    }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return `Value: ${context.raw}`;
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Numeric Value',
-                        color: '#64748b'
-                    },
-                    grid: {
-                        color: '#e2e8f0'
-                    }
-                },
-                x: {
-                    title: {
-                        display: true,
-                        text: 'Date & Time',
-                        color: '#64748b'
-                    },
-                    ticks: {
-                        maxRotation: 45,
-                        minRotation: 45,
-                        autoSkip: true,
-                        maxTicksLimit: 10
-                    },
-                    grid: {
-                        display: false
-                    }
-                }
-            }
-        }
+        if(!time) { showToast(`Row ${idx+1}: Time is required`, 'error'); isValid=false; return false; }
+        if(!selector) selector = 'CPU Utilization'; // default if empty
+        if(rawValue === '') { showToast(`Row ${idx+1}: Value cannot be empty`, 'error'); isValid=false; return false; }
+        
+        let finalValue = ensurePercentSuffix(rawValue);
+        rows.push({ date: globalDate, time: time, selector: selector, value: finalValue });
+        return true;
     });
+    if(!isValid) return null;
+    if(rows.length === 0) { showToast('No rows to submit', 'warning'); return null; }
+    return rows;
 }
 
-async function loadLogsWithDateFilter(fromDateStr, toDateStr) {
-    if (!config.apiKey || !config.sheetUrl) {
-        showToast('⚠️ Missing API key or Sheet URL. Please load configuration first.', 'error');
-        return [];
+// Submit rows one by one
+async function submitAllRowsOneByOne() {
+    if(!config.appScriptUrl) { showToast('Apps Script URL not configured! Please save config first.', 'error'); return; }
+    
+    let rowsData = validateAndCollectRows();
+    if(!rowsData || rowsData.length===0) return;
+    
+    $('#submitAllBtn').prop('disabled', true).html('<span class="loading-spinner"></span> Submitting...');
+    let successCount = 0, failCount = 0;
+    
+    for(let i=0; i<rowsData.length; i++) {
+        let r = rowsData[i];
+        let ok = await sendToSheetBackend(r.date, r.time, r.selector, r.value);
+        if(ok !== false) { 
+            successCount++; 
+            showToast(`[${i+1}/${rowsData.length}] ✅ ${r.date} ${r.time} - ${r.value}`, 'success'); 
+        } else { 
+            failCount++; 
+            showToast(`[${i+1}/${rowsData.length}] ❌ Failed: ${r.date} ${r.time}`, 'error'); 
+        }
+        await new Promise(resolve => setTimeout(resolve, 500));
     }
     
+    $('#submitAllBtn').prop('disabled', false).html('<i class="bi bi-cloud-upload"></i> Submit All (One by One)');
+    showToast(`Submission complete. Success: ${successCount}, Failed: ${failCount}`, successCount>0?'success':'error');
+    if(successCount>0) {
+        showToast(`${successCount} record(s) sent to Google Sheet`, 'success');
+    }
+}
+
+// Helper functions for logs/reports (preserved from original)
+function parseDate(str){ if(!str) return null; let parts=str.split('/'); if(parts.length===3) return new Date(`${parts[2]}-${parts[1]}-${parts[0]}`); return null; }
+function extractNumericValue(v){ if(!v) return null; let m=v.toString().match(/-?\d+(?:\.\d+)?/); return m?parseFloat(m[0]):null; }
+async function loadLogsWithDateFilter(fromDate, toDate) {
+    if(!config.apiKey || !config.sheetUrl) return [];
     let sheetIdMatch = config.sheetUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
-    if (!sheetIdMatch && config.sheetUrl.match(/^[a-zA-Z0-9_-]+$/)) {
-        sheetIdMatch = [null, config.sheetUrl];
-    }
-    if (!sheetIdMatch) {
-        showToast('Invalid sheet URL format', 'error');
-        return [];
-    }
-    
-    const sheetId = sheetIdMatch[1];
-    const range = `${config.sheetName}!${config.dataRange}`;
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${config.apiKey}`;
-    
-    try {
-        showToast('Fetching data from Google Sheet...', 'info');
-        const response = await fetch(url);
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const data = await response.json();
-        
-        if (!data.values || data.values.length === 0) {
-            showToast('No data found in the sheet', 'warning');
-            return [];
-        }
-        
-        let allRows = data.values.map((row, index) => ({
-            date: row[0] || '',
-            time: row[1] || '',
-            selector: row[2] || '',
-            value: row[3] || '',
-            sheetOrder: index
-        }));
-        
-        if (fromDateStr && toDateStr) {
-            const fromDate = parseDate(fromDateStr);
-            const toDate = parseDate(toDateStr);
-            
-            if (fromDate && toDate) {
-                toDate.setHours(23, 59, 59, 999);
-                
-                const filteredRows = allRows.filter(row => {
-                    if (!row.date) return false;
-                    const rowDate = parseDate(row.date);
-                    if (!rowDate) return false;
-                    return rowDate >= fromDate && rowDate <= toDate;
-                });
-                
-                showToast(`Found ${filteredRows.length} records between ${fromDateStr} and ${toDateStr}`, 'success');
-                return filteredRows;
+    if(!sheetIdMatch && config.sheetUrl.match(/^[a-zA-Z0-9_-]+$/)) sheetIdMatch=[null,config.sheetUrl];
+    if(!sheetIdMatch) return [];
+    let sheetId=sheetIdMatch[1], range=`${config.sheetName}!${config.dataRange}`;
+    let url=`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${config.apiKey}`;
+    try{
+        let resp=await fetch(url);
+        if(!resp.ok) return [];
+        let data=await resp.json();
+        if(!data.values) return [];
+        let allRows=data.values.map((row,idx)=>({date:row[0]||'', time:row[1]||'', selector:row[2]||'', value:row[3]||'', sheetOrder:idx}));
+        if(fromDate && toDate){
+            let fromDt=parseDate(fromDate), toDt=parseDate(toDate);
+            if(fromDt && toDt){ toDt.setHours(23,59,59,999);
+            return allRows.filter(r=>{ let rd=parseDate(r.date); return rd && rd>=fromDt && rd<=toDt; });
             }
         }
-        
-        showToast(`Loaded ${allRows.length} total records`, 'info');
         return allRows;
-        
-    } catch(err) {
-        console.error('Sheet fetch error:', err);
-        showToast('Failed to load sheet data. Check API key and sheet permissions.', 'error');
-        return [];
-    }
+    }catch(e){ return []; }
 }
 
-async function refreshTableWithFilter() {
-    const fromDate = $('#fromDatePicker').val();
-    const toDate = $('#toDatePicker').val();
-    
-    if (!fromDate || !toDate) {
-        showToast('Please select both From and To dates', 'warning');
-        return;
-    }
-    
-    const tbody = $('#logsTable tbody');
-    tbody.html('<tr><td colspan="4" class="text-center"><span class="loading-spinner"></span> Loading data...</td></tr>');
-    
-    const rows = await loadLogsWithDateFilter(fromDate, toDate);
-    currentFilteredData = rows;
-    
-    // Render chart with the data (this will also update statistics)
-    renderChart(rows);
-    
-    if ($.fn.DataTable.isDataTable('#logsTable')) {
-        dataTable.destroy();
-        $('#logsTable').empty();
-        $('#logsTable').append('<thead><tr><th>Date</th><th>Time</th><th>Selector</th><th>Value</th></tr></thead><tbody></tbody>');
-    }
-    
-    dataTable = $('#logsTable').DataTable({
-        data: rows,
-        columns: [
-            { data: "date" },
-            { data: "time" },
-            { data: "selector" },
-            { data: "value" }
-        ],
-        pageLength: 25,
-        lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
-        ordering: false,
-        order: [],
-        language: {
-            search: "",
-            searchPlaceholder: "Search logs...",
-            lengthMenu: "Show _MENU_ entries",
-            info: "Showing _START_ to _END_ of _TOTAL_ entries",
-            infoEmpty: "No entries found",
-            emptyTable: "No data available for the selected date range"
-        }
-    });
-    
-    if (rows.length === 0) {
-        showToast(`No records found between ${fromDate} and ${toDate}`, 'info');
-        $('#chartSection').hide();
-    } else {
-        showToast(`Displaying ${rows.length} records in sheet order`, 'success');
-    }
+function renderChartAndStats(rows){
+    if(!rows || rows.length===0){ $('#chartSection').hide(); return; }
+    let nums=[];
+    rows.forEach(r=>{ let n=extractNumericValue(r.value); if(n!==null) nums.push(n); });
+    let count=rows.length, avg=nums.length?nums.reduce((a,b)=>a+b,0)/nums.length:0, max=nums.length?Math.max(...nums):0, min=nums.length?Math.min(...nums):0;
+    $('#statCount').text(count); $('#statAvg').text(avg.toFixed(2)); $('#statMax').text(max.toFixed(2)); $('#statMin').text(min.toFixed(2));
+    if(trendChart) trendChart.destroy();
+    let ctx=document.getElementById('trendChart').getContext('2d');
+    let labels=rows.map(r=>`${r.date} ${r.time}`).slice(0,80);
+    let dataVals=rows.map(r=>{ let n=extractNumericValue(r.value); return n!==null?n:0; }).slice(0,80);
+    trendChart=new Chart(ctx,{ type:'line', data:{ labels:labels, datasets:[{ label:'Value Trend', data:dataVals, borderColor:'#0f5b9c', fill:true, tension:0.3 }] }, options:{ responsive:true, maintainAspectRatio:true } });
+    $('#chartSection').show();
 }
 
-function downloadChart() {
-    if (!trendChart) {
-        showToast('No chart available to download. Please generate report first.', 'warning');
-        return;
-    }
-    
-    const canvas = document.getElementById('trendChart');
-    const link = document.createElement('a');
-    link.download = `trend_chart_${$('#fromDatePicker').val()}_to_${$('#toDatePicker').val()}.png`;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-    showToast('Chart downloaded as PNG', 'success');
-}
-
-function exportToCSV() {
-    if (!currentFilteredData || currentFilteredData.length === 0) { 
-        showToast('No data to export. Please generate report first.', 'warning'); 
-        return; 
-    }
-    
-    const headers = ['Date', 'Time', 'Selector', 'Value'];
-    const csvRows = [headers.join(',')];
-    
-    currentFilteredData.forEach(row => {
-        const escapedValue = (row.value || '').replace(/"/g, '""');
-        csvRows.push(`"${row.date}","${row.time}","${row.selector}","${escapedValue}"`);
-    });
-    
-    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.href = url;
-    link.setAttribute('download', `logs_${$('#fromDatePicker').val()}_to_${$('#toDatePicker').val()}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    showToast(`CSV exported with ${currentFilteredData.length} records`, 'success');
-}
-
-async function exportToPDF() {
-    if (!currentFilteredData || currentFilteredData.length === 0) { 
-        showToast('No data to export. Please generate report first.', 'warning'); 
-        return; 
-    }
-    
-    try {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({ orientation: 'landscape' });
-        
-        const body = currentFilteredData.map(row => [
-            row.date || '',
-            row.time || '',
-            row.selector || '',
-            row.value || ''
-        ]);
-        
-        doc.autoTable({
-            head: [['Date', 'Time', 'Selector', 'Value']],
-            body: body,
-            theme: 'striped',
-            styles: { fontSize: 8, cellPadding: 2 },
-            headStyles: { fillColor: [15, 91, 156], textColor: 255, fontSize: 9, fontStyle: 'bold' },
-            alternateRowStyles: { fillColor: [248, 250, 252] },
-            margin: { top: 10, left: 5, right: 5 }
-        });
-        
-        doc.save(`report_${$('#fromDatePicker').val()}_to_${$('#toDatePicker').val()}.pdf`);
-        showToast(`PDF exported with ${currentFilteredData.length} records`, 'success');
-    } catch(err) {
-        console.error('PDF export error:', err);
-        showToast('PDF export failed. Check if jspdf is properly loaded.', 'error');
-    }
-}
-
-async function performAutoMonitoring() {
-    if (!currentAutoSelector) return;
-    const value = extractFromIframe(currentAutoSelector);
-    if (!value) { showToast(`Auto-extract failed`, 'warning'); return; }
-    const now = new Date();
-    const dateStr = now.toLocaleDateString('en-GB');
-    const timeStr = now.toLocaleTimeString('en-GB');
-    const success = await sendToSheet(dateStr, timeStr, currentAutoSelector, value);
-    if (success !== false) { $('#lastAutoValue').html(`<i class="bi bi-graph-up"></i> Last captured: ${value}`); showToast(`Auto-logged: ${value}`, 'success'); }
-}
-
-function scheduleAutoRun() {
-    if (!isMonitoring || isPaused) return;
-    let days = parseInt($('#intervalDays').val()) || 0;
-    let hours = parseInt($('#intervalHours').val()) || 0;
-    let minutes = parseInt($('#intervalMinutes').val()) || 1;
-    if (days === 0 && hours === 0 && minutes === 0) minutes = 1;
-    const totalMs = ((days * 24 + hours) * 60 + minutes) * 60 * 1000;
-    if (monitoringIntervalId) clearTimeout(monitoringIntervalId);
-    const nextRun = new Date(Date.now() + totalMs);
-    $('#nextRunInfo').text(`Next: ${nextRun.toLocaleTimeString()}`);
-    monitoringIntervalId = setTimeout(async () => {
-        if (isMonitoring && !isPaused) { await performAutoMonitoring(); scheduleAutoRun(); }
-    }, totalMs);
-}
-
-function startAutoMonitoring() {
-    if (isMonitoring && !isPaused) { showToast('Already running', 'warning'); return; }
-    const selector = $('#autoSelector').val().trim();
-    if (!selector) { showToast('Enter CSS selector', 'warning'); return; }
-    currentAutoSelector = selector;
-    if (monitoringIntervalId) clearTimeout(monitoringIntervalId);
-    isMonitoring = true; isPaused = false;
-    performAutoMonitoring().then(() => scheduleAutoRun());
-    $('#startAutoBtn').prop('disabled', true);
-    $('#pauseAutoBtn').prop('disabled', false);
-    $('#stopAutoBtn').prop('disabled', false);
-    $('#autoStatusBadge').html('<i class="bi bi-play-circle"></i> Running').removeClass('status-stopped').addClass('status-running');
-    showToast('Auto monitoring started', 'success');
-}
-
-function pauseAutoMonitoring() {
-    if (!isMonitoring || isPaused) return;
-    isPaused = true;
-    if (monitoringIntervalId) clearTimeout(monitoringIntervalId);
-    $('#startAutoBtn').prop('disabled', false);
-    $('#pauseAutoBtn').prop('disabled', true);
-    $('#autoStatusBadge').html('<i class="bi bi-pause-circle"></i> Paused');
-    $('#nextRunInfo').text('Paused');
-    showToast('Paused', 'info');
-}
-
-function stopAutoMonitoring() {
-    isMonitoring = false; isPaused = false;
-    if (monitoringIntervalId) clearTimeout(monitoringIntervalId);
-    $('#startAutoBtn').prop('disabled', false);
-    $('#pauseAutoBtn').prop('disabled', true);
-    $('#stopAutoBtn').prop('disabled', true);
-    $('#autoStatusBadge').html('<i class="bi bi-stop-circle"></i> Stopped').removeClass('status-running').addClass('status-stopped');
-    $('#nextRunInfo').text('');
-    showToast('Stopped', 'info');
-}
-
-function initDatePickers() {
-    const today = new Date();
-    const formattedToday = today.toLocaleDateString('en-GB');
-    
-    flatpickr("#fromDatePicker", { 
-        dateFormat: "d/m/Y", 
-        defaultDate: today, 
-        allowInput: true,
-        maxDate: new Date()
-    });
-    
-    flatpickr("#toDatePicker", { 
-        dateFormat: "d/m/Y", 
-        defaultDate: today, 
-        allowInput: true,
-        maxDate: new Date()
-    });
-    
-    $('#fromDatePicker').val(formattedToday);
-    $('#toDatePicker').val(formattedToday);
+// Manual value log from Monitor tab
+async function logManualValue() {
+    let val = $('#manualValue').val().trim();
+    if(!val) { showToast('Enter a value', 'warning'); return; }
+    let now = new Date();
+    let dateStr = now.toLocaleDateString('en-GB');
+    let timeStr = now.toLocaleTimeString('en-GB');
+    let success = await sendToSheetBackend(dateStr, timeStr, 'manual-entry', val);
+    if(success !== false) { 
+        showToast(`Logged: ${val}`, 'success'); 
+        $('#lastValueDisplayManual').html(`<i class="bi bi-graph-up"></i> Last logged: ${val}`);
+        $('#manualValue').val(''); 
+    } else showToast('Failed to log', 'error');
 }
 
 $(document).ready(function() {
     loadConfigFromStorage();
-    initDatePickers();
     
+    // Initialize global date picker (DD/MM/YYYY) - default to today
+    flatpickr("#globalDatePicker", { 
+        dateFormat: "d/m/Y", 
+        defaultDate: new Date(),
+        allowInput: true,
+        maxDate: new Date()
+    });
+    $('#globalDatePicker').val(new Date().toLocaleDateString('en-GB'));
+    
+    // Initialize log date pickers
+    flatpickr("#fromDatePicker", { dateFormat: "d/m/Y", defaultDate: new Date(), maxDate: new Date() });
+    flatpickr("#toDatePicker", { dateFormat: "d/m/Y", defaultDate: new Date(), maxDate: new Date() });
+    $('#fromDatePicker').val(new Date().toLocaleDateString('en-GB'));
+    $('#toDatePicker').val(new Date().toLocaleDateString('en-GB'));
+    
+    // Initialize backdate table with default rows (no date column)
+    resetAllRows();
+    
+    // Attach button events for backdate tab
+    $('#addRowBtn').on('click', () => addBackdateRow('12:00', 'CPU Utilization', ''));
+    $('#resetRowsBtn').on('click', resetAllRows);
+    $('#submitAllBtn').on('click', submitAllRowsOneByOne);
+    
+    // Config events
     $('#saveConfigBtn').on('click', saveConfigToStorage);
     $('#loadConfigBtn').on('click', loadPredefinedConfig);
-    $('#showPageBtn').on('click', showPageInIframe);
-    $('#reloadIframeBtn').on('click', () => { const src = $('#targetIframe').attr('src'); if(src !== 'about:blank') $('#targetIframe').attr('src', src); });
+    $('#showPageBtn').on('click', function() { let url=$('#targetUrl').val(); if(url && !url.startsWith('http')) url='https://'+url; $('#targetIframe').attr('src', url||'about:blank'); $('#frameStatus').text('Loading...'); });
+    $('#reloadIframeBtn').on('click', ()=> { let src=$('#targetIframe').attr('src'); if(src && src!=='about:blank') $('#targetIframe').attr('src', src); });
     $('#logManualValueBtn').on('click', logManualValue);
-    $('#testExtractBtn').on('click', testExtract);
-    $('#startAutoBtn').on('click', startAutoMonitoring);
-    $('#pauseAutoBtn').on('click', pauseAutoMonitoring);
-    $('#stopAutoBtn').on('click', stopAutoMonitoring);
-    $('#refreshTableBtn').on('click', refreshTableWithFilter);
-    $('#generateReportBtn').on('click', refreshTableWithFilter);
-    $('#exportCsvBtn').on('click', exportToCSV);
-    $('#exportPdfBtn').on('click', exportToPDF);
-    $('#downloadChartBtn').on('click', downloadChart);
     
-    $('#logs-tab').on('shown.bs.tab', function() {
-        if ($('#fromDatePicker').val() && $('#toDatePicker').val() && (!currentFilteredData || currentFilteredData.length === 0)) {
-            refreshTableWithFilter();
-        }
+    // Logs & reports generation
+    $('#generateReportBtn, #refreshTableBtn').on('click', async function(){
+        let from=$('#fromDatePicker').val(), to=$('#toDatePicker').val();
+        if(!from || !to){ showToast('Select both dates','warning'); return; }
+        let rows=await loadLogsWithDateFilter(from,to);
+        currentFilteredData=rows;
+        if($.fn.DataTable.isDataTable('#logsTable')) dataTable.destroy();
+        dataTable=$('#logsTable').DataTable({ data:rows, columns:[{data:"date"},{data:"time"},{data:"selector"},{data:"value"}], pageLength:25, ordering:false, language:{search:"",searchPlaceholder:"Search..."} });
+        renderChartAndStats(rows);
+        if(rows.length===0) $('#chartSection').hide();
+        else $('#chartSection').show();
+        showToast(`Loaded ${rows.length} records`, 'info');
     });
     
-    $('#targetIframe').on('load', function() { $('#frameStatus').text('Loaded').removeClass('bg-warning').addClass('bg-success'); setTimeout(() => $('#frameStatus').text('Loaded').removeClass('bg-success').addClass('bg-secondary'), 1500); });
+    $('#exportCsvBtn').on('click',()=>{ if(!currentFilteredData.length){showToast('No data','warning');return;} let csvRows=[['Date','Time','Selector','Value']]; currentFilteredData.forEach(r=>csvRows.push([r.date,r.time,r.selector,r.value])); let blob=new Blob([csvRows.map(row=>row.join(',')).join('\n')],{type:'text/csv'}); let a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='logs.csv'; a.click(); });
+    $('#exportPdfBtn').on('click',async()=>{ if(!currentFilteredData.length){showToast('No data','warning');return;} try{ let {jsPDF}=window.jspdf; let doc=new jsPDF({orientation:'landscape'}); doc.autoTable({ head:[['Date','Time','Selector','Value']], body:currentFilteredData.map(r=>[r.date,r.time,r.selector,r.value]), styles:{fontSize:8} }); doc.save('report.pdf'); }catch(e){showToast('PDF error','error');} });
+    $('#downloadChartBtn').on('click',()=>{ if(trendChart){ let link=document.createElement('a'); link.download='chart.png'; link.href=document.getElementById('trendChart').toDataURL(); link.click(); } else showToast('No chart','warning'); });
+    
+    // Disable old auto-monitor buttons to avoid confusion (they are not functional in this version)
+    $('#startAutoBtn, #pauseAutoBtn, #stopAutoBtn, #testExtractBtn').on('click', (e) => e.preventDefault());
 });
 </script>
 </body>
