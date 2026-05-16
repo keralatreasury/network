@@ -1088,7 +1088,7 @@ async function logManualValue() {
     let now = new Date();
     let dateStr = now.toLocaleDateString('en-GB');
     let timeStr = now.toLocaleTimeString('en-GB');
-    let success = await sendToSheetBackend(dateStr, timeStr, 'manual-entry', val);
+    let success = await sendToSheetBackend(dateStr, timeStr, 'CPU Utilization', val);
     if(success !== false) { 
         showToast(`Logged: ${val}`, 'success'); 
         $('#lastValueDisplayManual').html(`<i class="bi bi-graph-up"></i> Last logged: ${val}`);
