@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Application Installer - Upload & Update</title>
+    <title>Application Installer - Upload & Register</title>
     
     <!-- LOCAL CSS -->
     <link rel="stylesheet" href="../css/bootstrap.min.css">
@@ -173,6 +173,30 @@
             color: var(--danger);
             margin-left: 4px;
         }
+        .user-info {
+            background: #e8f0fe;
+            border-radius: 12px;
+            padding: 10px 15px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .btn-signout {
+            background: none;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
+        .btn-signout:hover {
+            background: var(--primary);
+            color: white;
+        }
         @media (max-width: 768px) {
             body { padding: 10px; }
             .form-body { padding: 20px; }
@@ -188,6 +212,12 @@
             </div>
             
             <div class="form-body">
+                <!-- User Info Section -->
+                <div id="userInfo" class="user-info" style="display: none;">
+                    <span><i class="bi bi-person-circle"></i> Signed in as: <strong id="userEmail"></strong></span>
+                    <button type="button" id="signOutBtn" class="btn-signout"><i class="bi bi-box-arrow-right"></i> Sign Out</button>
+                </div>
+                
                 <form id="uploadForm">
                     <!-- File Upload Section -->
                     <div class="form-group">
@@ -265,24 +295,17 @@
     
     <script>
         // ======================== CONFIGURATION ========================
-        // Google Drive Folder ID (Your shared folder)
         const DRIVE_FOLDER_ID = "181Idk62hrdSzWc-XahVsCn4id38pSmAB";
-        
-        // Google Sheets Configuration
         const SHEET_ID = "1vabPhjx_Nr4jbuhz1lW4Ksh5DLR-v4BR6dIrkY5Ceck";
         const SHEET_NAME = "List";
-        
-        // Google Drive API - You need to enable Drive API and get API key
-        // Get your API key from Google Cloud Console
         const API_KEY = "AIzaSyBB1V3vJpNZ9X1GIF-YOwoa6YSt_iXMLo0";
-        
-        // OAuth2 Client ID - You need to create OAuth 2.0 credentials
-        const CLIENT_ID = "963882785112-6q00su3e28lalgj1b7qlk4p7lcctva9q.apps.googleusercontent.com"; // Replace with your OAuth Client ID
+        const CLIENT_ID = "963882785112-6q00su3e28lalgj1b7qlk4p7lcctva9q.apps.googleusercontent.com";
         
         let accessToken = null;
         let selectedFile = null;
         let uploadedFileId = null;
         let directDownloadLink = null;
+        let currentUser = null;
         
         // ======================== GOOGLE AUTHENTICATION ========================
         function initGoogleAuth() {
@@ -291,9 +314,28 @@
                     apiKey: API_KEY,
                     clientId: CLIENT_ID,
                     discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
-                    scope: 'https://www.googleapis.com/auth/drive.file'
+                    scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets'
                 }).then(() => {
                     console.log('Google API initialized');
+                    
+                    // Check if user is already signed in
+                    const authInstance = gapi.auth2.getAuthInstance();
+                    const isSignedIn = authInstance.isSignedIn.get();
+                    if (isSignedIn) {
+                        updateUserInfo(authInstance.currentUser.get());
+                    }
+                    
+                    // Listen for sign-in state changes
+                    authInstance.isSignedIn.listen(isSignedIn => {
+                        if (isSignedIn) {
+                            updateUserInfo(authInstance.currentUser.get());
+                        } else {
+                            $('#userInfo').hide();
+                            currentUser = null;
+                            accessToken = null;
+                        }
+                    });
+                    
                 }).catch(error => {
                     console.error('Error initializing Google API:', error);
                     Swal.fire({
@@ -306,42 +348,38 @@
             });
         }
         
-        async function authenticateAndUpload() {
-            if (!selectedFile) {
-                Swal.fire({ icon: 'warning', title: 'No File', text: 'Please select a file first', confirmButtonColor: '#0f5b9c' });
+        function updateUserInfo(user) {
+            const profile = user.getBasicProfile();
+            currentUser = user;
+            accessToken = user.getAuthResponse().access_token;
+            $('#userEmail').text(profile.getEmail());
+            $('#userInfo').show();
+        }
+        
+        async function ensureAuthenticated() {
+            if (!gapi.auth2) {
+                Swal.fire({ icon: 'error', title: 'Not Ready', text: 'Please wait for Google API to load', confirmButtonColor: '#0f5b9c' });
                 return false;
             }
             
+            const authInstance = gapi.auth2.getAuthInstance();
+            const isSignedIn = authInstance.isSignedIn.get();
+            
+            if (isSignedIn && accessToken) {
+                return true;
+            }
+            
             try {
-                // Check if already authenticated
-                if (gapi.auth2 && gapi.auth2.getAuthInstance()) {
-                    const authInstance = gapi.auth2.getAuthInstance();
-                    const isSignedIn = authInstance.isSignedIn.get();
-                    if (isSignedIn) {
-                        const user = authInstance.currentUser.get();
-                        accessToken = user.getAuthResponse().access_token;
-                        return await uploadToDrive();
-                    } else {
-                        // Sign in first
-                        await authInstance.signIn();
-                        const user = authInstance.currentUser.get();
-                        accessToken = user.getAuthResponse().access_token;
-                        return await uploadToDrive();
-                    }
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Authentication Error',
-                        text: 'Google API not initialized. Please check your configuration.',
-                        confirmButtonColor: '#0f5b9c'
-                    });
-                    return false;
-                }
+                await authInstance.signIn();
+                const user = authInstance.currentUser.get();
+                accessToken = user.getAuthResponse().access_token;
+                updateUserInfo(user);
+                return true;
             } catch (error) {
-                console.error('Authentication error:', error);
+                console.error('Sign-in error:', error);
                 Swal.fire({
                     icon: 'error',
-                    title: 'Authentication Failed',
+                    title: 'Sign In Required',
                     text: 'Please sign in with your Google account to upload files.',
                     confirmButtonColor: '#0f5b9c'
                 });
@@ -349,9 +387,25 @@
             }
         }
         
+        $('#signOutBtn').on('click', () => {
+            if (gapi.auth2) {
+                const authInstance = gapi.auth2.getAuthInstance();
+                authInstance.signOut().then(() => {
+                    $('#userInfo').hide();
+                    currentUser = null;
+                    accessToken = null;
+                    Swal.fire({ icon: 'success', title: 'Signed Out', text: 'You have been signed out', toast: true, timer: 2000 });
+                });
+            }
+        });
+        
         // ======================== UPLOAD FILE TO GOOGLE DRIVE ========================
         async function uploadToDrive() {
             if (!selectedFile) return false;
+            
+            // Ensure user is authenticated
+            const isAuth = await ensureAuthenticated();
+            if (!isAuth) return false;
             
             const formData = new FormData();
             formData.append('metadata', new Blob([JSON.stringify({
@@ -390,14 +444,14 @@
                             $('#uploadProgress').removeClass('show');
                         }, 1500);
                         
-                        // Show the generated download link
                         $('#generatedLink').attr('href', directDownloadLink).text(directDownloadLink);
                         $('#downloadLinkResult').addClass('show');
                         
                         resolve(true);
                     } else {
-                        console.error('Upload failed:', xhr.responseText);
-                        reject(new Error('Upload failed'));
+                        const error = JSON.parse(xhr.responseText);
+                        console.error('Upload failed:', error);
+                        reject(new Error(error.error?.message || 'Upload failed'));
                     }
                 };
                 
@@ -408,11 +462,10 @@
         
         // ======================== SUBMIT TO GOOGLE SHEET ========================
         async function submitToSheet(formData) {
-            // Using a proxy service or Google Sheets API with the API key
-            // Since direct sheet append requires authentication, we'll use a simple approach
-            // You can use sheet.best or similar service for simple submissions
+            const isAuth = await ensureAuthenticated();
+            if (!isAuth) return false;
             
-            const sheetUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_NAME}!A:G:append?valueInputOption=USER_ENTERED&key=${API_KEY}`;
+            const sheetUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_NAME}!A:G:append?valueInputOption=USER_ENTERED`;
             
             const values = [[
                 formData.packageName,
@@ -424,15 +477,14 @@
                 "Yes"
             ]];
             
-            const body = { values: values };
-            
             try {
                 const response = await fetch(sheetUrl, {
                     method: 'POST',
                     headers: {
+                        'Authorization': `Bearer ${accessToken}`,
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify(body)
+                    body: JSON.stringify({ values: values })
                 });
                 
                 if (response.ok) {
@@ -440,6 +492,16 @@
                 } else {
                     const error = await response.json();
                     console.error('Sheet API error:', error);
+                    
+                    // If sheet access error, try to share sheet with user
+                    if (error.error?.status === 'PERMISSION_DENIED') {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Sheet Access Required',
+                            text: 'Please share the Google Sheet with your email as Editor.',
+                            confirmButtonColor: '#0f5b9c'
+                        });
+                    }
                     return false;
                 }
             } catch (error) {
@@ -448,35 +510,28 @@
             }
         }
         
-        // Alternative: Use Google Forms for easier submission
-        // You can create a Google Form and submit data that way
-        
         // ======================== FORM HANDLING ========================
-        $('#fileDropArea').on('click', function() {
-            $('#fileInput').click();
+        $('#fileDropArea').on('click', () => $('#fileInput').click());
+        
+        $('#fileInput').on('change', (e) => {
+            if (e.target.files[0]) handleFileSelect(e.target.files[0]);
         });
         
-        $('#fileInput').on('change', function(e) {
-            handleFileSelect(e.target.files[0]);
-        });
-        
-        // Drag and drop handlers
-        $('#fileDropArea').on('dragover', function(e) {
+        $('#fileDropArea').on('dragover', (e) => {
             e.preventDefault();
-            $(this).addClass('dragover');
+            $('#fileDropArea').addClass('dragover');
         });
         
-        $('#fileDropArea').on('dragleave', function(e) {
+        $('#fileDropArea').on('dragleave', (e) => {
             e.preventDefault();
-            $(this).removeClass('dragover');
+            $('#fileDropArea').removeClass('dragover');
         });
         
-        $('#fileDropArea').on('drop', function(e) {
+        $('#fileDropArea').on('drop', (e) => {
             e.preventDefault();
-            $(this).removeClass('dragover');
-            const files = e.originalEvent.dataTransfer.files;
-            if (files.length > 0) {
-                handleFileSelect(files[0]);
+            $('#fileDropArea').removeClass('dragover');
+            if (e.originalEvent.dataTransfer.files[0]) {
+                handleFileSelect(e.originalEvent.dataTransfer.files[0]);
             }
         });
         
@@ -485,15 +540,13 @@
             $('#fileName').text(file.name);
             $('#fileSize').text((file.size / 1024 / 1024).toFixed(2) + ' MB');
             $('#fileInfo').addClass('show');
-            
-            // Auto-clear previous download link
             $('#downloadLinkResult').removeClass('show');
             uploadedFileId = null;
             directDownloadLink = null;
             $('#submitBtn').prop('disabled', false);
         }
         
-        $('#uploadForm').on('submit', async function(e) {
+        $('#uploadForm').on('submit', async (e) => {
             e.preventDefault();
             
             const packageName = $('#packageName').val().trim();
@@ -517,34 +570,21 @@
             $('#submitBtn').prop('disabled', true).html('<i class="bi bi-hourglass-split"></i> Uploading...');
             
             try {
-                // Upload file to Drive
-                const uploadSuccess = await authenticateAndUpload();
+                const uploadSuccess = await uploadToDrive();
+                if (!uploadSuccess || !directDownloadLink) throw new Error('File upload failed');
                 
-                if (!uploadSuccess || !directDownloadLink) {
-                    throw new Error('File upload failed');
-                }
-                
-                // Submit to Sheet
-                const formData = {
-                    packageName: packageName,
-                    os: os,
-                    version: version,
-                    sourceUrl: sourceUrl,
-                    downloadLink: directDownloadLink
-                };
-                
-                const sheetSuccess = await submitToSheet(formData);
+                const sheetSuccess = await submitToSheet({
+                    packageName, os, version, sourceUrl, downloadLink: directDownloadLink
+                });
                 
                 if (sheetSuccess) {
                     Swal.fire({
                         icon: 'success',
                         title: 'Success!',
-                        html: `<strong>${packageName}</strong> has been added to the repository.<br><br>
-                               Download Link: <a href="${directDownloadLink}" target="_blank">${directDownloadLink.substring(0, 60)}...</a>`,
+                        html: `<strong>${packageName}</strong> has been added.<br><a href="${directDownloadLink}" target="_blank">View Download Link</a>`,
                         confirmButtonColor: '#0f5b9c'
                     });
                     
-                    // Reset form
                     $('#uploadForm')[0].reset();
                     $('#fileInfo').removeClass('show');
                     $('#downloadLinkResult').removeClass('show');
@@ -555,13 +595,7 @@
                     throw new Error('Sheet submission failed');
                 }
             } catch (error) {
-                console.error('Error:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Submission Failed',
-                    text: error.message || 'Something went wrong. Please try again.',
-                    confirmButtonColor: '#0f5b9c'
-                });
+                Swal.fire({ icon: 'error', title: 'Submission Failed', text: error.message, confirmButtonColor: '#0f5b9c' });
             } finally {
                 $('#submitBtn').prop('disabled', false).html('<i class="bi bi-check-circle"></i> Submit to Repository');
             }
@@ -571,31 +605,18 @@
             const link = $('#generatedLink').attr('href');
             if (link) {
                 navigator.clipboard.writeText(link);
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Copied!',
-                    text: 'Download link copied to clipboard',
-                    toast: true,
-                    timer: 2000,
-                    showConfirmButton: false
-                });
+                Swal.fire({ icon: 'success', title: 'Copied!', toast: true, timer: 2000, showConfirmButton: false });
             }
         }
         
-        // Load Google API
         function loadGoogleAPI() {
             const script = document.createElement('script');
             script.src = 'https://apis.google.com/js/api.js';
-            script.onload = () => {
-                gapi.load('client:auth2', initGoogleAuth);
-            };
+            script.onload = () => gapi.load('client:auth2', initGoogleAuth);
             document.head.appendChild(script);
         }
         
-        // Initialize when document is ready
-        $(document).ready(function() {
-            loadGoogleAPI();
-        });
+        $(document).ready(() => loadGoogleAPI());
     </script>
 </body>
 </html>
