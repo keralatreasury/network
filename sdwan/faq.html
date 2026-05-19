@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>NOC Command Center | FAQ & Troubleshooting Hub</title>
+    <!-- Local CSS files (only essential ones) -->
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../css/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="../css/main-style.css" rel="stylesheet">
+    <!-- Google Fonts (external, but acceptable for UI) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <style>
+        /* Additional custom NOC styling */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        html, body {
+            height: 100%;
+            overflow-x: hidden;
+        }
+        body {
+            background: var(--bg-primary);
+            font-family: 'Inter', sans-serif;
+            overflow-y: auto !important;
+            min-height: 100vh;
+        }
+        .noc-header {
+            background: linear-gradient(135deg, #0f5b9c 0%, #1a4b7a 100%);
+            padding: 2rem 0 1.5rem 0;
+            border-bottom: 3px solid #00d2ff;
+            margin-bottom: 2rem;
+        }
+        .noc-header h1 {
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        .noc-header p {
+            color: #a0c4e8;
+        }
+        .search-section {
+            background: var(--bg-secondary);
+            border-radius: 60px;
+            padding: 0.3rem 0.3rem 0.3rem 1.5rem;
+            box-shadow: 0 10px 25px -5px var(--shadow-color);
+            border: 1px solid var(--border-color);
+            transition: all 0.2s;
+        }
+        .search-section:focus-within {
+            border-color: #00d2ff;
+            box-shadow: 0 0 0 3px rgba(0,210,255,0.2);
+        }
+        .search-input {
+            border: none;
+            background: transparent;
+            color: var(--text-primary);
+            padding: 0.75rem 0;
+            font-size: 1rem;
+            width: 100%;
+            outline: none;
+        }
+        .search-input::placeholder {
+            color: var(--text-muted);
+        }
+        .search-btn {
+            background: linear-gradient(135deg, #0f5b9c 0%, #1a4b7a 100%);
+            border: none;
+            border-radius: 50px;
+            padding: 0.6rem 1.8rem;
+            color: white;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .search-btn:hover {
+            background: linear-gradient(135deg, #0d2b3e, #0a1a2f);
+            transform: translateY(-1px);
+        }
+        .category-tabs {
+            border-bottom: 2px solid var(--border-color);
+            margin-bottom: 1.8rem;
+            flex-wrap: wrap;
+            gap: 0.25rem;
+        }
+        .category-tabs .nav-link {
+            border: none;
+            color: var(--text-secondary);
+            font-weight: 600;
+            padding: 0.7rem 1.4rem;
+            border-radius: 40px;
+            transition: all 0.2s;
+            margin-right: 0.5rem;
+            background: transparent;
+        }
+        .category-tabs .nav-link:hover {
+            background: var(--dropdown-hover);
+            color: var(--text-primary);
+        }
+        .category-tabs .nav-link.active {
+            background: linear-gradient(135deg, #0f5b9c 0%, #1a4b7a 100%);
+            color: white;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        .accordion-item {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            margin-bottom: 1rem;
+            border-radius: 16px !important;
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+        .accordion-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px var(--shadow-color);
+        }
+        .accordion-button {
+            background: var(--card-bg);
+            color: var(--text-primary);
+            font-weight: 600;
+            padding: 1.2rem 1.5rem;
+            font-size: 1rem;
+            border: none;
+        }
+        .accordion-button:not(.collapsed) {
+            background: linear-gradient(90deg, rgba(0,210,255,0.05), transparent);
+            color: #00d2ff;
+            box-shadow: none;
+        }
+        .accordion-button:focus {
+            box-shadow: none;
+            border-color: transparent;
+        }
+        .accordion-body {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            padding: 1.5rem;
+            border-top: 1px solid var(--border-color);
+            line-height: 1.6;
+        }
+        .accordion-body img {
+            max-width: 100%;
+            border-radius: 12px;
+            margin: 0.75rem 0;
+        }
+        .accordion-body iframe {
+            width: 100%;
+            border-radius: 12px;
+            margin: 0.5rem 0;
+        }
+        .badge-category {
+            background: rgba(0,210,255,0.15);
+            color: #00d2ff;
+            font-size: 0.7rem;
+            padding: 0.25rem 0.7rem;
+            border-radius: 30px;
+            margin-left: 0.75rem;
+            vertical-align: middle;
+        }
+        .faq-empty {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: var(--bg-secondary);
+            border-radius: 24px;
+            border: 1px solid var(--border-color);
+        }
+        .faq-empty i {
+            font-size: 3rem;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+        }
+        .stats-bar {
+            background: var(--bg-secondary);
+            border-radius: 40px;
+            padding: 0.5rem 1.2rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 1rem;
+            border: 1px solid var(--border-color);
+        }
+        footer {
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-color);
+            padding: 1.5rem;
+            margin-top: 3rem;
+            text-align: center;
+            color: var(--text-muted);
+        }
+        /* Pagination Styles */
+        .pagination-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin: 2rem 0 1rem;
+            flex-wrap: wrap;
+        }
+        .pagination-btn {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 8px 16px;
+            border-radius: 40px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+        .pagination-btn:hover:not(:disabled) {
+            background: var(--dropdown-hover);
+            transform: translateY(-1px);
+        }
+        .pagination-btn.active {
+            background: linear-gradient(135deg, #0f5b9c 0%, #1a4b7a 100%);
+            color: white;
+            border-color: transparent;
+        }
+        .pagination-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .page-info {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            padding: 8px 16px;
+            border-radius: 40px;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        .items-per-page {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 40px;
+            padding: 6px 12px;
+            color: var(--text-primary);
+            margin-left: 10px;
+        }
+        .items-per-page:focus {
+            outline: none;
+            border-color: #00d2ff;
+        }
+        @media (max-width: 768px) {
+            .category-tabs .nav-link {
+                padding: 0.5rem 1rem;
+                font-size: 0.85rem;
+            }
+            .accordion-button {
+                padding: 1rem;
+                font-size: 0.9rem;
+            }
+            .search-section {
+                padding: 0.2rem 0.2rem 0.2rem 1rem;
+            }
+            .search-btn {
+                padding: 0.5rem 1.2rem;
+            }
+            .pagination-btn {
+                padding: 6px 12px;
+                font-size: 0.8rem;
+            }
+        }
+        .loader-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+        .loader-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid var(--border-color);
+            border-top: 4px solid #00d2ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        pre {
+            background: var(--bg-primary);
+            padding: 0.75rem;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+        code {
+            color: #00d2ff;
+        }
+        /* icon spacing */
+        .bi {
+            vertical-align: middle;
+            margin-right: 4px;
+        }
+        .btn .bi, .accordion-button .bi {
+            margin-right: 8px;
+        }
+        .stats-bar .bi {
+            font-size: 1.2rem;
+        }
+        /* Ensure main container allows scrolling */
+        .main-content {
+            min-height: calc(100vh - 250px);
+        }
+    </style>
+</head>
+<body class="light-theme">
+    <div class="noc-header">
+        <div class="container">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                <div>
+                    <h1 class="text-white mb-1"><i class="bi bi-hdd-network-fill me-3"></i>NOC F.A.Q</h1>
+                </div>
+                <div class="stats-bar">
+                    <i class="bi bi-database-fill text-info"></i>
+                    <span id="totalCount" class="fw-semibold">0</span>
+                    <span class="text-muted">solutions</span>
+                    <div class="vr mx-1"></div>
+                    <i class="bi bi-tags-fill text-info"></i>
+                    <span id="categoryCount" class="fw-semibold">0</span>
+                    <span>categories</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mb-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="search-section d-flex align-items-center justify-content-between">
+                    <i class="bi bi-search text-muted me-2"></i>
+                    <input type="text" id="searchInput" class="search-input" placeholder="Search by keywords, tags, or question... (e.g., latency, VPN, switch)">
+                    <button id="searchBtn" class="search-btn ms-2"><i class="bi bi-search"></i> </button>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap">
+                    <div><i class="bi bi-lightbulb text-warning"></i> <span class="small text-muted">Tip: Use keywords like 'VPN', 'latency', 'SSH'</span></div>
+                    <button id="resetBtn" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-repeat"></i> Reset Filters</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container main-content" style="min-width: 90%;">
+        <!-- Category Tabs (dynamically generated) -->
+        <ul class="nav nav-tabs category-tabs" id="categoryTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" data-category="all" type="button" role="tab"><i class="bi bi-grid-3x3-gap-fill me-1"></i> All Categories</button>
+            </li>
+        </ul>
+
+        <!-- Accordion Container -->
+        <div id="faqAccordion" class="accordion"></div>
+        
+        <!-- Pagination Controls -->
+        <div id="paginationControls" class="pagination-container" style="display: none;">
+            <button id="prevPageBtn" class="pagination-btn" disabled><i class="bi bi-chevron-left"></i> Previous</button>
+            <div id="pageNumbers" class="d-flex gap-2 flex-wrap"></div>
+            <button id="nextPageBtn" class="pagination-btn">Next <i class="bi bi-chevron-right"></i></button>
+            <div class="items-per-page ms-3">
+                <label class="text-muted me-2">Show:</label>
+                <select id="itemsPerPage" style="background: transparent; border: none; color: var(--text-primary);">
+                    <option value="5">5</option>
+                    <option value="10" selected>10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="faq-empty" id="emptyState" style="display: none;">
+            <i class="bi bi-inbox-fill"></i>
+            <h4 class="mt-2">No matching results</h4>
+            <p class="text-muted">Try different keywords or clear the search filter</p>
+        </div>
+    </div>
+
+    <footer>
+        
+    </footer>
+
+    <!-- loader overlay -->
+    <div id="loader" class="loader-overlay" style="display: none;">
+        <div class="loader-spinner"></div>
+    </div>
+
+    <!-- local JS files -->
+    <script src="../js/jquery.min.js"></script>
+    <script src="../js/bootstrap.bundle.min.js"></script>
+    <script src="../js/sweetalert2.all.min.js"></script>
+    
+    <script>
+        // Configuration
+        const SHEET_ID = '18f4XE_t7AmS30iztxqXWjO9oYdM6KjtyTVotPeGGLLE';
+        const API_KEY = 'AIzaSyDc8tegwi2rgHyDFYm7uWBqVqQ7Fwb3uWM';
+        const SHEET_NAME = 'NOC_FAQ';
+        const SHEET_RANGE = `${SHEET_NAME}!A:F`;
+        
+        let allFaqs = [];
+        let uniqueCategories = new Set();
+        let currentPage = 1;
+        let itemsPerPage = 10;
+        let currentFilteredFaqs = [];
+        
+        // DOM elements
+        const searchInput = document.getElementById('searchInput');
+        const searchBtn = document.getElementById('searchBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const faqAccordion = document.getElementById('faqAccordion');
+        const emptyState = document.getElementById('emptyState');
+        const totalCountSpan = document.getElementById('totalCount');
+        const categoryCountSpan = document.getElementById('categoryCount');
+        const categoryTabs = document.getElementById('categoryTabs');
+        const paginationControls = document.getElementById('paginationControls');
+        const prevPageBtn = document.getElementById('prevPageBtn');
+        const nextPageBtn = document.getElementById('nextPageBtn');
+        const pageNumbersDiv = document.getElementById('pageNumbers');
+        const itemsPerPageSelect = document.getElementById('itemsPerPage');
+        
+        let currentCategory = 'all';
+        let currentSearchTerm = '';
+        
+        // Helper: show/hide loader
+        function showLoader(show) {
+            document.getElementById('loader').style.display = show ? 'flex' : 'none';
+        }
+        
+        // Fetch data from Google Sheets using API v4
+        async function fetchGoogleSheetData() {
+            showLoader(true);
+            try {
+                const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_RANGE}?key=${API_KEY}`;
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+                if (!data.values || data.values.length < 2) {
+                    throw new Error('No data rows found in sheet');
+                }
+                const rows = data.values.slice(1);
+                const faqs = [];
+                uniqueCategories.clear();
+                
+                rows.forEach((row, idx) => {
+                    const id = row[0] || idx+1;
+                    const category = row[1] ? row[1].trim() : 'Uncategorized';
+                    const tagsRaw = row[2] ? row[2].toString() : '';
+                    const question = row[3] ? row[3].trim() : 'Untitled Question';
+                    let answerHtml = row[4] ? row[4].trim() : '<p>No answer provided.</p>';
+                    const status = row[5] ? row[5].trim().toLowerCase() : 'active';
+                    
+                    if (status !== 'active') return;
+                    
+                    const tagsArray = tagsRaw.split(',').map(t => t.trim().toLowerCase()).filter(t => t);
+                    uniqueCategories.add(category);
+                    
+                    faqs.push({
+                        id: id,
+                        category: category,
+                        tags: tagsArray,
+                        tagsRaw: tagsRaw,
+                        question: question,
+                        answer: answerHtml,
+                        status: status
+                    });
+                });
+                allFaqs = faqs;
+                updateStats();
+                renderCategoryTabs();
+                return faqs;
+            } catch (error) {
+                console.error('Sheet fetch error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Data Load Failed',
+                    text: 'Could not load FAQ from Google Sheet.',
+                    footer: `<a href="https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit" target="_blank">Open sheet</a>`
+                });
+                return [];
+            } finally {
+                showLoader(false);
+            }
+        }
+        
+        function updateStats() {
+            totalCountSpan.innerText = allFaqs.length;
+            categoryCountSpan.innerText = uniqueCategories.size;
+        }
+        
+        function renderCategoryTabs() {
+            let tabsHtml = `<li class="nav-item" role="presentation">
+                <button class="nav-link ${currentCategory === 'all' ? 'active' : ''}" data-category="all" type="button" role="tab"><i class="bi bi-grid-3x3-gap-fill me-1"></i> All Categories</button>
+            </li>`;
+            const sortedCategories = Array.from(uniqueCategories).sort();
+            sortedCategories.forEach(cat => {
+                tabsHtml += `<li class="nav-item" role="presentation">
+                    <button class="nav-link ${currentCategory === cat ? 'active' : ''}" data-category="${escapeHtml(cat)}" type="button" role="tab"><i class="bi bi-folder-fill me-1"></i> ${escapeHtml(cat)}</button>
+                </li>`;
+            });
+            categoryTabs.innerHTML = tabsHtml;
+            
+            document.querySelectorAll('#categoryTabs .nav-link').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const cat = btn.getAttribute('data-category');
+                    if (cat) {
+                        currentCategory = cat;
+                        currentSearchTerm = searchInput.value.trim();
+                        currentPage = 1;
+                        applyFiltersAndRender();
+                        document.querySelectorAll('#categoryTabs .nav-link').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                    }
+                });
+            });
+        }
+        
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+        
+        function getFilteredFaqs() {
+            let filtered = [...allFaqs];
+            if (currentCategory !== 'all') {
+                filtered = filtered.filter(faq => faq.category === currentCategory);
+            }
+            if (currentSearchTerm) {
+                const term = currentSearchTerm.toLowerCase().trim();
+                filtered = filtered.filter(faq => {
+                    const inQuestion = faq.question.toLowerCase().includes(term);
+                    const inTags = faq.tagsRaw.toLowerCase().includes(term);
+                    const inTagArray = faq.tags.some(tag => tag.includes(term));
+                    return inQuestion || inTags || inTagArray;
+                });
+            }
+            return filtered;
+        }
+        
+        function applyFiltersAndRender() {
+            currentFilteredFaqs = getFilteredFaqs();
+            currentPage = 1;
+            renderAccordionWithPagination();
+        }
+        
+        function renderAccordionWithPagination() {
+            const totalItems = currentFilteredFaqs.length;
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+            
+            if (totalItems === 0) {
+                faqAccordion.innerHTML = '';
+                emptyState.style.display = 'block';
+                paginationControls.style.display = 'none';
+                return;
+            }
+            
+            emptyState.style.display = 'none';
+            
+            // Calculate start and end indices
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+            const pageItems = currentFilteredFaqs.slice(startIndex, endIndex);
+            
+            // Render accordion items for current page
+            let accordionHtml = '';
+            pageItems.forEach((faq, idx) => {
+                const accordionId = `faq-${faq.id}-${startIndex + idx}`;
+                const headerId = `heading-${faq.id}-${startIndex + idx}`;
+                let processedAnswer = faq.answer;
+                processedAnswer = processedAnswer.replace(/<img /g, '<img class="img-fluid rounded" style="max-width:100%; height:auto;" ');
+                processedAnswer = processedAnswer.replace(/<iframe /g, '<iframe class="rounded" style="width:100%; border:none;" ');
+                
+                const tagPills = faq.tags.slice(0,5).map(tag => `<span class="badge bg-secondary me-1 opacity-75">#${escapeHtml(tag)}</span>`).join('');
+                
+                accordionHtml += `
+                    <div class="accordion-item mb-3" data-category="${escapeHtml(faq.category)}">
+                        <h2 class="accordion-header" id="${headerId}">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#${accordionId}" aria-expanded="false" aria-controls="${accordionId}">
+                                <i class="bi bi-question-circle-fill text-info me-3"></i>
+                                ${escapeHtml(faq.question)}
+                                <span class="badge-category ms-2">${escapeHtml(faq.category)}</span>
+                                ${tagPills ? `<span class="ms-2">${tagPills}</span>` : ''}
+                            </button>
+                        </h2>
+                        <div id="${accordionId}" class="accordion-collapse collapse" aria-labelledby="${headerId}" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                ${processedAnswer}
+                                <hr class="my-2">
+                                <small class="text-muted"><i class="bi bi-tag-fill"></i> Tags: ${faq.tagsRaw || '—'}</small>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            faqAccordion.innerHTML = accordionHtml;
+            
+            // Render pagination controls
+            renderPaginationControls(totalPages, totalItems, startIndex, endIndex);
+            paginationControls.style.display = 'flex';
+        }
+        
+        function renderPaginationControls(totalPages, totalItems, startIndex, endIndex) {
+            // Update prev/next buttons
+            prevPageBtn.disabled = currentPage === 1;
+            nextPageBtn.disabled = currentPage === totalPages || totalPages === 0;
+            
+            // Generate page number buttons
+            let pageNumbersHtml = '';
+            const maxVisiblePages = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+            
+            if (endPage - startPage < maxVisiblePages - 1) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
+            }
+            
+            if (startPage > 1) {
+                pageNumbersHtml += `<button class="pagination-btn page-num" data-page="1">1</button>`;
+                if (startPage > 2) pageNumbersHtml += `<span class="page-info">...</span>`;
+            }
+            
+            for (let i = startPage; i <= endPage; i++) {
+                pageNumbersHtml += `<button class="pagination-btn page-num ${i === currentPage ? 'active' : ''}" data-page="${i}">${i}</button>`;
+            }
+            
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) pageNumbersHtml += `<span class="page-info">...</span>`;
+                pageNumbersHtml += `<button class="pagination-btn page-num" data-page="${totalPages}">${totalPages}</button>`;
+            }
+            
+            pageNumbersDiv.innerHTML = pageNumbersHtml;
+            
+            // Add event listeners to page number buttons
+            document.querySelectorAll('.page-num').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const page = parseInt(btn.getAttribute('data-page'));
+                    if (!isNaN(page) && page !== currentPage) {
+                        currentPage = page;
+                        renderAccordionWithPagination();
+                        // Scroll to top of accordion
+                        faqAccordion.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                });
+            });
+        }
+        
+        function performSearch() {
+            currentSearchTerm = searchInput.value.trim();
+            currentPage = 1;
+            applyFiltersAndRender();
+        }
+        
+        function resetFilters() {
+            searchInput.value = '';
+            currentSearchTerm = '';
+            currentCategory = 'all';
+            currentPage = 1;
+            renderCategoryTabs();
+            applyFiltersAndRender();
+        }
+        
+        function handleItemsPerPageChange() {
+            itemsPerPage = parseInt(itemsPerPageSelect.value);
+            currentPage = 1;
+            applyFiltersAndRender();
+        }
+        
+        async function init() {
+            showLoader(true);
+            await fetchGoogleSheetData();
+            applyFiltersAndRender();
+            showLoader(false);
+            
+            searchBtn.addEventListener('click', performSearch);
+            resetBtn.addEventListener('click', resetFilters);
+            prevPageBtn.addEventListener('click', () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    renderAccordionWithPagination();
+                    faqAccordion.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+            nextPageBtn.addEventListener('click', () => {
+                const totalPages = Math.ceil(currentFilteredFaqs.length / itemsPerPage);
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    renderAccordionWithPagination();
+                    faqAccordion.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+            itemsPerPageSelect.addEventListener('change', handleItemsPerPageChange);
+            searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') performSearch();
+            });
+        }
+        
+        init();
+        
+        // Theme handling
+        const themeToggle = document.querySelector('.theme-switch input');
+        if (themeToggle) {
+            themeToggle.addEventListener('change', function() {
+                if (this.checked) {
+                    document.body.classList.remove('light-theme');
+                    document.body.classList.add('dark-theme');
+                    localStorage.setItem('theme', 'dark');
+                } else {
+                    document.body.classList.remove('dark-theme');
+                    document.body.classList.add('light-theme');
+                    localStorage.setItem('theme', 'light');
+                }
+            });
+        } else {
+            const storedTheme = localStorage.getItem('theme');
+            if (storedTheme === 'dark') {
+                document.body.classList.remove('light-theme');
+                document.body.classList.add('dark-theme');
+            }
+        }
+        
+        // External links open in new tab
+        document.addEventListener('click', function(e) {
+            if (e.target.tagName === 'A' && e.target.href && !e.target.getAttribute('target')) {
+                if (e.target.href.startsWith('http')) {
+                    e.target.setAttribute('target', '_blank');
+                    e.target.setAttribute('rel', 'noopener noreferrer');
+                }
+            }
+        });
+    </script>
+</body>
+</html>
