@@ -286,6 +286,15 @@
         border-color: #dc2626;
         background-color: #fee2e2;
     }
+    /* Restrict input styling for numeric fields */
+    input.numeric-input {
+        -moz-appearance: textfield;
+    }
+    input.numeric-input::-webkit-outer-spin-button,
+    input.numeric-input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
     </style>
 </head>
 <body>
@@ -303,7 +312,6 @@
             <strong>LAN Pool:</strong> <span id="displayLanPool">—</span>
         </div>
      <p style="color: red;">*Batch limit: 30 assets. Please submit any additional assets in a new batch</p>
-         <p style="color: red;">*Only Provide last part of NOD number (after "trycode-NOD-")  </p>
         <div id="pcRowsContainer"></div>
         <div class="mt-3 d-flex gap-3 flex-wrap align-items-center">
             <button id="addMorePcBtn" class="btn btn-outline-secondary add-pc-btn"><i class="bi bi-plus-lg"></i> Add New</button>
@@ -322,7 +330,7 @@
                     <tr><th>ID</th><th>District</th><th>Treasury</th><th>Branch</th><th>Asset ID</th><th>IP Assigned</th><th>Working</th><th>Confirm</th><th>Actions</th></tr>
                 </thead>
                 <tbody></tbody>
-            </table>
+             </table>
         </div>
     </div>
 </div>
@@ -532,6 +540,45 @@
         $part3.on('input', checkAndHighlight);
     }
     
+    // ------------------------------------------------------------------
+    // Helper: Restrict input to numbers only for given jQuery element
+    // ------------------------------------------------------------------
+    function restrictToNumbers($inputElement) {
+        if (!$inputElement.length) return;
+        $inputElement.on('input', function(e) {
+            let val = $(this).val();
+            // Remove any non-digit characters
+            let newVal = val.replace(/\D/g, '');
+            if (newVal !== val) {
+                $(this).val(newVal);
+            }
+        });
+        // Also handle keypress for preventing non-digit characters before they appear
+        $inputElement.on('keypress', function(e) {
+            const charCode = e.which ? e.which : e.keyCode;
+            // Allow backspace, delete, tab, escape, enter, etc. (control keys)
+            if (charCode === 0 || charCode === 8 || charCode === 9 || charCode === 13 || charCode === 27 || 
+                charCode === 46 || (charCode >= 37 && charCode <= 40)) {
+                return true;
+            }
+            // Allow only digit characters (0-9)
+            if (charCode < 48 || charCode > 57) {
+                e.preventDefault();
+                return false;
+            }
+            return true;
+        });
+        // Also handle paste event to sanitize numbers
+        $inputElement.on('paste', function(e) {
+            const pastedText = (e.originalEvent.clipboardData || window.clipboardData).getData('text');
+            if (pastedText && /\D/.test(pastedText)) {
+                e.preventDefault();
+                const numbersOnly = pastedText.replace(/\D/g, '');
+                $(this).val(numbersOnly);
+            }
+        });
+    }
+    
     function createTableRow(index) {
         let defaultLanPrefix = "10.165.4.";
         if (currentSettings.lanPool) {
@@ -549,14 +596,14 @@
                 <div class="asset-combiner">
                     <input type="text" class="asset-part1" value="${currentBranchCode}" style="width:65px;" readonly>
                     <span class="asset-sep">-NOD-</span>
-                    <input type="text" class="asset-part3" placeholder="Number" style="width:70px;">
+                    <input type="text" class="asset-part3 numeric-input" placeholder="Number" style="width:70px;">
                 </div>
             </div>
             <div class="field-cell">
                 <label class="form-label required">IP Address</label>
                 <div class="ip-combiner">
                     <input type="text" class="ip-prefix-field" value="${defaultLanPrefix}" readonly style="width:90px;">
-                    <input type="text" class="ip-last-field" placeholder="octet" value="" style="width:50px;">
+                    <input type="text" class="ip-last-field numeric-input" placeholder="octet" value="" style="width:50px;">
                 </div>
             </div>
             <div class="small-select-field">
@@ -587,6 +634,11 @@
         const idx = pcRowCounter++;
         const newRow = $(createTableRow(idx));
         $("#pcRowsContainer").append(newRow);
+        
+        // Apply numeric restriction to asset-part3 and ip-last-field
+        restrictToNumbers(newRow.find(".asset-part3"));
+        restrictToNumbers(newRow.find(".ip-last-field"));
+        
         attachRealTimeDuplicateCheck(newRow);
         newRow.find('.delete-row-btn').on('click', function() {
             $(this).closest('.pc-row-table').remove();
