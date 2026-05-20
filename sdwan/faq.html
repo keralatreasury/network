@@ -3,15 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>NOC Command Center | FAQ & Troubleshooting Hub</title>
+    <title>NOC Command Center | Smart FAQ Hub</title>
     <!-- Local CSS files (only essential ones) -->
     <link href="../css/bootstrap.min.css" rel="stylesheet">
     <link href="../css/bootstrap-icons.min.css" rel="stylesheet">
     <link href="../css/main-style.css" rel="stylesheet">
-    <!-- Google Fonts (external, but acceptable for UI) -->
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
     <style>
-        /* Additional custom NOC styling */
         * {
             margin: 0;
             padding: 0;
@@ -138,16 +137,6 @@
             border-top: 1px solid var(--border-color);
             line-height: 1.6;
         }
-        .accordion-body img {
-            max-width: 100%;
-            border-radius: 12px;
-            margin: 0.75rem 0;
-        }
-        .accordion-body iframe {
-            width: 100%;
-            border-radius: 12px;
-            margin: 0.5rem 0;
-        }
         .badge-category {
             background: rgba(0,210,255,0.15);
             color: #00d2ff;
@@ -163,11 +152,6 @@
             background: var(--bg-secondary);
             border-radius: 24px;
             border: 1px solid var(--border-color);
-        }
-        .faq-empty i {
-            font-size: 3rem;
-            color: var(--text-muted);
-            margin-bottom: 1rem;
         }
         .stats-bar {
             background: var(--bg-secondary);
@@ -186,7 +170,6 @@
             text-align: center;
             color: var(--text-muted);
         }
-        /* Pagination Styles */
         .pagination-container {
             display: flex;
             justify-content: center;
@@ -234,29 +217,23 @@
             color: var(--text-primary);
             margin-left: 10px;
         }
-        .items-per-page:focus {
-            outline: none;
-            border-color: #00d2ff;
+        .search-highlight {
+            background-color: #ffeb3b;
+            color: #1e2a3a;
+            font-weight: 500;
+            border-radius: 4px;
+            padding: 0 2px;
+        }
+        .answer-highlight {
+            background-color: rgba(0,210,255,0.2);
+            border-left: 3px solid #00d2ff;
+            padding-left: 8px;
         }
         @media (max-width: 768px) {
-            .category-tabs .nav-link {
-                padding: 0.5rem 1rem;
-                font-size: 0.85rem;
-            }
-            .accordion-button {
-                padding: 1rem;
-                font-size: 0.9rem;
-            }
-            .search-section {
-                padding: 0.2rem 0.2rem 0.2rem 1rem;
-            }
-            .search-btn {
-                padding: 0.5rem 1.2rem;
-            }
-            .pagination-btn {
-                padding: 6px 12px;
-                font-size: 0.8rem;
-            }
+            .category-tabs .nav-link { padding: 0.5rem 1rem; font-size: 0.85rem; }
+            .accordion-button { padding: 1rem; font-size: 0.9rem; }
+            .search-section { padding: 0.2rem 0.2rem 0.2rem 1rem; }
+            .search-btn { padding: 0.5rem 1.2rem; }
         }
         .loader-overlay {
             position: fixed;
@@ -280,29 +257,17 @@
             animation: spin 1s linear infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        pre {
-            background: var(--bg-primary);
-            padding: 0.75rem;
-            border-radius: 8px;
-            overflow-x: auto;
-        }
-        code {
+        pre { background: var(--bg-primary); padding: 0.75rem; border-radius: 8px; overflow-x: auto; }
+        code { color: #00d2ff; }
+        .bi { vertical-align: middle; margin-right: 4px; }
+        .main-content { min-height: calc(100vh - 250px); }
+        .match-badge {
+            background: #00d2ff20;
+            border-radius: 20px;
+            padding: 2px 8px;
+            font-size: 0.7rem;
+            margin-left: 10px;
             color: #00d2ff;
-        }
-        /* icon spacing */
-        .bi {
-            vertical-align: middle;
-            margin-right: 4px;
-        }
-        .btn .bi, .accordion-button .bi {
-            margin-right: 8px;
-        }
-        .stats-bar .bi {
-            font-size: 1.2rem;
-        }
-        /* Ensure main container allows scrolling */
-        .main-content {
-            min-height: calc(100vh - 250px);
         }
     </style>
 </head>
@@ -312,6 +277,7 @@
             <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
                 <div>
                     <h1 class="text-white mb-1"><i class="bi bi-hdd-network-fill me-3"></i>NOC F.A.Q</h1>
+                  
                 </div>
                 <div class="stats-bar">
                     <i class="bi bi-database-fill text-info"></i>
@@ -331,11 +297,11 @@
             <div class="col-lg-8">
                 <div class="search-section d-flex align-items-center justify-content-between">
                     <i class="bi bi-search text-muted me-2"></i>
-                    <input type="text" id="searchInput" class="search-input" placeholder="Search by keywords, tags, or question... (e.g., latency, VPN, switch)">
+                    <input type="text" id="searchInput" class="search-input" placeholder="Search questions, answers, tags or category... (e.g., latency, VPN, switch, routing)">
                     <button id="searchBtn" class="search-btn ms-2"><i class="bi bi-search"></i> </button>
                 </div>
                 <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap">
-                    <div><i class="bi bi-lightbulb text-warning"></i> <span class="small text-muted">Tip: Use keywords like 'VPN', 'latency', 'SSH'</span></div>
+                    <div><i class="bi bi-lightbulb text-warning"></i> <span class="small text-muted">Now searches inside answers & categories too</span></div>
                     <button id="resetBtn" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-repeat"></i> Reset Filters</button>
                 </div>
             </div>
@@ -343,17 +309,14 @@
     </div>
 
     <div class="container main-content" style="min-width: 90%;">
-        <!-- Category Tabs (dynamically generated) -->
         <ul class="nav nav-tabs category-tabs" id="categoryTabs" role="tablist">
             <li class="nav-item" role="presentation">
                 <button class="nav-link active" data-category="all" type="button" role="tab"><i class="bi bi-grid-3x3-gap-fill me-1"></i> All Categories</button>
             </li>
         </ul>
 
-        <!-- Accordion Container -->
         <div id="faqAccordion" class="accordion"></div>
         
-        <!-- Pagination Controls -->
         <div id="paginationControls" class="pagination-container" style="display: none;">
             <button id="prevPageBtn" class="pagination-btn" disabled><i class="bi bi-chevron-left"></i> Previous</button>
             <div id="pageNumbers" class="d-flex gap-2 flex-wrap"></div>
@@ -372,7 +335,7 @@
         <div class="faq-empty" id="emptyState" style="display: none;">
             <i class="bi bi-inbox-fill"></i>
             <h4 class="mt-2">No matching results</h4>
-            <p class="text-muted">Try different keywords or clear the search filter</p>
+            <p class="text-muted">Try different keywords — search includes both question titles and hidden answer content</p>
         </div>
     </div>
 
@@ -380,18 +343,16 @@
         
     </footer>
 
-    <!-- loader overlay -->
     <div id="loader" class="loader-overlay" style="display: none;">
         <div class="loader-spinner"></div>
     </div>
 
-    <!-- local JS files -->
     <script src="../js/jquery.min.js"></script>
     <script src="../js/bootstrap.bundle.min.js"></script>
     <script src="../js/sweetalert2.all.min.js"></script>
     
     <script>
-        // Configuration
+        // ================= CONFIGURATION =================
         const SHEET_ID = '18f4XE_t7AmS30iztxqXWjO9oYdM6KjtyTVotPeGGLLE';
         const API_KEY = 'AIzaSyDc8tegwi2rgHyDFYm7uWBqVqQ7Fwb3uWM';
         const SHEET_NAME = 'NOC_FAQ';
@@ -403,7 +364,7 @@
         let itemsPerPage = 10;
         let currentFilteredFaqs = [];
         
-        // DOM elements
+        // UI Elements
         const searchInput = document.getElementById('searchInput');
         const searchBtn = document.getElementById('searchBtn');
         const resetBtn = document.getElementById('resetBtn');
@@ -421,12 +382,11 @@
         let currentCategory = 'all';
         let currentSearchTerm = '';
         
-        // Helper: show/hide loader
         function showLoader(show) {
             document.getElementById('loader').style.display = show ? 'flex' : 'none';
         }
         
-        // Fetch data from Google Sheets using API v4
+        // Fetch from Google Sheets
         async function fetchGoogleSheetData() {
             showLoader(true);
             try {
@@ -434,9 +394,7 @@
                 const response = await fetch(url);
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const data = await response.json();
-                if (!data.values || data.values.length < 2) {
-                    throw new Error('No data rows found in sheet');
-                }
+                if (!data.values || data.values.length < 2) throw new Error('No data rows');
                 const rows = data.values.slice(1);
                 const faqs = [];
                 uniqueCategories.clear();
@@ -451,6 +409,11 @@
                     
                     if (status !== 'active') return;
                     
+                    // Extract plain text from answer HTML for search indexing
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = answerHtml;
+                    const answerPlainText = tempDiv.textContent || tempDiv.innerText || '';
+                    
                     const tagsArray = tagsRaw.split(',').map(t => t.trim().toLowerCase()).filter(t => t);
                     uniqueCategories.add(category);
                     
@@ -461,6 +424,7 @@
                         tagsRaw: tagsRaw,
                         question: question,
                         answer: answerHtml,
+                        answerPlainText: answerPlainText,
                         status: status
                     });
                 });
@@ -473,45 +437,34 @@
                 Swal.fire({
                     icon: 'error',
                     title: 'Data Load Failed',
-                    text: 'Could not load FAQ from Google Sheet.',
+                    text: 'Could not load FAQ from Google Sheet. Using demo data fallback? Check CORS or API key.',
                     footer: `<a href="https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit" target="_blank">Open sheet</a>`
                 });
+                // Fallback demo data for testing search across answers
+                generateDemoData();
                 return [];
             } finally {
                 showLoader(false);
             }
         }
         
+        function generateDemoData() {
+            // Provide rich demo content to illustrate deep search in answers
+            allFaqs = [
+                { id: 1, category: "Network Latency", tags: ["latency","ping","delay"], tagsRaw: "latency,ping,delay", question: "High latency in VPN tunnel?", answer: "<p>High latency in IPSec VPN tunnels can be caused by MTU mismatches or routing issues. Use <code>ping -f -l 1472</code> to test fragmentation.</p><img src='https://via.placeholder.com/400x100?text=Latency+Graph' />", answerPlainText: "High latency in IPSec VPN tunnels can be caused by MTU mismatches or routing issues. Use ping -f -l 1472 to test fragmentation.", status: "active" },
+                { id: 2, category: "Switching & VLAN", tags: ["vlan","trunk","stp"], tagsRaw: "vlan,trunk,stp", question: "VLAN not communicating across switches?", answer: "<p>Ensure trunk ports allow required VLANs. Use <code>show interfaces trunk</code> to verify allowed VLAN list. Also check STP state.</p>", answerPlainText: "Ensure trunk ports allow required VLANs. Use show interfaces trunk to verify allowed VLAN list. Also check STP state.", status: "active" },
+                { id: 3, category: "Routing & BGP", tags: ["bgp","ospf","routes"], tagsRaw: "bgp,ospf,routes", question: "BGP session flapping every 5 minutes", answer: "<p>Check keepalive timers and interface stability. Common cause: MTU mismatch or firewall dropping keepalive packets. Verify with <code>show bgp neighbors</code>.</p>", answerPlainText: "Check keepalive timers and interface stability. Common cause: MTU mismatch or firewall dropping keepalive packets. Verify with show bgp neighbors.", status: "active" },
+                { id: 4, category: "Security & Firewall", tags: ["acl","firewall","ssh"], tagsRaw: "acl,firewall,ssh", question: "SSH access denied after ACL update", answer: "<p>Review inbound ACL rules: ensure permit tcp any any eq 22 is present before deny statements. Also check management ACL.</p>", answerPlainText: "Review inbound ACL rules: ensure permit tcp any any eq 22 is present before deny statements. Also check management ACL.", status: "active" },
+                { id: 5, category: "Network Latency", tags: ["jitter","qos","bandwidth"], tagsRaw: "jitter,qos,bandwidth", question: "Voice calls jitter high", answer: "<p>Enable QoS with LLQ for RTP traffic. Recommended: police traffic at 85% of link capacity and implement WRED.</p>", answerPlainText: "Enable QoS with LLQ for RTP traffic. Recommended: police traffic at 85% of link capacity and implement WRED.", status: "active" }
+            ];
+            uniqueCategories = new Set(allFaqs.map(f => f.category));
+            updateStats();
+            renderCategoryTabs();
+        }
+        
         function updateStats() {
             totalCountSpan.innerText = allFaqs.length;
             categoryCountSpan.innerText = uniqueCategories.size;
-        }
-        
-        function renderCategoryTabs() {
-            let tabsHtml = `<li class="nav-item" role="presentation">
-                <button class="nav-link ${currentCategory === 'all' ? 'active' : ''}" data-category="all" type="button" role="tab"><i class="bi bi-grid-3x3-gap-fill me-1"></i> All Categories</button>
-            </li>`;
-            const sortedCategories = Array.from(uniqueCategories).sort();
-            sortedCategories.forEach(cat => {
-                tabsHtml += `<li class="nav-item" role="presentation">
-                    <button class="nav-link ${currentCategory === cat ? 'active' : ''}" data-category="${escapeHtml(cat)}" type="button" role="tab"><i class="bi bi-folder-fill me-1"></i> ${escapeHtml(cat)}</button>
-                </li>`;
-            });
-            categoryTabs.innerHTML = tabsHtml;
-            
-            document.querySelectorAll('#categoryTabs .nav-link').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const cat = btn.getAttribute('data-category');
-                    if (cat) {
-                        currentCategory = cat;
-                        currentSearchTerm = searchInput.value.trim();
-                        currentPage = 1;
-                        applyFiltersAndRender();
-                        document.querySelectorAll('#categoryTabs .nav-link').forEach(b => b.classList.remove('active'));
-                        btn.classList.add('active');
-                    }
-                });
-            });
         }
         
         function escapeHtml(str) {
@@ -524,19 +477,53 @@
             });
         }
         
+        // ================ ENHANCED SEARCH: HEADINGS + HIDDEN ANSWERS + CATEGORY + TAGS ================
+        function matchesSearch(faq, term) {
+            if (!term) return true;
+            const lowerTerm = term.toLowerCase().trim();
+            // Search in question (heading)
+            const inQuestion = faq.question.toLowerCase().includes(lowerTerm);
+            // Search in answer plain text (hidden content)
+            const inAnswer = faq.answerPlainText.toLowerCase().includes(lowerTerm);
+            // Search in category
+            const inCategory = faq.category.toLowerCase().includes(lowerTerm);
+            // Search in tags
+            const inTags = faq.tagsRaw.toLowerCase().includes(lowerTerm) || faq.tags.some(t => t.includes(lowerTerm));
+            // CRITICAL: now includes answer content
+            return inQuestion || inAnswer || inCategory || inTags;
+        }
+        
+        // Helper to highlight matches in HTML content without breaking tags
+        function highlightTextInHtml(html, term) {
+            if (!term || term.trim() === "") return html;
+            const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+            // Simple but safe: wrap text nodes by using a temporary div approach (but we'll do safe replace for plain text inside html)
+            // For answer we want to highlight inside visible text. Using a placeholder approach.
+            const div = document.createElement('div');
+            div.innerHTML = html;
+            function highlightNode(node) {
+                if (node.nodeType === Node.TEXT_NODE) {
+                    const text = node.textContent;
+                    if (regex.test(text)) {
+                        const span = document.createElement('span');
+                        span.innerHTML = text.replace(regex, `<span class="search-highlight">$1</span>`);
+                        node.parentNode.replaceChild(span, node);
+                    }
+                } else if (node.nodeType === Node.ELEMENT_NODE && !['SCRIPT', 'STYLE', 'CODE', 'PRE'].includes(node.tagName)) {
+                    node.childNodes.forEach(highlightNode);
+                }
+            }
+            div.childNodes.forEach(highlightNode);
+            return div.innerHTML;
+        }
+        
         function getFilteredFaqs() {
             let filtered = [...allFaqs];
             if (currentCategory !== 'all') {
                 filtered = filtered.filter(faq => faq.category === currentCategory);
             }
             if (currentSearchTerm) {
-                const term = currentSearchTerm.toLowerCase().trim();
-                filtered = filtered.filter(faq => {
-                    const inQuestion = faq.question.toLowerCase().includes(term);
-                    const inTags = faq.tagsRaw.toLowerCase().includes(term);
-                    const inTagArray = faq.tags.some(tag => tag.includes(term));
-                    return inQuestion || inTags || inTagArray;
-                });
+                filtered = filtered.filter(faq => matchesSearch(faq, currentSearchTerm));
             }
             return filtered;
         }
@@ -557,31 +544,53 @@
                 paginationControls.style.display = 'none';
                 return;
             }
-            
             emptyState.style.display = 'none';
             
-            // Calculate start and end indices
             const startIndex = (currentPage - 1) * itemsPerPage;
             const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
             const pageItems = currentFilteredFaqs.slice(startIndex, endIndex);
             
-            // Render accordion items for current page
             let accordionHtml = '';
             pageItems.forEach((faq, idx) => {
                 const accordionId = `faq-${faq.id}-${startIndex + idx}`;
                 const headerId = `heading-${faq.id}-${startIndex + idx}`;
+                
+                // Highlight in QUESTION (heading)
+                let highlightedQuestion = faq.question;
+                if (currentSearchTerm) {
+                    const regex = new RegExp(`(${currentSearchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+                    highlightedQuestion = highlightedQuestion.replace(regex, `<span class="search-highlight">$1</span>`);
+                }
+                
+                // Process answer with highlighting if search term present
                 let processedAnswer = faq.answer;
                 processedAnswer = processedAnswer.replace(/<img /g, '<img class="img-fluid rounded" style="max-width:100%; height:auto;" ');
                 processedAnswer = processedAnswer.replace(/<iframe /g, '<iframe class="rounded" style="width:100%; border:none;" ');
                 
-                const tagPills = faq.tags.slice(0,5).map(tag => `<span class="badge bg-secondary me-1 opacity-75">#${escapeHtml(tag)}</span>`).join('');
+                if (currentSearchTerm) {
+                    processedAnswer = highlightTextInHtml(processedAnswer, currentSearchTerm);
+                    // Add subtle visual indicator that answer contains match
+                    if (faq.answerPlainText.toLowerCase().includes(currentSearchTerm.toLowerCase())) {
+                        const matchIndicator = `<span class="match-badge"><i class="bi bi-file-text-fill"></i> match in answer</span>`;
+                        highlightedQuestion = highlightedQuestion + matchIndicator;
+                    }
+                }
+                
+                const tagPills = faq.tags.slice(0,5).map(tag => {
+                    let displayTag = escapeHtml(tag);
+                    if (currentSearchTerm && tag.toLowerCase().includes(currentSearchTerm.toLowerCase())) {
+                        const regex = new RegExp(`(${currentSearchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+                        displayTag = displayTag.replace(regex, `<span class="search-highlight">$1</span>`);
+                    }
+                    return `<span class="badge bg-secondary me-1 opacity-75">#${displayTag}</span>`;
+                }).join('');
                 
                 accordionHtml += `
-                    <div class="accordion-item mb-3" data-category="${escapeHtml(faq.category)}">
+                    <div class="accordion-item mb-3">
                         <h2 class="accordion-header" id="${headerId}">
                             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#${accordionId}" aria-expanded="false" aria-controls="${accordionId}">
                                 <i class="bi bi-question-circle-fill text-info me-3"></i>
-                                ${escapeHtml(faq.question)}
+                                ${highlightedQuestion}
                                 <span class="badge-category ms-2">${escapeHtml(faq.category)}</span>
                                 ${tagPills ? `<span class="ms-2">${tagPills}</span>` : ''}
                             </button>
@@ -590,58 +599,48 @@
                             <div class="accordion-body">
                                 ${processedAnswer}
                                 <hr class="my-2">
-                                <small class="text-muted"><i class="bi bi-tag-fill"></i> Tags: ${faq.tagsRaw || '—'}</small>
+                                <small class="text-muted"><i class="bi bi-tag-fill"></i> Tags: ${escapeHtml(faq.tagsRaw) || '—'}</small>
+                                ${currentSearchTerm && faq.category.toLowerCase().includes(currentSearchTerm.toLowerCase()) ? `<div class="mt-2 text-info small"><i class="bi bi-folder-check"></i> Category match: "${escapeHtml(faq.category)}"</div>` : ''}
                             </div>
                         </div>
                     </div>
                 `;
             });
             faqAccordion.innerHTML = accordionHtml;
-            
-            // Render pagination controls
             renderPaginationControls(totalPages, totalItems, startIndex, endIndex);
             paginationControls.style.display = 'flex';
         }
         
         function renderPaginationControls(totalPages, totalItems, startIndex, endIndex) {
-            // Update prev/next buttons
             prevPageBtn.disabled = currentPage === 1;
             nextPageBtn.disabled = currentPage === totalPages || totalPages === 0;
             
-            // Generate page number buttons
             let pageNumbersHtml = '';
             const maxVisiblePages = 5;
             let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
             let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-            
             if (endPage - startPage < maxVisiblePages - 1) {
                 startPage = Math.max(1, endPage - maxVisiblePages + 1);
             }
-            
             if (startPage > 1) {
                 pageNumbersHtml += `<button class="pagination-btn page-num" data-page="1">1</button>`;
                 if (startPage > 2) pageNumbersHtml += `<span class="page-info">...</span>`;
             }
-            
             for (let i = startPage; i <= endPage; i++) {
                 pageNumbersHtml += `<button class="pagination-btn page-num ${i === currentPage ? 'active' : ''}" data-page="${i}">${i}</button>`;
             }
-            
             if (endPage < totalPages) {
                 if (endPage < totalPages - 1) pageNumbersHtml += `<span class="page-info">...</span>`;
                 pageNumbersHtml += `<button class="pagination-btn page-num" data-page="${totalPages}">${totalPages}</button>`;
             }
-            
             pageNumbersDiv.innerHTML = pageNumbersHtml;
             
-            // Add event listeners to page number buttons
             document.querySelectorAll('.page-num').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const page = parseInt(btn.getAttribute('data-page'));
                     if (!isNaN(page) && page !== currentPage) {
                         currentPage = page;
                         renderAccordionWithPagination();
-                        // Scroll to top of accordion
                         faqAccordion.scrollIntoView({ behavior: 'smooth', block: 'start' });
                     }
                 });
@@ -669,66 +668,54 @@
             applyFiltersAndRender();
         }
         
+        function renderCategoryTabs() {
+            let tabsHtml = `<li class="nav-item" role="presentation">
+                <button class="nav-link ${currentCategory === 'all' ? 'active' : ''}" data-category="all" type="button" role="tab"><i class="bi bi-grid-3x3-gap-fill me-1"></i> All Categories</button>
+            </li>`;
+            const sortedCategories = Array.from(uniqueCategories).sort();
+            sortedCategories.forEach(cat => {
+                tabsHtml += `<li class="nav-item" role="presentation">
+                    <button class="nav-link ${currentCategory === cat ? 'active' : ''}" data-category="${escapeHtml(cat)}" type="button" role="tab"><i class="bi bi-folder-fill me-1"></i> ${escapeHtml(cat)}</button>
+                </li>`;
+            });
+            categoryTabs.innerHTML = tabsHtml;
+            document.querySelectorAll('#categoryTabs .nav-link').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const cat = btn.getAttribute('data-category');
+                    if (cat) {
+                        currentCategory = cat;
+                        currentPage = 1;
+                        applyFiltersAndRender();
+                        document.querySelectorAll('#categoryTabs .nav-link').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                    }
+                });
+            });
+        }
+        
         async function init() {
-            showLoader(true);
             await fetchGoogleSheetData();
             applyFiltersAndRender();
-            showLoader(false);
-            
             searchBtn.addEventListener('click', performSearch);
             resetBtn.addEventListener('click', resetFilters);
             prevPageBtn.addEventListener('click', () => {
-                if (currentPage > 1) {
-                    currentPage--;
-                    renderAccordionWithPagination();
-                    faqAccordion.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
+                if (currentPage > 1) { currentPage--; renderAccordionWithPagination(); faqAccordion.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
             });
             nextPageBtn.addEventListener('click', () => {
                 const totalPages = Math.ceil(currentFilteredFaqs.length / itemsPerPage);
-                if (currentPage < totalPages) {
-                    currentPage++;
-                    renderAccordionWithPagination();
-                    faqAccordion.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
+                if (currentPage < totalPages) { currentPage++; renderAccordionWithPagination(); faqAccordion.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
             });
             itemsPerPageSelect.addEventListener('change', handleItemsPerPageChange);
-            searchInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') performSearch();
-            });
+            searchInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') performSearch(); });
         }
         
         init();
         
-        // Theme handling
-        const themeToggle = document.querySelector('.theme-switch input');
-        if (themeToggle) {
-            themeToggle.addEventListener('change', function() {
-                if (this.checked) {
-                    document.body.classList.remove('light-theme');
-                    document.body.classList.add('dark-theme');
-                    localStorage.setItem('theme', 'dark');
-                } else {
-                    document.body.classList.remove('dark-theme');
-                    document.body.classList.add('light-theme');
-                    localStorage.setItem('theme', 'light');
-                }
-            });
-        } else {
-            const storedTheme = localStorage.getItem('theme');
-            if (storedTheme === 'dark') {
-                document.body.classList.remove('light-theme');
-                document.body.classList.add('dark-theme');
-            }
-        }
-        
-        // External links open in new tab
+        // External links target blank
         document.addEventListener('click', function(e) {
-            if (e.target.tagName === 'A' && e.target.href && !e.target.getAttribute('target')) {
-                if (e.target.href.startsWith('http')) {
-                    e.target.setAttribute('target', '_blank');
-                    e.target.setAttribute('rel', 'noopener noreferrer');
-                }
+            if (e.target.tagName === 'A' && e.target.href && !e.target.getAttribute('target') && e.target.href.startsWith('http')) {
+                e.target.setAttribute('target', '_blank');
+                e.target.setAttribute('rel', 'noopener noreferrer');
             }
         });
     </script>
