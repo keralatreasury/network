@@ -251,7 +251,7 @@
         
         // ======================== INACTIVITY LOGOUT ========================
         let inactivityTimer = null;
-        const INACTIVITY_LIMIT_MS = 5 * 60 * 1000; // 5 minutes (change to 15*60*1000 for 15 min)
+        const INACTIVITY_LIMIT_MS = 15 * 60 * 1000; // 5 minutes (change to 15*60*1000 for 15 min)
         
         function resetInactivityTimer() {
             if (!window.isAuthenticated) return;
