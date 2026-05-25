@@ -604,7 +604,7 @@
                 </div>
                 <div class="step-item">
                     <div class="step-number">2</div>
-                    <div>In the black window, type: <code>ping <span class="gateway-placeholder" id="pingGateway1">[Your New Gateway IP]</span></code></div>
+                    <div>In the black window, type: <code>ping <span class="gateway-placeholder" id="pingGateway1">[Please choose treasury above to know yout Gateway IP]</span></code></div>
                 </div>
                 
                 <div class="result-box">
@@ -663,48 +663,79 @@
             </div>
             
             <!-- ==================== SECTION 3: Basic Software Configuration ==================== -->
-            <div id="software-config" class="doc-section">
-                <div class="section-header">
-                    <i class="bi bi-3-circle-fill"></i> Basic Software Configuration
-                </div>
-                
-                <div class="section-subheader" id="pc-network">
-                    <i class="bi bi-pc-display"></i> 3.1 PC Network Configuration
-                </div>
-                
-                <table class="config-table">
-                    <thead>
-                        <tr>
-                            <th>Setting</th>
-                            <th>Value</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><i class="bi bi-hash"></i> IP Address</td>
-                            <td><span class="badge bg-secondary">No Change (Keep existing)</span></td>
-                        </tr>
-                        <tr>
-                            <td><i class="bi bi-grid-3x3"></i> Subnet Mask</td>
-                            <td><span class="badge bg-secondary">No Change (Keep existing)</span></td>
-                        </tr>
-                        <tr>
-                            <td><i class="bi bi-router"></i> Default Gateway</td>
-                            <td>
-                                <span class="gateway-highlight" id="configGateway">Select a treasury</span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><i class="bi bi-server"></i> Preferred DNS</td>
-                            <td><code>10.5.141.72</code></td>
-                        </tr>
-                        <tr>
-                            <td><i class="bi bi-server"></i> Alternate DNS</td>
-                            <td><code>10.5.141.73</code></td>
-                        </tr>
-                    </tbody>
-                </table>
+ <div id="software-config" class="doc-section">
+    <div class="section-header">
+        <i class="bi bi-3-circle-fill"></i> Basic Software Configuration
+    </div>
+    
+    <div class="section-subheader" id="pc-network">
+        <i class="bi bi-pc-display"></i> 3.1 PC Network Configuration
+    </div>
+    
+    <!-- === START: Added Steps for Opening Network Settings === -->
+    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #0d6efd;">
+        <p style="margin-top: 0; font-weight: bold; margin-bottom: 10px;"><i class="bi bi-info-circle-fill"></i> Before configuring, open network settings:</p>
+        
+        <div style="display: flex; flex-wrap: wrap; gap: 20px;">
+            <!-- Windows Section - Updated with ncpa.cpl as primary method -->
+            <div style="flex: 1; min-width: 200px;">
+                <p style="margin: 0 0 8px 0; font-weight: bold; color: #0078d4;"><i class="bi bi-windows"></i> Windows (IPv4)</p>
+                <ol style="margin: 0; padding-left: 1.2rem;">
+                    <li>Press <kbd>Win+R</kbd> → Type <code>ncpa.cpl</code> → Press <kbd>Enter</kbd></li>
+                    <li>Right-click your active network (Ethernet/Wi-Fi) → <strong>Properties</strong></li>
+                    <li>Select <strong>Internet Protocol Version 4 (TCP/IPv4)</strong> → Click <strong>Properties</strong></li>
+                </ol>
+                <p style="margin: 5px 0 0 0; font-size: 0.85em; color: #6c757d;">Alternative: Control Panel → Network and Sharing Center → Change adapter settings</p>
             </div>
+            
+            <!-- Ubuntu Section -->
+            <div style="flex: 1; min-width: 200px;">
+                <p style="margin: 0 0 8px 0; font-weight: bold; color: #e95420;"><i class="bi bi-ubuntu"></i> Ubuntu (Desktop)</p>
+                <ol style="margin: 0; padding-left: 1.2rem;">
+                    <li>Click <strong>top-right network icon</strong> (Wi-Fi/Ethernet symbol)</li>
+                    <li>Select <strong>Settings</strong> or <strong>Connection Information</strong> → <strong>Wired/Wi-Fi Settings</strong></li>
+                    <li>Click the <strong>gear icon</strong> next to your active connection</li>
+                    <li>Go to <strong>IPv4</strong> tab → configure as needed</li>
+                </ol>
+                <p style="margin: 5px 0 0 0; font-size: 0.85em; color: #6c757d;">Alternative (CLI): <code>nm-connection-editor</code> or edit <code>/etc/netplan/*.yaml</code></p>
+            </div>
+        </div>
+    </div>
+    <!-- === END: Added Steps === -->
+    
+    <table class="config-table">
+        <thead>
+            <tr>
+                <th>Setting</th>
+                <th>Value</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><i class="bi bi-hash"></i> IP Address</td>
+                <td><span class="badge bg-secondary">No Change (Keep existing)</span></td>
+            </tr>
+            <tr>
+                <td><i class="bi bi-grid-3x3"></i> Subnet Mask</td>
+                <td><span class="badge bg-secondary">No Change (Keep existing)</span></td>
+            </tr>
+            <tr>
+                <td><i class="bi bi-router"></i> Default Gateway</td>
+                <td>
+                    <span class="gateway-highlight" id="configGateway">Choose your Treasury above to know Gateway IP </span>
+                </td>
+            </tr>
+            <tr>
+                <td><i class="bi bi-server"></i> Preferred DNS</td>
+                <td><code>10.5.141.72</code></td>
+            </tr>
+            <tr>
+                <td><i class="bi bi-server"></i> Alternate DNS</td>
+                <td><code>10.5.141.73</code></td>
+            </tr>
+        </tbody>
+    </table>
+</div>
             
             <!-- ==================== SECTION 4: Disable Proxy Settings ==================== -->
             <div id="disable-proxy" class="doc-section">
