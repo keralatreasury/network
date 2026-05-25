@@ -8,7 +8,14 @@
     <!-- LOCAL RESOURCES - Using your existing project files -->
     <link rel="stylesheet" href="../css/bootstrap.min.css">
     <link rel="stylesheet" href="../css/bootstrap-icons.min.css">
-    
+<!-- Google Fonts - Noto Serif Malayalam -->
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Malayalam:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+    * {
+        font-family: 'Noto Serif Malayalam', 'Noto Sans Malayalam', sans-serif;
+    }
+</style>    
     <style>
         :root {
             --primary: #0f5b9c;
@@ -520,7 +527,7 @@
             <div class="navbar-brand">
                 <i class="bi bi-hdd-network"></i>
                 <div>
-                    <h2>SDWAN MIGRATION</h2>
+                    <h2>SDWAN മൈഗ്രേഷൻ</h2>
                     
                 </div>
             </div>
@@ -547,8 +554,8 @@
                     <i class="bi bi-hdd-network-fill"></i>
                 </div>
                 <div>
-                    <h1>SDWAN മൈഗ്രേഷൻ</h1>
-                    <p>ട്രഷറികൾക്കുള്ള മാർഗ്ഗനിർദ്ദേശങ്ങൾ</p>
+                    <h1>ട്രഷറികൾക്കുള്ള മാർഗ്ഗനിർദ്ദേശങ്ങൾ</h1>
+                   
                 </div>
             </div>
             
@@ -588,12 +595,14 @@
                 </div>
                 <div class="step-item">
                     <div class="step-number">2</div>
-                    <div>തുറന്നുവരുന്ന വിൻഡോയിൽ <code>ping <span class="gateway-placeholder" id="pingGateway1">[Your New Gateway IP]</span></code> എന്ന് ടൈപ്പ് ചെയ്യുക.</div>
+                    <div>തുറന്നുവരുന്ന വിൻഡോയിൽ <code>ping <span class="gateway-placeholder" id="pingGateway1">[മുകളിൽ നിങ്ങളുടെ ട്രഷറി സെലക്ട് ചെയ്യുക ]</span></code> എന്ന് ടൈപ്പ് ചെയ്യുക.</div>
                 </div>
                 
                 <div class="result-box">
-                    <div><span class="text-success">✓ Reply from... :</span> ഈ IP നിലവിൽ <strong>ഉപയോഗത്തിലുണ്ട്</strong>. ആ ഉപകരണം കണ്ടെത്തി അതിന്റെ IP മാറ്റേണ്ടതാണ്.</div>
-                    <div class="mt-2"><span class="text-danger">✗ Request timed out :</span> ഈ IP നിലവിൽ <strong>ഒഴിഞ്ഞു കിടക്കുകയാണ്</strong>.</div>
+                    <div><span class="text-success"> Reply from... :</span> ഈ IP നിലവിൽ <strong>ഉപയോഗത്തിലുണ്ട്</strong>. ആ ഉപകരണം കണ്ടെത്തി അതിന്റെ IP മാറ്റേണ്ടതാണ്.</div>
+                    <div class="mt-2"><span class="text-danger">  Request timed out :</span> ഈ IP നിലവിൽ <strong>ഒഴിഞ്ഞു കിടക്കുകയാണ്</strong>.</div> അല്ലെങ്കിൽ 
+  <div class="mt-2"><span class="text-danger"> Destination Host Unreachable :</span> ഈ IP നിലവിൽ <strong>ഒഴിഞ്ഞു കിടക്കുകയാണ്</strong>.</div>
+
                 </div>
                 
                 <h6 class="mt-3 fw-bold">Ubuntu (Linux) സിസ്റ്റങ്ങളിൽ</h6>
@@ -603,7 +612,7 @@
                 </div>
                 <div class="step-item">
                     <div class="step-number">2</div>
-                    <div><code>ping -c 4 <span class="gateway-placeholder" id="pingGateway2">[Your New Gateway IP]</span></code> എന്ന് ടൈപ്പ് ചെയ്യുക.</div>
+                    <div><code>ping -c 4 <span class="gateway-placeholder" id="pingGateway2">[മുകളിൽ നിങ്ങളുടെ ട്രഷറി സെലക്ട് ചെയ്യുക ]</span></code> എന്ന് ടൈപ്പ് ചെയ്യുക.</div>
                 </div>
                 
                 <div class="result-box">
@@ -644,37 +653,36 @@
             </div>
             
             <!-- SECTION 3: Basic Software Configuration -->
-           <div id="software-config" class="doc-section">
+       <div id="software-config" class="doc-section">
     <div class="section-header">
-        <i class="bi bi-3-circle-fill"></i> അടിസ്ഥാന സോഫ്റ്റ്വെയർ കോൺഫിഗറേഷൻ
+        <i class="bi bi-3-circle-fill"></i> അടിസ്ഥാന സോഫ്റ്റ് വെയർ  കോൺഫിഗറേഷൻ
     </div>
     
     <div class="section-subheader" id="pc-network">
-        <i class="bi bi-pc-display"></i> 3.1 പിസി നെറ്റ്വർക്ക് കോൺഫിഗറേഷൻ
+        <i class="bi bi-pc-display"></i> 3.1 പിസി നെറ്റ് വർക്ക്  കോൺഫിഗറേഷൻ
     </div>
     
-    <!-- === START: നെറ്റ്വർക്ക് ക്രമീകരണങ്ങൾ തുറക്കുന്നതിനുള്ള ഘട്ടങ്ങൾ (മലയാളം) === -->
+    <!-- === START: നെറ്റ് വർക്ക്  ക്രമീകരണങ്ങൾ തുറക്കുന്നതിനുള്ള ഘട്ടങ്ങൾ === -->
     <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #0d6efd;">
-        <p style="margin-top: 0; font-weight: bold; margin-bottom: 10px;"><i class="bi bi-info-circle-fill"></i> കോൺഫിഗർ ചെയ്യുന്നതിന് മുമ്പ്, നെറ്റ്വർക്ക് ക്രമീകരണങ്ങൾ തുറക്കുക:</p>
+        <p style="margin-top: 0; font-weight: bold; margin-bottom: 10px;"><i class="bi bi-info-circle-fill"></i> കോൺഫിഗർ ചെയ്യുന്നതിന് മുമ്പ്, നെറ്റ് വർക്ക് ക്രമീകരണങ്ങൾ തുറക്കുക:</p>
         
         <div style="display: flex; flex-wrap: wrap; gap: 20px;">
-            <!-- Windows Section (Malayalam) -->
+            <!-- Windows Section - Malayalam -->
             <div style="flex: 1; min-width: 200px;">
                 <p style="margin: 0 0 8px 0; font-weight: bold; color: #0078d4;"><i class="bi bi-windows"></i> വിൻഡോസ് (IPv4)</p>
                 <ol style="margin: 0; padding-left: 1.2rem;">
-                    <li><strong>കൺട്രോൾ പാനൽ</strong> തുറക്കുക → <strong>നെറ്റ്വർക്ക് ആൻഡ് ഷെയറിംഗ് സെന്റർ</strong> എന്നതിലേക്ക് പോകുക</li>
-                    <li>ഇടതുവശത്ത് <strong>ചേഞ്ച് അഡാപ്റ്റർ സെറ്റിംഗ്സ്</strong> ക്ലിക്ക് ചെയ്യുക</li>
-                    <li>നിങ്ങളുടെ സജീവമായ നെറ്റ്വർക്കിൽ (ഈതർനെറ്റ്/വൈ-ഫൈ) റൈറ്റ് ക്ലിക്ക് ചെയ്ത് → <strong>പ്രോപ്പർട്ടീസ്</strong> തിരഞ്ഞെടുക്കുക</li>
+                    <li><kbd>Win+R</kbd> അമർത്തുക → <code>ncpa.cpl</code> ടൈപ്പ് ചെയ്യുക → <kbd>Enter</kbd> അമർത്തുക</li>
+                    <li>നിങ്ങളുടെ സജീവമായ നെറ്റ് വർക്കിൽ (ഈതർനെറ്റ്/വൈ-ഫൈ) റൈറ്റ് ക്ലിക്ക് ചെയ്ത് → <strong>പ്രോപ്പർട്ടീസ്</strong> തിരഞ്ഞെടുക്കുക</li>
                     <li><strong>ഇന്റർനെറ്റ് പ്രോട്ടോക്കോൾ വേർഷൻ 4 (TCP/IPv4)</strong> സെലക്ട് ചെയ്ത് → <strong>പ്രോപ്പർട്ടീസ്</strong> ക്ലിക്ക് ചെയ്യുക</li>
                 </ol>
-                <p style="margin: 5px 0 0 0; font-size: 0.85em; color: #6c757d;">എളുപ്പ വഴി: <kbd>Win+R</kbd> → <code>ncpa.cpl</code> എന്ന് ടൈപ്പ് ചെയ്ത് എന്റർ അമർത്തുക</p>
+                <p style="margin: 5px 0 0 0; font-size: 0.85em; color: #6c757d;">ഇതര മാർഗ്ഗം: കൺട്രോൾ പാനൽ → നെറ്റ് വർക്ക്  ആൻഡ് ഷെയറിംഗ് സെന്റർ → ചേഞ്ച് അഡാപ്റ്റർ സെറ്റിംഗ്സ്</p>
             </div>
             
-            <!-- Ubuntu Section (Malayalam) -->
+            <!-- Ubuntu Section - Malayalam -->
             <div style="flex: 1; min-width: 200px;">
                 <p style="margin: 0 0 8px 0; font-weight: bold; color: #e95420;"><i class="bi bi-ubuntu"></i> ഉബുണ്ടു (ഡെസ്ക്ടോപ്പ്)</p>
                 <ol style="margin: 0; padding-left: 1.2rem;">
-                    <li>മുകളിൽ വലതുവശത്തുള്ള <strong>നെറ്റ്വർക്ക് ഐക്കൺ</strong> (വൈ-ഫൈ/ഈതർനെറ്റ് ചിഹ്നം) ക്ലിക്ക് ചെയ്യുക</li>
+                    <li>മുകളിൽ വലതുവശത്തുള്ള <strong>നെറ്റ് വർക്ക്  ഐക്കൺ</strong> (വൈ-ഫൈ/ഈതർനെറ്റ് ചിഹ്നം) ക്ലിക്ക് ചെയ്യുക</li>
                     <li><strong>ക്രമീകരണങ്ങൾ</strong> അല്ലെങ്കിൽ <strong>കണക്ഷൻ വിവരങ്ങൾ</strong> തിരഞ്ഞെടുക്കുക → <strong>വയേർഡ്/വൈ-ഫൈ ക്രമീകരണങ്ങൾ</strong> എന്നതിലേക്ക് പോകുക</li>
                     <li>നിങ്ങളുടെ സജീവമായ കണക്ഷന്റെ അടുത്തുള്ള <strong>ഗിയർ ഐക്കൺ</strong> ക്ലിക്ക് ചെയ്യുക</li>
                     <li><strong>IPv4</strong> ടാബിലേക്ക് പോകുക → ആവശ്യമായ വിവരങ്ങൾ കോൺഫിഗർ ചെയ്യുക</li>
@@ -683,7 +691,7 @@
             </div>
         </div>
     </div>
-    <!-- === END: നെറ്റ്വർക്ക് ക്രമീകരണങ്ങൾ തുറക്കുന്നതിനുള്ള ഘട്ടങ്ങൾ === -->
+    <!-- === END: നെറ്റ് വർക്ക്  ക്രമീകരണങ്ങൾ തുറക്കുന്നതിനുള്ള ഘട്ടങ്ങൾ === -->
     
     <table class="config-table">
         <thead>
@@ -694,29 +702,40 @@
         </thead>
         <tbody>
             <tr>
-                <td><i class="bi bi-hash"></i> ഐപി വിലാസം</td>
+                <td><i class="bi bi-hash"></i> ഐപി വിലാസം
+    
                 <td><span class="badge bg-secondary">മാറ്റേണ്ടതില്ല (നിലവിലുള്ളത് നിലനിർത്തുക)</span></td>
             </tr>
             <tr>
-                <td><i class="bi bi-grid-3x3"></i> സബ്നെറ്റ് മാസ്ക്</td>
+                <td><i class="bi bi-grid-3x3"></i> സബ്നെറ്റ് മാസ്ക്
+    
                 <td><span class="badge bg-secondary">മാറ്റേണ്ടതില്ല (നിലവിലുള്ളത് നിലനിർത്തുക)</span></td>
             </tr>
             <tr>
-                <td><i class="bi bi-router"></i> ഡിഫോൾട്ട് ഗേറ്റ്വേ</td>
+                <td><i class="bi bi-router"></i> ഡിഫോൾട്ട്  ഗേറ്റ് വേ 
+    
                 <td>
-                    <span class="gateway-highlight" id="configGateway">ഒരു ട്രഷറി തിരഞ്ഞെടുക്കുക</span>
-                 </td>
+                    <span class="gateway-highlight" id="configGateway">നിങ്ങളുടെ  ട്രഷറി തിരഞ്ഞെടുക്കുക</span>
+                
+    
             </tr>
             <tr>
-                <td><i class="bi bi-server"></i> മുൻഗണനാ ഡിഎൻഎസ്</td>
+                <td><i class="bi bi-server"></i> മുൻഗണനാ ഡിഎൻഎസ്
+    
                 <td><code>10.5.141.72</code></td>
             </tr>
             <tr>
-                <td><i class="bi bi-server"></i> ഇതര ഡിഎൻഎസ്</td>
+                <td><i class="bi bi-server"></i> ഇതര ഡിഎൻഎസ്
+    
                 <td><code>10.5.141.73</code></td>
+
+
             </tr>
         </tbody>
     </table>
+<div class="action-note"><i class="bi bi-arrow-right"></i> ശ്രദ്ധിക്കുക: <strong> ഉബുണ്ടു പി സി കളില്  മുൻഗണനാ ഡിഎൻഎസ് ഉം ഇതര ഡിഎൻഎസ് ഉം കോമ്മ നല്കിയാണ് ചേര്ക്കുക ( ഇങ്ങനെ : -10.5.141.72, 10.5.141.73).</div>
+ 
+
 </div>
             
             <!-- SECTION 4: Disable Proxy Settings -->
@@ -892,7 +911,7 @@
         
         function populateTreasuryDropdown() {
             const $select = $('#treasurySelect');
-            $select.empty().append('<option value="">Select your treasury</option>');
+            $select.empty().append('<option value="">നിങ്ങളുടെ ട്രഷറി തിരഞ്ഞെടുക്കുക</option>');
             
             treasuryData.sort((a, b) => a.name.localeCompare(b.name)).forEach(item => {
                 $select.append(`<option value="${escapeHtml(item.name)}">${escapeHtml(item.name)}</option>`);
@@ -901,7 +920,7 @@
         
         function updateGatewayForSelection(treasuryName) {
             if (!treasuryName) {
-                $('.gateway-placeholder').text('[Your New Gateway IP]');
+                $('.gateway-placeholder').text('[മുകളിൽ നിങ്ങളുടെ ട്രഷറി സെലക്ട് ചെയ്യുക ]');
                 $('#configGateway').text('Select your treasury');
                 $('#selectedGateway').hide();
                 return;
