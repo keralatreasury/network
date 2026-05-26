@@ -910,7 +910,7 @@
         updateBranchInfo();
         if(!branchFromCache) {
             Swal.fire({ icon: 'warning', title: 'Branch Not Detected', text: 'Please login again.' });
-            $("#pcRowsContainer").html('<div class="alert alert-warning">Please login to add PC assets.</div>');
+            $("#pcRowsContainer").html('<div class="alert alert-warning">Please <a href="https://keralatreasury.github.io/network/">login</a> to add PC assets.</div>');
         } else {
             await loadAssetsAndRenderTable();
             refreshPcRows();
