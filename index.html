@@ -482,7 +482,7 @@
         // Maintain compatibility with original notification system if needed
         window.fetchUnreadChatCount = window.fetchUnreadChatCount || function() { return Promise.resolve(0); };
         window.openChatInIframe = window.openChatInIframe || function() {
-            const chatUrl = "./chat.html?t=" + Date.now();
+            const chatUrl = "./br-chat.html?t=" + Date.now();
             const iframe = document.getElementById('content-frame');
             const loading = document.getElementById('loading');
             const welcomeMessage = document.getElementById('welcome-message');
