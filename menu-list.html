@@ -16,6 +16,18 @@
     
     <style>
         * { box-sizing: border-box; }
+
+        :root {
+    --primary: #0f5b9c;
+    --primary-dark: #1a4b7a;
+    --primary-light: #e8f0fe;
+    --success: #10b981;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --dark: #1e293b;
+    --light: #f8fafc;
+    --border: #e9ecef;
+}
         body {
             background: #eef2f7;
             font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
@@ -143,9 +155,46 @@
         .inline-text-input {
             margin-top: 8px;
         }
+        /* New badge style consistency */
+        .badge.bg-info { background-color: #0dcaf0 !important; }
+.header-card {
+    background: white;
+    border-radius: 20px;
+    padding: 20px 30px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+.header-title {
+    display: flex;
+    color: var(--primary);
+    align-items: center;
+    gap: 15px;
+}
+.header-title i {
+    font-size: 2rem;
+    color: var(--primary);
+    background: var(--primary-light);
+    padding: 12px;
+    border-radius: 16px;
+}
     </style>
 </head>
 <body>
+<div class="header-card">
+                <div class="header-title">
+        <i class="bi bi-menu-app"></i>
+                    <div>
+                        <h1>Menu List Manager</h1>
+                       
+                    </div>
+                </div>
+            </div>
 <div class="app-card">
     <div class="tab-header">
         <button class="tab-btn active" id="tabAddBtn"><i class="bi bi-plus-circle"></i> Add Menu Item</button>
@@ -177,19 +226,26 @@
                 <label class="form-label required">Url</label>
                 <input type="text" id="urlValue" class="form-control" placeholder="./path/to/page.html or https://...">
             </div>
-            <div class="col-md-6">
+            <div class="col-md-4">
                 <label class="form-label required">Admin-Menu</label>
                 <select id="adminMenuFlag" class="form-select">
                     <option value="Yes">Yes</option>
                     <option value="No">No</option>
                 </select>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-4">
                 <label class="form-label required">BR-Menu</label>
                 <select id="brMenuFlag" class="form-select">
-                     <option value="No">No</option>
+                    <option value="No">No</option>
                     <option value="Yes">Yes</option>
-                   
+                </select>
+            </div>
+            <!-- NEW USER-MENU FIELD (Column G) -->
+            <div class="col-md-4">
+                <label class="form-label required">User-Menu</label>
+                <select id="userMenuFlag" class="form-select">
+                    <option value="No">No</option>
+                    <option value="Yes">Yes</option>
                 </select>
             </div>
             <div class="col-12 mt-3">
@@ -208,7 +264,14 @@
             <table id="menuTable" class="table table-striped table-hover" style="width:100%">
                 <thead>
                     <tr>
-                        <th>Main menu</th><th>Sub Menu</th><th>link item</th><th>Url</th><th>Admin-Menu</th><th>BR-Menu</th><th>Actions</th>
+                        <th>Main menu</th>
+                        <th>Sub Menu</th>
+                        <th>link item</th>
+                        <th>Url</th>
+                        <th>Admin-Menu</th>
+                        <th>BR-Menu</th>
+                        <th>User-Menu</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody></tbody>
@@ -248,13 +311,18 @@
                         <label class="form-label">Url</label>
                         <input type="text" id="editUrl" class="form-control">
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <label class="form-label">Admin-Menu</label>
                         <select id="editAdminFlag" class="form-select"><option>Yes</option><option>No</option></select>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <label class="form-label">BR-Menu</label>
                         <select id="editBrFlag" class="form-select"><option>Yes</option><option>No</option></select>
+                    </div>
+                    <!-- EDIT MODAL: User-Menu column G -->
+                    <div class="col-md-4">
+                        <label class="form-label">User-Menu</label>
+                        <select id="editUserFlag" class="form-select"><option>Yes</option><option>No</option></select>
                     </div>
                 </div>
             </div>
@@ -278,371 +346,368 @@
     const SPREADSHEET_ID = "1jd1xZe9x2mrZm5KAwGT12vMNYjbrnynsmelNKeK95jc";
     const SHEET_NAME = "All Menu";
     const API_KEY = "AIzaSyDc8tegwi2rgHyDFYm7uWBqVqQ7Fwb3uWM";
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxfUbpikQ_UPXc9B0z2xgz3MeQ6jxPUy_ssMFYsQ4biAq2CbVtxKq1NQUeQyakDf-nhWg/exec"; // Replace with your actual Web App URL
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzBV2h_gpcTBPElc4Zd0tRDLqVIqJ1VG1LCda4--b8Kn5Z47Azv6OQplHojq-Hzf9Kutg/exec"; // Replace with actual Web App URL
     
-    let allMenuData = [];        // stores full menu objects
- let dataTable = null;
- let mainMenuOptions = [];
- let subMenuOptions = [];
- 
- // Helper functions
- function showGlobalLoading(msg = 'Processing...') {
-     if($('#global-loading-overlay').length) return;
-     $('body').append(`<div id="global-loading-overlay"><div style="background:white;padding:30px;border-radius:24px;text-align:center;"><i class="bi bi-arrow-repeat bi-spinner" style="font-size:48px;color:#0f3b5f;"></i><p style="margin-top:15px;">${msg}</p></div></div>`);
- }
- function hideGlobalLoading() { $('#global-loading-overlay').remove(); }
- 
- function setButtonLoading(btn, isLoading, originalHtml) {
-     const $btn = $(btn);
-     if(isLoading) {
-         $btn.data('original-html', $btn.html());
-         $btn.html('<i class="bi bi-arrow-repeat"></i> Processing...');
-         $btn.prop('disabled', true).addClass('btn-loading');
-     } else {
-         $btn.html($btn.data('original-html') || originalHtml);
-         $btn.prop('disabled', false).removeClass('btn-loading');
-     }
- }
- 
- // Fetch distinct values from sheet columns for dropdowns
- async function fetchDistinctMenuOptions() {
-     try {
-         const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_NAME}!A2:F?key=${API_KEY}`;
-         const resp = await fetch(url);
-         const data = await resp.json();
-         const rows = data.values || [];
-         const mainSet = new Set();
-         const subSet = new Set();
-         rows.forEach(row => {
-             if(row[0]) mainSet.add(row[0].trim());
-             if(row[1]) subSet.add(row[1].trim());
-         });
-         mainMenuOptions = Array.from(mainSet).sort();
-         subMenuOptions = Array.from(subSet).sort();
-         populateSelectors();
-     } catch(e) { console.warn("fetch options error", e); }
- }
- 
- function populateSelectors() {
-     // Add Tab selects
-     const $mainSel = $("#mainMenuSelect");
-     $mainSel.empty().append('<option></option>');
-     mainMenuOptions.forEach(opt => $mainSel.append(`<option value="${escapeHtml(opt)}">${escapeHtml(opt)}</option>`));
-     $mainSel.select2({ theme: 'bootstrap-5', placeholder: "Select Main menu", allowClear: true, width: '100%' });
-     
-     const $subSel = $("#subMenuSelect");
-     $subSel.empty().append('<option></option>');
-     subMenuOptions.forEach(opt => $subSel.append(`<option value="${escapeHtml(opt)}">${escapeHtml(opt)}</option>`));
-     $subSel.select2({ theme: 'bootstrap-5', placeholder: "Select Sub Menu", allowClear: true, width: '100%' });
-     
-     // Edit modal selects
-     const $editMain = $("#editMainMenuSelect");
-     $editMain.empty().append('<option></option>');
-     mainMenuOptions.forEach(opt => $editMain.append(`<option value="${escapeHtml(opt)}">${escapeHtml(opt)}</option>`));
-     
-     const $editSub = $("#editSubMenuSelect");
-     $editSub.empty().append('<option></option>');
-     subMenuOptions.forEach(opt => $editSub.append(`<option value="${escapeHtml(opt)}">${escapeHtml(opt)}</option>`));
- }
- 
- function escapeHtml(str) { if(!str) return ''; return String(str).replace(/[&<>]/g, m => m==='&'?'&amp;':m==='<'?'&lt;':'&gt;'); }
- 
- // Fetch full menu data from sheet A2:F
- async function loadAllMenuData() {
-     showGlobalLoading('Loading menu data...');
-     const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_NAME}!A2:F?key=${API_KEY}`;
-     try {
-         const resp = await fetch(url);
-         const data = await resp.json();
-         const rows = data.values || [];
-         allMenuData = rows.map(row => ({
-             mainMenu: (row[0] || "").trim(),
-             subMenu: (row[1] || "").trim(),
-             linkItem: (row[2] || "").trim(),
-             url: (row[3] || "").trim(),
-             adminMenu: (row[4] || "").trim() === "Yes" ? "Yes" : "No",
-             brMenu: (row[5] || "").trim() === "Yes" ? "Yes" : "No"
-         }));
-         renderDataTable();
-         hideGlobalLoading();
-         return allMenuData;
-     } catch(err) {
-         console.error(err);
-         hideGlobalLoading();
-         Swal.fire({ icon: 'error', title: 'Load Failed', text: 'Cannot fetch menu data from Google Sheet' });
-         return [];
-     }
- }
- 
- function renderDataTable() {
-     if(dataTable) {
-         dataTable.destroy();
-         $('#menuTable tbody').empty();
-     }
-     dataTable = $('#menuTable').DataTable({
-         data: allMenuData,
-         columns: [
-             { data: "mainMenu" },
-             { data: "subMenu" },
-             { data: "linkItem" },
-             { data: "url", render: (d) => d ? `<span title="${escapeHtml(d)}">${escapeHtml(d.length>50?d.substring(0,50)+'...':d)}</span>` : '' },
-             { data: "adminMenu", render: (d) => d === "Yes" ? '<span class="badge bg-success">Yes</span>' : '<span class="badge bg-secondary">No</span>' },
-             { data: "brMenu", render: (d) => d === "Yes" ? '<span class="badge bg-success">Yes</span>' : '<span class="badge bg-secondary">No</span>' },
-             { data: null, orderable: false, render: (row) => {
-                 const uniqueKey = btoa(unescape(encodeURIComponent(row.mainMenu + '|' + row.subMenu + '|' + row.linkItem))); // safe key
-                 return `<div class="action-icons"><i class="bi bi-pencil-square edit-row" data-key="${uniqueKey}" data-main="${escapeHtml(row.mainMenu)}" data-sub="${escapeHtml(row.subMenu)}" data-link="${escapeHtml(row.linkItem)}" data-url="${escapeHtml(row.url)}" data-admin="${row.adminMenu}" data-br="${row.brMenu}"></i><i class="bi bi-trash3 delete-row" data-key="${uniqueKey}" data-main="${escapeHtml(row.mainMenu)}" data-sub="${escapeHtml(row.subMenu)}" data-link="${escapeHtml(row.linkItem)}"></i></div>`;
-             } }
-         ],
-         order: [[0, 'asc'], [1, 'asc']],
-         pageLength: -1,
-         language: { search: "Filter:" }
-     });
-     attachTableEvents();
- }
- 
- function attachTableEvents() {
-     $('.edit-row').off('click').on('click', function() {
-         const main = $(this).data('main');
-         const sub = $(this).data('sub');
-         const link = $(this).data('link');
-         const url = $(this).data('url');
-         const admin = $(this).data('admin');
-         const br = $(this).data('br');
-         openEditModal(main, sub, link, url, admin, br);
-     });
-     $('.delete-row').off('click').on('click', function() {
-         const main = $(this).data('main');
-         const sub = $(this).data('sub');
-         const link = $(this).data('link');
-         Swal.fire({
-             title: 'Delete Menu Item?',
-             text: `Are you sure you want to delete "${main} / ${sub} / ${link}"?`,
-             icon: 'warning',
-             showCancelButton: true,
-             confirmButtonColor: '#dc2626',
-             confirmButtonText: 'Yes, delete'
-         }).then(result => {
-             if(result.isConfirmed) deleteMenuItem(main, sub, link);
-         });
-     });
- }
- 
- function getCurrentRowKey(main, sub, link) {
-     return `${main}|||${sub}|||${link}`;
- }
- 
- async function deleteMenuItem(mainMenu, subMenu, linkItem) {
-     showGlobalLoading('Deleting record...');
-     const payload = { action: "DELETE", mainMenu, subMenu, linkItem };
-     try {
-         await fetchWithTimeout(APPS_SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) });
-         hideGlobalLoading();
-         Swal.fire({ icon: 'success', title: 'Deleted!', timer: 1500, showConfirmButton: false });
-         await loadAllMenuData();
-         await fetchDistinctMenuOptions(); // refresh dropdowns
-     } catch(e) {
-         hideGlobalLoading();
-         Swal.fire({ icon: 'error', title: 'Delete Failed', text: e.message });
-     }
- }
- 
- async function fetchWithTimeout(url, options, timeout=15000) {
-     const controller = new AbortController();
-     const id = setTimeout(() => controller.abort(), timeout);
-     const response = await fetch(url, { ...options, signal: controller.signal });
-     clearTimeout(id);
-     return response;
- }
- 
- async function submitNewMenu() {
-     // Get values: Main menu
-     let mainMenu = $("#mainMenuSelect").val();
-     const mainCustom = $("#mainMenuCustom").val();
-     if(mainCustom && mainCustom.trim() !== "") mainMenu = mainCustom.trim();
-     if(!mainMenu) { Swal.fire({ icon: 'warning', title: 'Missing', text: 'Main menu is required' }); return; }
-     
-     let subMenu = $("#subMenuSelect").val();
-     const subCustom = $("#subMenuCustom").val();
-     if(subCustom && subCustom.trim() !== "") subMenu = subCustom.trim();
-     if(!subMenu) { Swal.fire({ icon: 'warning', title: 'Missing', text: 'Sub menu is required' }); return; }
-     
-     const linkItem = $("#linkItem").val().trim();
-     if(!linkItem) { Swal.fire({ icon: 'warning', title: 'Missing', text: 'Link item is required' }); return; }
-     const urlValue = $("#urlValue").val().trim();
-     if(!urlValue) { Swal.fire({ icon: 'warning', title: 'Missing', text: 'URL is required' }); return; }
-     const adminFlag = $("#adminMenuFlag").val();
-     const brFlag = $("#brMenuFlag").val();
-     
-     // Check for duplicate (main+sub+link)
-     const exists = allMenuData.some(item => item.mainMenu === mainMenu && item.subMenu === subMenu && item.linkItem === linkItem);
-     if(exists) {
-         Swal.fire({ icon: 'error', title: 'Duplicate', text: 'This menu item already exists!' });
-         return;
-     }
-     
-     const payload = { action: "ADD", mainMenu, subMenu, linkItem, url: urlValue, adminMenu: adminFlag, brMenu: brFlag };
-     const $btn = $("#submitMenuBtn");
-     const origHtml = $btn.html();
-     setButtonLoading($btn, true, origHtml);
-     try {
-         await fetchWithTimeout(APPS_SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) });
-         Swal.fire({ icon: 'success', title: 'Added!', text: 'Menu item added successfully', timer: 1500, showConfirmButton: false });
-         $("#linkItem").val('');
-         $("#urlValue").val('');
-         $("#adminMenuFlag").val('Yes');
-         $("#brMenuFlag").val('Yes');
-         $("#mainMenuCustom").val('').hide();
-         $("#subMenuCustom").val('').hide();
-         $("#mainMenuSelect").val(null).trigger('change');
-         $("#subMenuSelect").val(null).trigger('change');
-         await loadAllMenuData();
-         await fetchDistinctMenuOptions();
-     } catch(e) {
-         Swal.fire({ icon: 'error', title: 'Error', text: e.message });
-     } finally {
-         setButtonLoading($btn, false, origHtml);
-     }
- }
- 
- function openEditModal(main, sub, link, url, admin, br) {
-     $("#editOriginalKey").val(`${main}|${sub}|${link}`);
-     $("#editLinkItem").val(link);
-     $("#editUrl").val(url);
-     $("#editAdminFlag").val(admin);
-     $("#editBrFlag").val(br);
-     
-     // Populate selects and custom logic
-     const $mainSel = $("#editMainMenuSelect");
-     const $subSel = $("#editSubMenuSelect");
-     $mainSel.val(main).trigger('change');
-     $subSel.val(sub).trigger('change');
-     $("#editMainMenuCustom").val('').hide();
-     $("#editSubMenuCustom").val('').hide();
-     
-     const modal = new bootstrap.Modal(document.getElementById('editMenuModal'));
-     modal.show();
- }
- 
- async function updateMenuHandler() {
-     const originalKey = $("#editOriginalKey").val();
-     const [origMain, origSub, origLink] = originalKey.split('|');
-     
-     let newMain = $("#editMainMenuSelect").val();
-     const mainCustom = $("#editMainMenuCustom").val();
-     if(mainCustom && mainCustom.trim() !== "") newMain = mainCustom.trim();
-     
-     let newSub = $("#editSubMenuSelect").val();
-     const subCustom = $("#editSubMenuCustom").val();
-     if(subCustom && subCustom.trim() !== "") newSub = subCustom.trim();
-     
-     const newLink = $("#editLinkItem").val().trim();
-     const newUrl = $("#editUrl").val().trim();
-     const newAdmin = $("#editAdminFlag").val();
-     const newBr = $("#editBrFlag").val();
-     
-     if(!newMain || !newSub || !newLink || !newUrl) {
-         Swal.fire({ icon: 'warning', title: 'Missing fields', text: 'All fields required' });
-         return;
-     }
-     
-     // Check if changing combination would create duplicate (except current)
-     const duplicateExists = allMenuData.some(item => 
-         (item.mainMenu === newMain && item.subMenu === newSub && item.linkItem === newLink) &&
-         !(item.mainMenu === origMain && item.subMenu === origSub && item.linkItem === origLink)
-     );
-     if(duplicateExists) {
-         Swal.fire({ icon: 'error', title: 'Duplicate', text: 'Another menu item with same Main+Sub+Link exists' });
-         return;
-     }
-     
-     const payload = { 
-         action: "UPDATE", 
-         originalMain: origMain, originalSub: origSub, originalLink: origLink,
-         mainMenu: newMain, subMenu: newSub, linkItem: newLink, url: newUrl, 
-         adminMenu: newAdmin, brMenu: newBr 
-     };
-     
-     const $btn = $("#confirmUpdateBtn");
-     const origHtml = $btn.html();
-     setButtonLoading($btn, true, origHtml);
-     try {
-         await fetchWithTimeout(APPS_SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) });
-         Swal.fire({ icon: 'success', title: 'Updated!', timer: 1500, showConfirmButton: false });
-         bootstrap.Modal.getInstance(document.getElementById('editMenuModal')).hide();
-         await loadAllMenuData();
-         await fetchDistinctMenuOptions();
-     } catch(e) {
-         Swal.fire({ icon: 'error', title: 'Update Failed', text: e.message });
-     } finally {
-         setButtonLoading($btn, false, origHtml);
-     }
- }
- 
- // Custom toggle handlers
- function initCustomToggles() {
-     $("#toggleMainCustom").on("click", function() {
-         $("#mainMenuCustom").toggle();
-         if($("#mainMenuCustom").is(":visible")) $("#mainMenuCustom").focus();
-         else $("#mainMenuCustom").val('');
-     });
-     $("#toggleSubCustom").on("click", function() {
-         $("#subMenuCustom").toggle();
-         if($("#subMenuCustom").is(":visible")) $("#subMenuCustom").focus();
-         else $("#subMenuCustom").val('');
-     });
-     $("#editToggleMainCustom").on("click", function() {
-         $("#editMainMenuCustom").toggle();
-         if($("#editMainMenuCustom").is(":visible")) $("#editMainMenuCustom").focus();
-         else $("#editMainMenuCustom").val('');
-     });
-     $("#editToggleSubCustom").on("click", function() {
-         $("#editSubMenuCustom").toggle();
-         if($("#editSubMenuCustom").is(":visible")) $("#editSubMenuCustom").focus();
-         else $("#editSubMenuCustom").val('');
-     });
-     // When select changes, optionally clear custom if it's selected
-     $("#editMainMenuSelect").on("change", function() { if($(this).val()) $("#editMainMenuCustom").val('').hide(); });
-     $("#editSubMenuSelect").on("change", function() { if($(this).val()) $("#editSubMenuCustom").val('').hide(); });
- }
- 
- // Tab switching
- function switchTab(tab) {
-     if(tab === 'add') {
-         $("#addPane").addClass("active-pane");
-         $("#editPane").removeClass("active-pane");
-         $("#tabAddBtn").addClass("active");
-         $("#tabEditBtn").removeClass("active");
-     } else {
-         $("#editPane").addClass("active-pane");
-         $("#addPane").removeClass("active-pane");
-         $("#tabEditBtn").addClass("active");
-         $("#tabAddBtn").removeClass("active");
-         if(dataTable) dataTable.columns.adjust().draw();
-         else loadAllMenuData();
-     }
- }
- 
- // Initialization
- $(document).ready(async function() {
-     await fetchDistinctMenuOptions();
-     await loadAllMenuData();
-     initCustomToggles();
-     $("#submitMenuBtn").on("click", submitNewMenu);
-     $("#confirmUpdateBtn").on("click", updateMenuHandler);
-     $("#refreshTableBtn").on("click", async () => { await loadAllMenuData(); await fetchDistinctMenuOptions(); });
-     $("#tabAddBtn").on("click", () => switchTab('add'));
-     $("#tabEditBtn").on("click", () => switchTab('edit'));
-     
-     // fallback for custom selects styling
-     $(".main-menu-select, .sub-menu-select").on("select2:select", function(e) {
-         if($(this).attr('id') === 'mainMenuSelect') $("#mainMenuCustom").val('').hide();
-         else $("#subMenuCustom").val('').hide();
-     });
- });
- 
- // Note: You must deploy the corresponding Google Apps Script Web App with the exact endpoints.
- // Provide the .gs function in the next response.
+    let allMenuData = [];        // stores full menu objects (including userMenu field)
+    let dataTable = null;
+    let mainMenuOptions = [];
+    let subMenuOptions = [];
+    
+    // Helper functions
+    function showGlobalLoading(msg = 'Processing...') {
+        if($('#global-loading-overlay').length) return;
+        $('body').append(`<div id="global-loading-overlay"><div style="background:white;padding:30px;border-radius:24px;text-align:center;"><i class="bi bi-arrow-repeat bi-spinner" style="font-size:48px;color:#0f3b5f;"></i><p style="margin-top:15px;">${msg}</p></div></div>`);
+    }
+    function hideGlobalLoading() { $('#global-loading-overlay').remove(); }
+    
+    function setButtonLoading(btn, isLoading, originalHtml) {
+        const $btn = $(btn);
+        if(isLoading) {
+            $btn.data('original-html', $btn.html());
+            $btn.html('<i class="bi bi-arrow-repeat"></i> Processing...');
+            $btn.prop('disabled', true).addClass('btn-loading');
+        } else {
+            $btn.html($btn.data('original-html') || originalHtml);
+            $btn.prop('disabled', false).removeClass('btn-loading');
+        }
+    }
+    
+    function escapeHtml(str) { if(!str) return ''; return String(str).replace(/[&<>]/g, m => m==='&'?'&amp;':m==='<'?'&lt;':'&gt;'); }
+    
+    // Fetch distinct values from sheet columns A and B for dropdowns (no changes needed but we keep as is)
+    async function fetchDistinctMenuOptions() {
+        try {
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_NAME}!A2:G?key=${API_KEY}`;
+            const resp = await fetch(url);
+            const data = await resp.json();
+            const rows = data.values || [];
+            const mainSet = new Set();
+            const subSet = new Set();
+            rows.forEach(row => {
+                if(row[0]) mainSet.add(row[0].trim());
+                if(row[1]) subSet.add(row[1].trim());
+            });
+            mainMenuOptions = Array.from(mainSet).sort();
+            subMenuOptions = Array.from(subSet).sort();
+            populateSelectors();
+        } catch(e) { console.warn("fetch options error", e); }
+    }
+    
+    function populateSelectors() {
+        // Add Tab selects
+        const $mainSel = $("#mainMenuSelect");
+        $mainSel.empty().append('<option></option>');
+        mainMenuOptions.forEach(opt => $mainSel.append(`<option value="${escapeHtml(opt)}">${escapeHtml(opt)}</option>`));
+        $mainSel.select2({ theme: 'bootstrap-5', placeholder: "Select Main menu", allowClear: true, width: '100%' });
+        
+        const $subSel = $("#subMenuSelect");
+        $subSel.empty().append('<option></option>');
+        subMenuOptions.forEach(opt => $subSel.append(`<option value="${escapeHtml(opt)}">${escapeHtml(opt)}</option>`));
+        $subSel.select2({ theme: 'bootstrap-5', placeholder: "Select Sub Menu", allowClear: true, width: '100%' });
+        
+        // Edit modal selects
+        const $editMain = $("#editMainMenuSelect");
+        $editMain.empty().append('<option></option>');
+        mainMenuOptions.forEach(opt => $editMain.append(`<option value="${escapeHtml(opt)}">${escapeHtml(opt)}</option>`));
+        
+        const $editSub = $("#editSubMenuSelect");
+        $editSub.empty().append('<option></option>');
+        subMenuOptions.forEach(opt => $editSub.append(`<option value="${escapeHtml(opt)}">${escapeHtml(opt)}</option>`));
+    }
+    
+    // Fetch full menu data from sheet A2:G (now includes column G: User-Menu)
+    async function loadAllMenuData() {
+        showGlobalLoading('Loading menu data...');
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_NAME}!A2:G?key=${API_KEY}`;
+        try {
+            const resp = await fetch(url);
+            const data = await resp.json();
+            const rows = data.values || [];
+            allMenuData = rows.map(row => ({
+                mainMenu: (row[0] || "").trim(),
+                subMenu: (row[1] || "").trim(),
+                linkItem: (row[2] || "").trim(),
+                url: (row[3] || "").trim(),
+                adminMenu: (row[4] || "").trim() === "Yes" ? "Yes" : "No",
+                brMenu: (row[5] || "").trim() === "Yes" ? "Yes" : "No",
+                userMenu: (row[6] || "").trim() === "Yes" ? "Yes" : "No"   // NEW field column G
+            }));
+            renderDataTable();
+            hideGlobalLoading();
+            return allMenuData;
+        } catch(err) {
+            console.error(err);
+            hideGlobalLoading();
+            Swal.fire({ icon: 'error', title: 'Load Failed', text: 'Cannot fetch menu data from Google Sheet' });
+            return [];
+        }
+    }
+    
+    function renderDataTable() {
+        if(dataTable) {
+            dataTable.destroy();
+            $('#menuTable tbody').empty();
+        }
+        dataTable = $('#menuTable').DataTable({
+            data: allMenuData,
+            columns: [
+                { data: "mainMenu" },
+                { data: "subMenu" },
+                { data: "linkItem" },
+                { data: "url", render: (d) => d ? `<span title="${escapeHtml(d)}">${escapeHtml(d.length>50?d.substring(0,50)+'...':d)}</span>` : '' },
+                { data: "adminMenu", render: (d) => d === "Yes" ? '<span class="badge bg-success">Yes</span>' : '<span class="badge bg-secondary">No</span>' },
+                { data: "brMenu", render: (d) => d === "Yes" ? '<span class="badge bg-success">Yes</span>' : '<span class="badge bg-secondary">No</span>' },
+                { data: "userMenu", render: (d) => d === "Yes" ? '<span class="badge bg-info">Yes</span>' : '<span class="badge bg-secondary">No</span>' }, // NEW User column
+                { data: null, orderable: false, render: (row) => {
+                    const uniqueKey = btoa(unescape(encodeURIComponent(row.mainMenu + '|' + row.subMenu + '|' + row.linkItem)));
+                    return `<div class="action-icons"><i class="bi bi-pencil-square edit-row" data-key="${uniqueKey}" data-main="${escapeHtml(row.mainMenu)}" data-sub="${escapeHtml(row.subMenu)}" data-link="${escapeHtml(row.linkItem)}" data-url="${escapeHtml(row.url)}" data-admin="${row.adminMenu}" data-br="${row.brMenu}" data-user="${row.userMenu}"></i><i class="bi bi-trash3 delete-row" data-key="${uniqueKey}" data-main="${escapeHtml(row.mainMenu)}" data-sub="${escapeHtml(row.subMenu)}" data-link="${escapeHtml(row.linkItem)}"></i></div>`;
+                } }
+            ],
+            order: [[0, 'asc'], [1, 'asc']],
+            pageLength: -1,
+            language: { search: "Filter:" }
+        });
+        attachTableEvents();
+    }
+    
+    function attachTableEvents() {
+        $('.edit-row').off('click').on('click', function() {
+            const main = $(this).data('main');
+            const sub = $(this).data('sub');
+            const link = $(this).data('link');
+            const url = $(this).data('url');
+            const admin = $(this).data('admin');
+            const br = $(this).data('br');
+            const user = $(this).data('user');   // NEW user flag
+            openEditModal(main, sub, link, url, admin, br, user);
+        });
+        $('.delete-row').off('click').on('click', function() {
+            const main = $(this).data('main');
+            const sub = $(this).data('sub');
+            const link = $(this).data('link');
+            Swal.fire({
+                title: 'Delete Menu Item?',
+                text: `Are you sure you want to delete "${main} / ${sub} / ${link}"?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc2626',
+                confirmButtonText: 'Yes, delete'
+            }).then(result => {
+                if(result.isConfirmed) deleteMenuItem(main, sub, link);
+            });
+        });
+    }
+    
+    async function deleteMenuItem(mainMenu, subMenu, linkItem) {
+        showGlobalLoading('Deleting record...');
+        const payload = { action: "DELETE", mainMenu, subMenu, linkItem };
+        try {
+            await fetchWithTimeout(APPS_SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) });
+            hideGlobalLoading();
+            Swal.fire({ icon: 'success', title: 'Deleted!', timer: 1500, showConfirmButton: false });
+            await loadAllMenuData();
+            await fetchDistinctMenuOptions();
+        } catch(e) {
+            hideGlobalLoading();
+            Swal.fire({ icon: 'error', title: 'Delete Failed', text: e.message });
+        }
+    }
+    
+    async function fetchWithTimeout(url, options, timeout=15000) {
+        const controller = new AbortController();
+        const id = setTimeout(() => controller.abort(), timeout);
+        const response = await fetch(url, { ...options, signal: controller.signal });
+        clearTimeout(id);
+        return response;
+    }
+    
+    async function submitNewMenu() {
+        let mainMenu = $("#mainMenuSelect").val();
+        const mainCustom = $("#mainMenuCustom").val();
+        if(mainCustom && mainCustom.trim() !== "") mainMenu = mainCustom.trim();
+        if(!mainMenu) { Swal.fire({ icon: 'warning', title: 'Missing', text: 'Main menu is required' }); return; }
+        
+        let subMenu = $("#subMenuSelect").val();
+        const subCustom = $("#subMenuCustom").val();
+        if(subCustom && subCustom.trim() !== "") subMenu = subCustom.trim();
+        if(!subMenu) { Swal.fire({ icon: 'warning', title: 'Missing', text: 'Sub menu is required' }); return; }
+        
+        const linkItem = $("#linkItem").val().trim();
+        if(!linkItem) { Swal.fire({ icon: 'warning', title: 'Missing', text: 'Link item is required' }); return; }
+        const urlValue = $("#urlValue").val().trim();
+        if(!urlValue) { Swal.fire({ icon: 'warning', title: 'Missing', text: 'URL is required' }); return; }
+        const adminFlag = $("#adminMenuFlag").val();
+        const brFlag = $("#brMenuFlag").val();
+        const userFlag = $("#userMenuFlag").val();   // NEW user flag value
+        
+        // Check duplicate with userMenu consideration (but main+sub+link duplication is enough)
+        const exists = allMenuData.some(item => item.mainMenu === mainMenu && item.subMenu === subMenu && item.linkItem === linkItem);
+        if(exists) {
+            Swal.fire({ icon: 'error', title: 'Duplicate', text: 'This menu item already exists!' });
+            return;
+        }
+        
+        const payload = { 
+            action: "ADD", 
+            mainMenu, subMenu, linkItem, url: urlValue, 
+            adminMenu: adminFlag, brMenu: brFlag, userMenu: userFlag   // NEW userMenu field
+        };
+        const $btn = $("#submitMenuBtn");
+        const origHtml = $btn.html();
+        setButtonLoading($btn, true, origHtml);
+        try {
+            await fetchWithTimeout(APPS_SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) });
+            Swal.fire({ icon: 'success', title: 'Added!', text: 'Menu item added successfully', timer: 1500, showConfirmButton: false });
+            $("#linkItem").val('');
+            $("#urlValue").val('');
+            $("#adminMenuFlag").val('Yes');
+            $("#brMenuFlag").val('Yes');
+            $("#userMenuFlag").val('No');   // reset user to default
+            $("#mainMenuCustom").val('').hide();
+            $("#subMenuCustom").val('').hide();
+            $("#mainMenuSelect").val(null).trigger('change');
+            $("#subMenuSelect").val(null).trigger('change');
+            await loadAllMenuData();
+            await fetchDistinctMenuOptions();
+        } catch(e) {
+            Swal.fire({ icon: 'error', title: 'Error', text: e.message });
+        } finally {
+            setButtonLoading($btn, false, origHtml);
+        }
+    }
+    
+    function openEditModal(main, sub, link, url, admin, br, user) {
+        $("#editOriginalKey").val(`${main}|${sub}|${link}`);
+        $("#editLinkItem").val(link);
+        $("#editUrl").val(url);
+        $("#editAdminFlag").val(admin);
+        $("#editBrFlag").val(br);
+        $("#editUserFlag").val(user || "No");   // NEW user field default No
+        
+        const $mainSel = $("#editMainMenuSelect");
+        const $subSel = $("#editSubMenuSelect");
+        $mainSel.val(main).trigger('change');
+        $subSel.val(sub).trigger('change');
+        $("#editMainMenuCustom").val('').hide();
+        $("#editSubMenuCustom").val('').hide();
+        
+        const modal = new bootstrap.Modal(document.getElementById('editMenuModal'));
+        modal.show();
+    }
+    
+    async function updateMenuHandler() {
+        const originalKey = $("#editOriginalKey").val();
+        const [origMain, origSub, origLink] = originalKey.split('|');
+        
+        let newMain = $("#editMainMenuSelect").val();
+        const mainCustom = $("#editMainMenuCustom").val();
+        if(mainCustom && mainCustom.trim() !== "") newMain = mainCustom.trim();
+        
+        let newSub = $("#editSubMenuSelect").val();
+        const subCustom = $("#editSubMenuCustom").val();
+        if(subCustom && subCustom.trim() !== "") newSub = subCustom.trim();
+        
+        const newLink = $("#editLinkItem").val().trim();
+        const newUrl = $("#editUrl").val().trim();
+        const newAdmin = $("#editAdminFlag").val();
+        const newBr = $("#editBrFlag").val();
+        const newUser = $("#editUserFlag").val();   // NEW user flag
+        
+        if(!newMain || !newSub || !newLink || !newUrl) {
+            Swal.fire({ icon: 'warning', title: 'Missing fields', text: 'All fields required' });
+            return;
+        }
+        
+        const duplicateExists = allMenuData.some(item => 
+            (item.mainMenu === newMain && item.subMenu === newSub && item.linkItem === newLink) &&
+            !(item.mainMenu === origMain && item.subMenu === origSub && item.linkItem === origLink)
+        );
+        if(duplicateExists) {
+            Swal.fire({ icon: 'error', title: 'Duplicate', text: 'Another menu item with same Main+Sub+Link exists' });
+            return;
+        }
+        
+        const payload = { 
+            action: "UPDATE", 
+            originalMain: origMain, originalSub: origSub, originalLink: origLink,
+            mainMenu: newMain, subMenu: newSub, linkItem: newLink, url: newUrl, 
+            adminMenu: newAdmin, brMenu: newBr, userMenu: newUser   // NEW user field
+        };
+        
+        const $btn = $("#confirmUpdateBtn");
+        const origHtml = $btn.html();
+        setButtonLoading($btn, true, origHtml);
+        try {
+            await fetchWithTimeout(APPS_SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) });
+            Swal.fire({ icon: 'success', title: 'Updated!', timer: 1500, showConfirmButton: false });
+            bootstrap.Modal.getInstance(document.getElementById('editMenuModal')).hide();
+            await loadAllMenuData();
+            await fetchDistinctMenuOptions();
+        } catch(e) {
+            Swal.fire({ icon: 'error', title: 'Update Failed', text: e.message });
+        } finally {
+            setButtonLoading($btn, false, origHtml);
+        }
+    }
+    
+    // Custom toggles as before
+    function initCustomToggles() {
+        $("#toggleMainCustom").on("click", function() {
+            $("#mainMenuCustom").toggle();
+            if($("#mainMenuCustom").is(":visible")) $("#mainMenuCustom").focus();
+            else $("#mainMenuCustom").val('');
+        });
+        $("#toggleSubCustom").on("click", function() {
+            $("#subMenuCustom").toggle();
+            if($("#subMenuCustom").is(":visible")) $("#subMenuCustom").focus();
+            else $("#subMenuCustom").val('');
+        });
+        $("#editToggleMainCustom").on("click", function() {
+            $("#editMainMenuCustom").toggle();
+            if($("#editMainMenuCustom").is(":visible")) $("#editMainMenuCustom").focus();
+            else $("#editMainMenuCustom").val('');
+        });
+        $("#editToggleSubCustom").on("click", function() {
+            $("#editSubMenuCustom").toggle();
+            if($("#editSubMenuCustom").is(":visible")) $("#editSubMenuCustom").focus();
+            else $("#editSubMenuCustom").val('');
+        });
+        $("#editMainMenuSelect").on("change", function() { if($(this).val()) $("#editMainMenuCustom").val('').hide(); });
+        $("#editSubMenuSelect").on("change", function() { if($(this).val()) $("#editSubMenuCustom").val('').hide(); });
+    }
+    
+    function switchTab(tab) {
+        if(tab === 'add') {
+            $("#addPane").addClass("active-pane");
+            $("#editPane").removeClass("active-pane");
+            $("#tabAddBtn").addClass("active");
+            $("#tabEditBtn").removeClass("active");
+        } else {
+            $("#editPane").addClass("active-pane");
+            $("#addPane").removeClass("active-pane");
+            $("#tabEditBtn").addClass("active");
+            $("#tabAddBtn").removeClass("active");
+            if(dataTable) dataTable.columns.adjust().draw();
+            else loadAllMenuData();
+        }
+    }
+    
+    // Initialization
+    $(document).ready(async function() {
+        await fetchDistinctMenuOptions();
+        await loadAllMenuData();
+        initCustomToggles();
+        $("#submitMenuBtn").on("click", submitNewMenu);
+        $("#confirmUpdateBtn").on("click", updateMenuHandler);
+        $("#refreshTableBtn").on("click", async () => { await loadAllMenuData(); await fetchDistinctMenuOptions(); });
+        $("#tabAddBtn").on("click", () => switchTab('add'));
+        $("#tabEditBtn").on("click", () => switchTab('edit'));
+        
+        $(".main-menu-select, .sub-menu-select").on("select2:select", function(e) {
+            if($(this).attr('id') === 'mainMenuSelect') $("#mainMenuCustom").val('').hide();
+            else $("#subMenuCustom").val('').hide();
+        });
+    });
 </script>
-<!-- <footer>Menu Management System | Data synced with Google Sheets (All Menu)</footer> -->
 </body>
 </html>
