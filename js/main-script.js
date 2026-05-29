@@ -468,7 +468,7 @@ function updateNotificationBadge(count) {
 }
 
 function openChatInIframe() {
-    const chatUrl = "./chat.html?t=" + Date.now();
+    const chatUrl = "./br-chat.html?t=" + Date.now();
     const iframe = document.getElementById('content-frame');
     const loading = document.getElementById('loading');
     const welcomeMessage = document.getElementById('welcome-message');
