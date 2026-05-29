@@ -12,7 +12,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     
-    <!-- Local CSS resources (as requested) -->
+    <!-- Local CSS resources -->
     <link rel="stylesheet" href="./css/bootstrap.min.css?v=20250102">
     <link rel="stylesheet" href="./css/bootstrap-icons.min.css?v=20250102">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Malayalam:wght@400;500;700&display=swap" rel="stylesheet">
@@ -24,7 +24,6 @@
     <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
     
     <style>
-        /* Minimal extra styles - no visible session indicators, just core overrides if needed */
         .notification-icon-wrapper {
             position: relative;
             display: inline-flex;
@@ -68,8 +67,7 @@
             100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
         }
         .flash-news-container.hidden { display: none !important; }
-        .cache-info-badge, .refresh-indicator {
-          /*  display:none;*/
+        .cache-info-badge {
             position: fixed;
             bottom: 10px;
             right: 10px;
@@ -82,9 +80,7 @@
             font-family: monospace;
             cursor: pointer;
         }
-        .refresh-indicator { left: auto; right: 10px; display:none; }
-        
-        /* No visible session timer or warnings - fully silent inactivity logout */
+        .refresh-indicator { display: none; }
     </style>
 </head>
 <body class="light-theme">
@@ -109,7 +105,7 @@
                         <input type="password" class="form-control" id="password" placeholder="Enter password">
                     </div>
                     <div class="text-center mb-2" style="font-size: 11px; color: var(--text-muted);">
-                        Version: <span id="appVersion">20250102_v3</span>
+                        Version: <span id="appVersion">20250102_v5</span>
                     </div>
                     <div class="login-error" id="loginError" style="display: none;">
                         <i class="bi bi-exclamation-triangle-fill"></i>
@@ -129,7 +125,7 @@
         </div>
     </div>
 
-    <!-- Main Dashboard (initially hidden) -->
+    <!-- Main Dashboard -->
     <div class="dashboard-container" id="dashboardContainer" style="display: none;">
         <div id="flashNewsContainer" class="flash-news-container hidden">
             <div class="flash-news-ticker" id="flashNewsTicker"></div>
@@ -207,9 +203,26 @@
     <script src="./js/main-script.js?v=20250102"></script>
     
     <script>
-        // ======================== APP VERSION & DAILY CACHE CLEAR (NO VISUAL INDICATORS) ========================
-        const APP_VERSION_ID = "20250102_v3_INACTIVITY";
+        // ======================== APP VERSION & DAILY CACHE CLEAR ========================
+        const APP_VERSION_ID = "20250102_v5_FIXED";
         const LAST_CLEAR_DATE_KEY = "lastCacheClearDate";
+        
+        // Function to reset login button state (enables it and hides spinner)
+        function resetLoginButtonState() {
+            const loginBtn = document.getElementById('loginBtn');
+            const loginSpinner = document.getElementById('loginSpinner');
+            const loginText = document.getElementById('loginText');
+            
+            if (loginBtn) {
+                loginBtn.disabled = false;
+            }
+            if (loginSpinner) {
+                loginSpinner.classList.add('d-none');
+            }
+            if (loginText) {
+                loginText.textContent = 'Login';
+            }
+        }
         
         function performDailyCacheClear() {
             const today = new Date().toDateString();
@@ -225,7 +238,6 @@
                         });
                     });
                 }
-                // Keep only essential auth keys, clear others silently
                 const keysToKeep = ['currentUser', 'branchCode', 'selectedBranch', 'theme', 'refreshInterval', 'soundEnabled', LAST_CLEAR_DATE_KEY, 'lastActivityTimestamp'];
                 for (let i = 0; i < localStorage.length; i++) {
                     const key = localStorage.key(i);
@@ -234,20 +246,17 @@
                     }
                 }
                 localStorage.setItem(LAST_CLEAR_DATE_KEY, today);
-                // No page reload visual disruption - just clean background
             }
         }
         
-        // ======================== INACTIVITY LOGOUT (15 MINUTES, FULLY SILENT) ========================
-        // No UI indicators, no modals, no warnings - just automatic logout after 15 min idle
+        // ======================== INACTIVITY LOGOUT ========================
         let inactivityTimer = null;
-        const INACTIVITY_LIMIT_MS = 5 * 60 * 1000; // 15 minutes
+        const INACTIVITY_LIMIT_MS = 15 * 60 * 1000; // 5 minutes (change to 15*60*1000 for 15 min)
         
         function resetInactivityTimer() {
             if (!window.isAuthenticated) return;
             if (inactivityTimer) clearTimeout(inactivityTimer);
             inactivityTimer = setTimeout(() => {
-                // Silent logout if user inactive
                 if (window.isAuthenticated === true) {
                     console.log("[Security] Inactivity timeout: auto-logout triggered");
                     performSilentLogout();
@@ -256,7 +265,16 @@
         }
         
         function performSilentLogout() {
-            // Call existing logout function from main-script.js if available, else fallback
+            // Reset login button state BEFORE calling logout
+            resetLoginButtonState();
+            
+            // Clear the inactivity timer
+            if (inactivityTimer) {
+                clearTimeout(inactivityTimer);
+                inactivityTimer = null;
+            }
+            
+            // Call existing logout function
             if (typeof window.logout === 'function') {
                 window.logout();
             } else {
@@ -277,22 +295,27 @@
                 if (badge) { badge.textContent = '0'; badge.classList.add('zero'); }
                 document.title = 'NOC Admin';
             }
+            
+            // Additional reset to ensure login button is enabled
+            setTimeout(() => {
+                resetLoginButtonState();
+                // Clear any stale error messages
+                const loginError = document.getElementById('loginError');
+                if (loginError) loginError.style.display = 'none';
+            }, 100);
         }
         
-        // Track user activity events (clicks, keypress, scroll, touch, mousemove)
         function bindActivityListeners() {
             const events = ['mousedown', 'keydown', 'touchstart', 'scroll', 'mousemove', 'click'];
             const activityHandler = () => {
                 if (window.isAuthenticated === true) {
                     resetInactivityTimer();
-                    // Also store last activity timestamp for session continuity (optional)
                     localStorage.setItem('lastActivityTimestamp', Date.now().toString());
                 }
             };
             events.forEach(event => {
                 window.addEventListener(event, activityHandler, { passive: true });
             });
-            // Also track iframe content activity (cross-origin limitations handled by focusing document)
             const iframe = document.getElementById('content-frame');
             if (iframe) {
                 iframe.addEventListener('load', () => {
@@ -304,33 +327,43 @@
                                 iframeDoc.addEventListener(ev, activityHandler);
                             });
                         }
-                    } catch(e) { /* cross-origin, ignore */ }
+                    } catch(e) { /* cross-origin */ }
                 });
             }
         }
         
-        // Override the original handleLogin success to start inactivity timer after auth
+        // Wrap the original handleLogin to ensure button state is managed
         const originalHandleLogin = window.handleLogin;
         if (typeof originalHandleLogin === 'function') {
             window.handleLogin = async function() {
-                await originalHandleLogin.apply(this, arguments);
-                // After login success (isAuthenticated becomes true), start timer
+                // Button is already disabled by original function, but we ensure it works
+                try {
+                    await originalHandleLogin.apply(this, arguments);
+                } catch(error) {
+                    // If login fails, reset button state
+                    resetLoginButtonState();
+                    throw error;
+                }
+                
                 setTimeout(() => {
                     if (window.isAuthenticated === true) {
                         resetInactivityTimer();
+                    } else {
+                        // If login failed for any reason, reset button
+                        resetLoginButtonState();
                     }
                 }, 500);
             };
         }
         
-        // Also patch the main-script's internal login flow via mutation or intercept the existing session restoration
-        // Since main-script.js already defines handleLogin and checkExistingSession, we need to ensure after any auth we start timer.
-        // We'll also wrap logout to clear inactivity timer properly.
+        // Wrap logout to properly reset button state
         if (typeof window.logout === 'function') {
             const originalLogout = window.logout;
             window.logout = function() {
                 if (inactivityTimer) clearTimeout(inactivityTimer);
                 originalLogout.apply(this, arguments);
+                // Reset login button after logout
+                resetLoginButtonState();
             };
         } else {
             window.logout = function() {
@@ -348,11 +381,10 @@
                 const badge = document.getElementById('notificationBadge');
                 if (badge) { badge.textContent = '0'; badge.classList.add('zero'); }
                 document.title = 'NOC Admin';
-                if (inactivityTimer) clearTimeout(inactivityTimer);
+                resetLoginButtonState();
             };
         }
         
-        // Monitor authentication state changes (since main-script sets window.isAuthenticated)
         function watchAuthState() {
             let lastAuthState = window.isAuthenticated;
             setInterval(() => {
@@ -362,24 +394,24 @@
                         resetInactivityTimer();
                     } else if (window.isAuthenticated === false) {
                         if (inactivityTimer) clearTimeout(inactivityTimer);
+                        // Reset button state when auth becomes false
+                        resetLoginButtonState();
                     }
                 }
             }, 500);
         }
         
-        // After main-script loads, also override its checkExistingSession to ensure timer starts
+        // Initialize everything
         document.addEventListener('DOMContentLoaded', function() {
             performDailyCacheClear();
             
-            // Display version in login screen
             const versionSpan = document.getElementById('appVersion');
             if (versionSpan) versionSpan.textContent = APP_VERSION_ID;
             
-            // Small cache info badges (admin-only debug, but keep non-intrusive - optional but for daily cache visibility, but no session indicators)
+            // Cache clear button (optional)
             const infoDiv = document.createElement('div');
             infoDiv.className = 'cache-info-badge';
-           // infoDiv.innerHTML = `📦 v${APP_VERSION_ID}`;
-            infoDiv.innerHTML = `<i class="bi bi-arrow-repeat"></i>  `;
+            infoDiv.innerHTML = `<i class="bi bi-arrow-repeat"></i> Clear Cache`;
             infoDiv.onclick = function() {
                 if (confirm('Clear all cache and reload?')) {
                     localStorage.clear();
@@ -392,46 +424,49 @@
             };
             document.body.appendChild(infoDiv);
             
-            const refreshDiv = document.createElement('div');
-            refreshDiv.className = 'refresh-indicator';
-            refreshDiv.innerHTML = `🔄 v${APP_VERSION_ID}`;
-            refreshDiv.onclick = () => window.location.reload(true);
-            document.body.appendChild(refreshDiv);
-            
-            // Bind activity listeners for silent inactivity logout
             bindActivityListeners();
             watchAuthState();
             
-            // If already authenticated from session restore, start timer
             setTimeout(() => {
                 if (window.isAuthenticated === true) {
                     resetInactivityTimer();
+                } else {
+                    // Ensure login button is enabled if not authenticated
+                    resetLoginButtonState();
                 }
             }, 800);
         });
         
-        // Also listen to manual login attempts from the original login button (in case main-script handles differently)
+        // Monitor login button clicks to ensure it gets reset if something goes wrong
         const loginBtnElement = document.getElementById('loginBtn');
         if (loginBtnElement) {
-            const originalClickHandler = loginBtnElement.onclick;
             loginBtnElement.addEventListener('click', function() {
+                // Small delay to check if login gets stuck
                 setTimeout(() => {
-                    if (window.isAuthenticated === true) {
-                        resetInactivityTimer();
+                    const isDisabled = loginBtnElement.disabled;
+                    const isAuthenticated = window.isAuthenticated;
+                    if (isDisabled === true && isAuthenticated !== true) {
+                        // Login button is stuck disabled but not authenticated - reset it
+                        console.log("[Fix] Detected stuck login button, resetting...");
+                        resetLoginButtonState();
                     }
-                }, 1000);
+                }, 3000);
             });
         }
         
-        // For Chat notification system (preserve original functionality) - minimal integration
+        // Also monitor for any error that might leave button disabled
+        window.addEventListener('error', function() {
+            if (!window.isAuthenticated) {
+                resetLoginButtonState();
+            }
+        });
+        
         window.fetchUnreadChatCount = window.fetchUnreadChatCount || function() {};
         window.openChatInIframe = window.openChatInIframe || function() {};
-        
-        // Expose necessary globals to match original expectations
         window.APP_VERSION = APP_VERSION_ID;
+        window.resetLoginButtonState = resetLoginButtonState;
         
-        // Ensure no extra UI warnings or session timers are shown - we have zero modals or countdown displays.
-        console.log("[Security] 15-min inactivity logout active | Daily cache reset enabled");
+        console.log("[Security] 5-min inactivity logout active | Daily cache reset enabled | Login button reset on logout");
     </script>
 </body>
 </html>

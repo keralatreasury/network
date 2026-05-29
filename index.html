@@ -82,6 +82,63 @@
         }
         .refresh-indicator { display: none; }
     </style>
+    
+    <!-- DEVICE DETECTION & MOBILE REDIRECT (EARLY EXECUTION) -->
+    <script>
+        // ======================== DEVICE DETECTION & REDIRECT ========================
+        // Enhanced device detection matching the logic from html with redirect.html
+        // Check for mobile devices using screen width AND user agent pattern
+        (function() {
+            // Function to check if we are already on mobile target page (app.html) to avoid redirect loops
+            const currentPath = window.location.pathname;
+            const isAppPage = currentPath.includes('app.html');
+            
+            // Only run detection if NOT already on app.html (prevent infinite loop)
+            if (!isAppPage) {
+                // Device detection conditions (same as in html with redirect.html)
+                const isMobileWidth = window.innerWidth <= 768;
+                const isMobileUA = /Mobile|iPhone|iPad|Android|iPod|BlackBerry|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent);
+                const isMobile = isMobileWidth || isMobileUA;
+                
+                // Optional: Check if we are in iframe (for embedded scenarios, skip redirect)
+                const isInIframe = window.self !== window.top;
+                
+                // Daily refresh check before redirect (keeps cache management consistent)
+                function checkDailyRedirectRefresh() {
+                    const lastLoginDate = localStorage.getItem('lastLoginDate');
+                    const today = new Date().toDateString();
+                    if (lastLoginDate !== today) {
+                        console.log("First login of the day - clearing session cache before redirect");
+                        sessionStorage.clear();
+                        localStorage.setItem('lastLoginDate', today);
+                        return true;
+                    }
+                    return false;
+                }
+                
+                // Perform redirect if mobile device detected AND not in iframe
+                if (isMobile && !isInIframe) {
+                    // Clear cache if first login of day
+                    checkDailyRedirectRefresh();
+                    
+                    // Add cache-busting parameter to prevent stale mobile app
+                    const redirectUrl = "app.html?nocache=" + Date.now();
+                    console.log("[Mobile Redirect] Device detected: width=" + window.innerWidth + ", UA mobile=" + isMobileUA);
+                    console.log("[Mobile Redirect] Redirecting to: " + redirectUrl);
+                    
+                    // Execute redirect immediately
+                    window.location.href = redirectUrl;
+                    return; // Stop further script execution on desktop version
+                } else if (isMobile && isInIframe) {
+                    console.log("[Mobile Redirect] Inside iframe, skipping redirect to preserve parent context");
+                } else {
+                    console.log("[Mobile Redirect] Desktop mode active - loading standard dashboard");
+                }
+            } else {
+                console.log("[Mobile Redirect] Already on app.html, preventing redirect loop");
+            }
+        })();
+    </script>
 </head>
 <body class="light-theme">
     <!-- Login Overlay -->
@@ -207,6 +264,23 @@
         const APP_VERSION_ID = "20250102_v5_FIXED";
         const LAST_CLEAR_DATE_KEY = "lastCacheClearDate";
         
+        // Additional safety: If redirect didn't happen (e.g., script blocked), re-evaluate for mobile but only once
+        (function secondaryMobileCheck() {
+            // Only run if we are on desktop version (dashboard not shown yet and not app.html)
+            if (!window.location.pathname.includes('app.html')) {
+                const isMobileWidth = window.innerWidth <= 768;
+                const isMobileUA = /Mobile|iPhone|iPad|Android|iPod|BlackBerry|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent);
+                const isMobile = isMobileWidth || isMobileUA;
+                const isInIframe = window.self !== window.top;
+                
+                if (isMobile && !isInIframe && !sessionStorage.getItem('mobileRedirectAttempted')) {
+                    sessionStorage.setItem('mobileRedirectAttempted', 'true');
+                    console.log("[Secondary Check] Mobile detected, redirecting to app.html");
+                    window.location.href = "app.html?nocache=" + Date.now();
+                }
+            }
+        })();
+        
         // Function to reset login button state (enables it and hides spinner)
         function resetLoginButtonState() {
             const loginBtn = document.getElementById('loginBtn');
@@ -238,7 +312,7 @@
                         });
                     });
                 }
-                const keysToKeep = ['currentUser', 'branchCode', 'selectedBranch', 'theme', 'refreshInterval', 'soundEnabled', LAST_CLEAR_DATE_KEY, 'lastActivityTimestamp'];
+                const keysToKeep = ['currentUser', 'branchCode', 'selectedBranch', 'theme', 'refreshInterval', 'soundEnabled', LAST_CLEAR_DATE_KEY, 'lastActivityTimestamp', 'lastLoginDate'];
                 for (let i = 0; i < localStorage.length; i++) {
                     const key = localStorage.key(i);
                     if (!keysToKeep.includes(key)) {
@@ -251,7 +325,7 @@
         
         // ======================== INACTIVITY LOGOUT ========================
         let inactivityTimer = null;
-        const INACTIVITY_LIMIT_MS = 15 * 60 * 1000; // 5 minutes (change to 15*60*1000 for 15 min)
+        const INACTIVITY_LIMIT_MS = 15 * 60 * 1000; // 15 minutes (security best practice)
         
         function resetInactivityTimer() {
             if (!window.isAuthenticated) return;
@@ -289,8 +363,10 @@
                 if (flashContainer) flashContainer.classList.add('hidden');
                 if (loginOverlay) loginOverlay.style.display = 'flex';
                 if (dashboardContainer) dashboardContainer.style.display = 'none';
-                document.getElementById('username').value = '';
-                document.getElementById('password').value = '';
+                const usernameField = document.getElementById('username');
+                const passwordField = document.getElementById('password');
+                if (usernameField) usernameField.value = '';
+                if (passwordField) passwordField.value = '';
                 const badge = document.getElementById('notificationBadge');
                 if (badge) { badge.textContent = '0'; badge.classList.add('zero'); }
                 document.title = 'NOC Admin';
@@ -336,7 +412,6 @@
         const originalHandleLogin = window.handleLogin;
         if (typeof originalHandleLogin === 'function') {
             window.handleLogin = async function() {
-                // Button is already disabled by original function, but we ensure it works
                 try {
                     await originalHandleLogin.apply(this, arguments);
                 } catch(error) {
@@ -376,8 +451,10 @@
                 const dashboardContainer = document.getElementById('dashboardContainer');
                 if (loginOverlay) loginOverlay.style.display = 'flex';
                 if (dashboardContainer) dashboardContainer.style.display = 'none';
-                document.getElementById('username').value = '';
-                document.getElementById('password').value = '';
+                const usernameField = document.getElementById('username');
+                const passwordField = document.getElementById('password');
+                if (usernameField) usernameField.value = '';
+                if (passwordField) passwordField.value = '';
                 const badge = document.getElementById('notificationBadge');
                 if (badge) { badge.textContent = '0'; badge.classList.add('zero'); }
                 document.title = 'NOC Admin';
@@ -401,14 +478,35 @@
             }, 500);
         }
         
-        // Initialize everything
+        // ======================== NOTIFICATION CONFIGURATION (lightweight) ========================
+        // Maintain compatibility with original notification system if needed
+        window.fetchUnreadChatCount = window.fetchUnreadChatCount || function() { return Promise.resolve(0); };
+        window.openChatInIframe = window.openChatInIframe || function() {
+            const chatUrl = "./chat.html?t=" + Date.now();
+            const iframe = document.getElementById('content-frame');
+            const loading = document.getElementById('loading');
+            const welcomeMessage = document.getElementById('welcome-message');
+            if (welcomeMessage) welcomeMessage.style.display = 'none';
+            if (loading) loading.style.display = 'flex';
+            if (iframe) {
+                iframe.onload = function() { if (loading) loading.style.display = 'none'; };
+                iframe.src = chatUrl;
+            }
+        };
+        
+        // Initialize everything after DOM is ready (only runs if not redirected)
         document.addEventListener('DOMContentLoaded', function() {
+            // Check if we are still on desktop version (redirect might have been skipped but mobile flag set)
+            if (window.location.pathname.includes('app.html')) {
+                return; // Do nothing if somehow app.html loaded (edge case)
+            }
+            
             performDailyCacheClear();
             
             const versionSpan = document.getElementById('appVersion');
             if (versionSpan) versionSpan.textContent = APP_VERSION_ID;
             
-            // Cache clear button (optional)
+            // Cache clear button (utility)
             const infoDiv = document.createElement('div');
             infoDiv.className = 'cache-info-badge';
             infoDiv.innerHTML = `<i class="bi bi-arrow-repeat"></i> Clear Cache`;
@@ -435,6 +533,16 @@
                     resetLoginButtonState();
                 }
             }, 800);
+            
+            // If notification icon exists, wire up basic function
+            const notifBtn = document.getElementById('notificationIconBtn');
+            if (notifBtn && !notifBtn.hasListener) {
+                notifBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (window.openChatInIframe) window.openChatInIframe();
+                });
+                notifBtn.hasListener = true;
+            }
         });
         
         // Monitor login button clicks to ensure it gets reset if something goes wrong
@@ -461,12 +569,12 @@
             }
         });
         
-        window.fetchUnreadChatCount = window.fetchUnreadChatCount || function() {};
-        window.openChatInIframe = window.openChatInIframe || function() {};
+        // Expose helper functions globally
         window.APP_VERSION = APP_VERSION_ID;
         window.resetLoginButtonState = resetLoginButtonState;
+        window.performSilentLogout = performSilentLogout;
         
-        console.log("[Security] 5-min inactivity logout active | Daily cache reset enabled | Login button reset on logout");
+        console.log("[Security] 15-min inactivity logout active | Daily cache reset enabled | Mobile redirect active | Login button reset on logout");
     </script>
 </body>
 </html>
