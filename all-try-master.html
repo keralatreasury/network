@@ -162,6 +162,17 @@
             width: 100%;
             max-width: 350px;
         }
+        .edit-textarea {
+            padding: 0.5rem 1rem;
+            border-radius: 12px;
+            border: 1px solid #cbd5e1;
+            width: 100%;
+            max-width: 500px;
+            font-family: inherit;
+            font-size: 0.9rem;
+            resize: vertical;
+            min-height: 80px;
+        }
         .empty-state {
             text-align: center;
             padding: 3rem;
@@ -178,6 +189,7 @@
             .info-label { width: 100%; border-right: none; border-bottom: 1px solid #e2e8f0; }
             .info-row { flex-direction: column; }
             .treasury-select { min-width: 200px; }
+            .edit-textarea { max-width: 100%; }
         }
         .btn-loading {
             pointer-events: none;
@@ -217,13 +229,22 @@
             animation: spin 0.6s linear infinite;
             margin-right: 6px;
         }
+        .section-badge {
+            background: #e9ecef;
+            border-radius: 30px;
+            padding: 0.2rem 0.8rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #2c5282;
+            margin-left: 8px;
+        }
     </style>
 </head>
 <body>
 <div class="app-card">
     <div class="header">
-        <h1><i class="bi bi-bank2"></i> Treasury Information</h1>
-        <p>Select Treasury to view and update contact details</p>
+        <h1><i class="bi bi-bank2"></i> Treasury Master Information</h1>
+       
     </div>
     
     <div class="treasury-selector">
@@ -244,7 +265,7 @@
         <div id="treasuryContent"></div>
     </div>
     <footer>
-        <i class="bi bi-cloud-upload"></i> Select a treasury from the dropdown to view and update details
+       
     </footer>
 </div>
 
@@ -254,7 +275,7 @@
 
 <script>
     // ================= CONFIGURATION =================
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzahzAr8GFDvUSJs4dDAWwZpwPM1nwWXcJDY2i19zju5V1NGCbtk3radTrjXIxZi85Gjg/exec";
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzl8MVzBw1EBT4eYsIxqodBiJ88PW2cv2YWDWJAugl1vrfS4LH7KS-0vx1_c5XdaP69jw/exec";
     
     const SHEET_ID = "1HvCqLHC8IyllKskBXX1MtMfjQMGUyhMP7KuTuJxDhmU";
     const SHEET_NAME = "Admin Contact Details";
@@ -266,7 +287,7 @@
     let editMode = false;
     let originalValues = {};
     
-    // Helper functions
+    // Helper: Global loader
     function showGlobalLoading(msg = 'Processing...') {
         if($('#global-loading-overlay').length) return;
         $('body').append(`<div id="global-loading-overlay"><div style="background:white;padding:30px;border-radius:24px;text-align:center;"><i class="bi bi-arrow-repeat" style="font-size:48px;color:#0f3b5f;animation:spin 1s linear infinite;"></i><p style="margin-top:15px;">${msg}</p></div></div>`);
@@ -288,14 +309,23 @@
         }
     }
     
+    // Helper to get PIN Code from record (handles column name variations)
+    function getPinCodeValue(record) {
+        if (!record) return '';
+        if (record['PIN Code'] !== undefined && record['PIN Code'] !== '') return record['PIN Code'];
+        if (record['Pincode'] !== undefined && record['Pincode'] !== '') return record['Pincode'];
+        if (record['PINCODE'] !== undefined && record['PINCODE'] !== '') return record['PINCODE'];
+        if (record['Pin Code'] !== undefined && record['Pin Code'] !== '') return record['Pin Code'];
+        if (record['pincode'] !== undefined && record['pincode'] !== '') return record['pincode'];
+        return '';
+    }
+    
     // Fetch ONLY treasury names from column A (fast initial load)
     async function fetchTreasuryNamesOnly() {
         showGlobalLoading('Loading treasury list...');
         
         try {
-            // Use Google Sheets API with specific range for column A only
             const encodedSheetName = encodeURIComponent(SHEET_NAME);
-            // Fetch only column A (Treasury) to minimize data transfer
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodedSheetName}!A:A?key=${API_KEY}`;
             
             const response = await fetch(url);
@@ -312,7 +342,6 @@
                 return false;
             }
             
-            // Extract unique treasury names from column A (skip header row)
             const treasurySet = new Set();
             for (let i = 1; i < rows.length; i++) {
                 const treasuryName = rows[i][0];
@@ -323,7 +352,6 @@
             
             treasuryList = Array.from(treasurySet).sort();
             
-            // Populate dropdown
             const $select = $('#treasurySelect');
             $select.empty();
             $select.append('<option value="">-- Select Treasury --</option>');
@@ -349,7 +377,6 @@
     
     // Fetch complete details for a specific treasury (on View click)
     async function fetchTreasuryDetails(treasuryName) {
-        // Check cache first
         if (treasuryDataCache[treasuryName]) {
             console.log('Returning cached data for:', treasuryName);
             return treasuryDataCache[treasuryName];
@@ -358,7 +385,6 @@
         showGlobalLoading(`Loading details for ${treasuryName}...`);
         
         try {
-            // Fetch all data and filter
             const encodedSheetName = encodeURIComponent(SHEET_NAME);
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodedSheetName}?key=${API_KEY}`;
             
@@ -375,9 +401,8 @@
             }
             
             const headers = rows[0];
-            
-            // Find the row matching the treasury name
             let foundRecord = null;
+            
             for (let i = 1; i < rows.length; i++) {
                 if (rows[i][0] && rows[i][0].toString().trim() === treasuryName) {
                     const record = {};
@@ -393,9 +418,13 @@
                 throw new Error(`Treasury "${treasuryName}" not found`);
             }
             
-            // Cache the result
-            treasuryDataCache[treasuryName] = foundRecord;
+            // Ensure PIN Code is properly set
+            const pinValue = getPinCodeValue(foundRecord);
+            if (pinValue && !foundRecord['PIN Code']) {
+                foundRecord['PIN Code'] = pinValue;
+            }
             
+            treasuryDataCache[treasuryName] = foundRecord;
             hideGlobalLoading();
             return foundRecord;
             
@@ -430,8 +459,7 @@
             const result = await response.json();
             
             if (result.success) {
-                Swal.fire({ icon: 'success', title: 'Updated!', text: result.message, timer: 2000, showConfirmButton: false });
-                // Update cache with new values
+                Swal.fire({ icon: 'success', title: 'Updated!', text: result.message, timer: 1000, showConfirmButton: false });
                 if (currentRecord.Treasury) {
                     treasuryDataCache[currentRecord.Treasury] = { ...currentRecord };
                 }
@@ -448,7 +476,7 @@
         }
     }
     
-    // Render treasury details
+    // Render treasury details with Address as textarea and PIN Code field
     function renderTreasuryDetails() {
         const container = $('#treasuryContent');
         
@@ -457,10 +485,16 @@
                 <div class="empty-state">
                     <i class="bi bi-building" style="font-size: 3rem; opacity: 0.5;"></i>
                     <p style="margin-top: 1rem;">Select a treasury from the dropdown and click "View Details"</p>
-                    <p class="text-muted">Treasury contact information will appear here</p>
+                    <p class="text-muted">Treasury contact information, Address (Column K) and PIN Code (Column L) will appear here</p>
                 </div>
             `);
             return;
+        }
+        
+        // Ensure PIN Code is properly displayed
+        const pinValue = getPinCodeValue(currentRecord);
+        if (pinValue && (!currentRecord['PIN Code'] || currentRecord['PIN Code'] === '')) {
+            currentRecord['PIN Code'] = pinValue;
         }
         
         const displayFields = [
@@ -473,6 +507,8 @@
             { label: "Office Mail ID", sheetColumn: "Office Mail ID", editable: true, fieldKey: "officeMailId" },
             { label: "Office Contact", sheetColumn: "Office Contact", editable: true, fieldKey: "officeContact" },
             { label: "Office Mobile", sheetColumn: "Office Mobile", editable: true, fieldKey: "officeMobile" },
+            { label: "Address", sheetColumn: "Address", editable: true, fieldKey: "address", note: "Column K", isTextarea: true },
+            { label: "PIN Code", sheetColumn: "PIN Code", editable: true, fieldKey: "pincode", note: "Column L" },
             { label: "BR Code", sheetColumn: "BRCode", editable: false }
         ];
         
@@ -483,7 +519,7 @@
                     <div>
                         ${!editMode ? '<button id="enableEditBtn" class="btn-warning-custom"><i class="bi bi-pencil"></i> Enable Editing</button>' : ''}
                         ${editMode ? '<button id="cancelEditBtn" class="btn-secondary-custom"><i class="bi bi-x-circle"></i> Cancel</button>' : ''}
-                        ${editMode ? '<button id="submitUpdateBtn" class="btn-primary-custom"><i class="bi bi-cloud-upload"></i> Update</button>' : ''}
+                        ${editMode ? '<button id="submitUpdateBtn" class="btn-primary-custom"><i class="bi bi-cloud-upload"></i> Save Changes</button>' : ''}
                     </div>
                 </div>
         `;
@@ -492,11 +528,20 @@
             let value = currentRecord[field.sheetColumn] || '—';
             const isEditing = editMode && field.editable;
             
+            if (value === '' || value === null) value = '—';
+            
             html += `
                 <div class="info-row">
-                    <div class="info-label">${field.label}</div>
+                    <div class="info-label">
+                        ${field.label}
+                        ${field.note ? `` : ''}
+                    </div>
                     <div class="info-value">
-                        ${!isEditing ? `<span>${escapeHtml(value)}</span>` : `<input type="text" class="edit-input" data-sheetcolumn="${field.sheetColumn}" data-fieldkey="${field.fieldKey || ''}" value="${escapeHtml(value)}">`}
+                        ${!isEditing ? `<span style="white-space: pre-wrap;">${escapeHtml(value)}</span>` : 
+                            (field.isTextarea ? 
+                                `<textarea class="edit-textarea" data-sheetcolumn="${field.sheetColumn}" data-fieldkey="${field.fieldKey || ''}" rows="3" placeholder="Enter ${field.label}">${escapeHtml(value)}</textarea>` :
+                                `<input type="text" class="edit-input" data-sheetcolumn="${field.sheetColumn}" data-fieldkey="${field.fieldKey || ''}" value="${escapeHtml(value)}" placeholder="Enter ${field.label}">`
+                            )}
                         ${!editMode && field.editable ? '<span class="badge-locked"><i class="bi bi-lock"></i> Locked</span>' : ''}
                     </div>
                 </div>
@@ -510,9 +555,12 @@
             $('#cancelEditBtn').on('click', cancelEditMode);
             $('#submitUpdateBtn').on('click', submitUpdate);
             
-            $('.edit-input').on('input', function() {
+            // Handle both input and textarea changes
+            $('.edit-input, .edit-textarea').on('input change', function() {
                 const sheetColumn = $(this).data('sheetcolumn');
-                currentRecord[sheetColumn] = $(this).val();
+                if (sheetColumn) {
+                    currentRecord[sheetColumn] = $(this).val();
+                }
             });
         } else {
             $('#enableEditBtn').on('click', enableEditMode);
@@ -522,21 +570,20 @@
     function enableEditMode() {
         if (!currentRecord) return;
         
-        // Save original values
-        const editableFields = ["Treasury Admin Name", "Treasury Admin Contact", "Office Mail ID", "Office Contact", "Office Mobile"];
+        // Save original values for all editable fields including Address and PIN Code
+        const editableFields = ["Treasury Admin Name", "Treasury Admin Contact", "Office Mail ID", "Office Contact", "Office Mobile", "Address", "PIN Code"];
         originalValues = {};
         editableFields.forEach(field => {
-            originalValues[field] = currentRecord[field];
+            originalValues[field] = currentRecord[field] || '';
         });
         
         editMode = true;
         renderTreasuryDetails();
-        Swal.fire({ icon: 'info', title: 'Edit Mode Enabled', text: 'Modify fields, then click "Update".', timer: 2000, showConfirmButton: false });
+        Swal.fire({ icon: 'info', title: 'Edit Mode Enabled', text: 'Modify fields including Address and PIN Code, then click "Update".', timer: 2000, showConfirmButton: false });
     }
     
     function cancelEditMode() {
-        // Restore original values
-        const editableFields = ["Treasury Admin Name", "Treasury Admin Contact", "Office Mail ID", "Office Contact", "Office Mobile"];
+        const editableFields = ["Treasury Admin Name", "Treasury Admin Contact", "Office Mail ID", "Office Contact", "Office Mobile", "Address", "PIN Code"];
         editableFields.forEach(field => {
             if (originalValues[field] !== undefined) {
                 currentRecord[field] = originalValues[field];
@@ -549,7 +596,6 @@
     }
     
     async function submitUpdate() {
-        // Collect changed fields
         const updatedFields = {};
         const changes = [];
         
@@ -558,7 +604,9 @@
             { sheetColumn: "Treasury Admin Contact", fieldKey: "treasuryAdminContact" },
             { sheetColumn: "Office Mail ID", fieldKey: "officeMailId" },
             { sheetColumn: "Office Contact", fieldKey: "officeContact" },
-            { sheetColumn: "Office Mobile", fieldKey: "officeMobile" }
+            { sheetColumn: "Office Mobile", fieldKey: "officeMobile" },
+            { sheetColumn: "Address", fieldKey: "address" },
+            { sheetColumn: "PIN Code", fieldKey: "pincode" }
         ];
         
         editableFields.forEach(field => {
@@ -567,7 +615,7 @@
             
             if (currentValue !== originalValue) {
                 updatedFields[field.fieldKey] = currentValue;
-                changes.push(`${field.sheetColumn}: "${originalValue}" → "${currentValue}"`);
+                changes.push(`${field.sheetColumn}: "${originalValue || '—'}" → "${currentValue || '—'}"`);
             }
         });
         
@@ -579,6 +627,10 @@
         const success = await updateRecord(updatedFields);
         
         if (success) {
+            // Update cache with new values
+            if (currentRecord.Treasury) {
+                treasuryDataCache[currentRecord.Treasury] = { ...currentRecord };
+            }
             editMode = false;
             renderTreasuryDetails();
         }
@@ -596,7 +648,6 @@
         if (record) {
             currentRecord = { ...record };
             editMode = false;
-            // Show BR Code display
             const brValue = currentRecord.BRCode || currentRecord.brCode || currentRecord['BR Code'] || '—';
             $('#currentBrCode').text(brValue);
             $('#brCodeDisplay').show();
@@ -624,13 +675,11 @@
     });
     
     $('#refreshTreasuryBtn').on('click', async () => {
-        // Clear cache
         treasuryDataCache = {};
         currentRecord = null;
         editMode = false;
         $('#brCodeDisplay').hide();
         renderTreasuryDetails();
-        // Reload treasury list only
         await fetchTreasuryNamesOnly();
         $('#treasurySelect').val('');
     });
@@ -640,5 +689,7 @@
         await fetchTreasuryNamesOnly();
     });
 </script>
+
+
 </body>
 </html>
