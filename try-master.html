@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Treasury Information</title>
+    <title>Treasury Information - Admin Portal</title>
     
-    <!-- CSS Resources -->
+    <!-- CSS Resources (Local paths as per original) -->
     <link rel="stylesheet" href="./css/bootstrap.min.css">
     <link rel="stylesheet" href="./css/bootstrap-icons.min.css">
     <link rel="stylesheet" href="./css/sweetalert2.min.css">
@@ -55,6 +55,7 @@
             border-radius: 40px;
             font-weight: 600;
             color: #1e4a76;
+            font-size: 1rem;
         }
         .manual-group {
             display: flex;
@@ -66,7 +67,8 @@
             padding: 0.5rem 1rem;
             border-radius: 40px;
             border: 1px solid #cbd5e1;
-            width: 200px;
+            width: 220px;
+            font-size: 0.9rem;
         }
         .btn-primary-custom {
             background: #0f3b5f;
@@ -75,6 +77,7 @@
             font-weight: 600;
             border-radius: 40px;
             color: white;
+            transition: all 0.2s;
         }
         .btn-primary-custom:hover {
             background: #0a2c46;
@@ -87,6 +90,10 @@
             font-weight: 600;
             border-radius: 40px;
             color: white;
+            transition: all 0.2s;
+        }
+        .btn-warning-custom:hover {
+            background: #d97706;
         }
         .btn-secondary-custom {
             background: #6c757d;
@@ -104,9 +111,10 @@
             border-radius: 24px;
             border: 1px solid #e2e8f0;
             overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
         }
         .card-header {
-            padding: 1.2rem 1.5rem;
+            padding: 1.2rem 1.8rem;
             background: #fafcff;
             border-bottom: 1px solid #e2e8f0;
             display: flex;
@@ -118,12 +126,13 @@
         .info-row {
             display: flex;
             border-bottom: 1px solid #f0f2f5;
+            transition: background 0.1s;
         }
         .info-row:last-child {
             border-bottom: none;
         }
         .info-label {
-            width: 240px;
+            width: 260px;
             padding: 1rem 1.5rem;
             background: #fafcff;
             font-weight: 600;
@@ -140,11 +149,18 @@
             gap: 1rem;
         }
         .edit-input {
-            padding: 0.5rem 1rem;
-            border-radius: 12px;
+            padding: 0.6rem 1rem;
+            border-radius: 14px;
             border: 1px solid #cbd5e1;
             width: 100%;
-            max-width: 350px;
+            max-width: 450px;
+            font-size: 0.9rem;
+            transition: 0.2s;
+        }
+        .edit-input:focus {
+            outline: none;
+            border-color: #0f3b5f;
+            box-shadow: 0 0 0 3px rgba(15,59,95,0.1);
         }
         .empty-state {
             text-align: center;
@@ -185,49 +201,52 @@
         }
         .badge-locked {
             background: #e2e8f0;
-            color: #64748b;
-            padding: 4px 10px;
-            border-radius: 20px;
+            color: #475569;
+            padding: 4px 12px;
+            border-radius: 30px;
             font-size: 0.7rem;
+            font-weight: 500;
+        }
+        .section-badge {
+            background: #e9ecef;
+            border-radius: 30px;
+            padding: 0.2rem 0.8rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #2c5282;
         }
     </style>
 </head>
 <body>
 <div class="app-card">
     <div class="header">
-        <h1><i class="bi bi-bank2"></i> Treasury Information</h1>
-       
-    </div>
+        <h1><i class="bi bi-bank2"></i> Treasury Master Information </h1>
+          </div>
     
     <div class="br-panel">
         <div class="br-display">
-            🔑 Branch: <strong id="currentBrCode">—</strong>
+             <strong id="currentBrCode">—</strong>
         </div>
-        <div class="manual-group" style="display:none">
-            <input type="text" id="manualBrInput" placeholder="Enter BR Code manually">
-            <button id="manualFetchBtn" class="btn-primary-custom">Fetch</button>
-            <button id="refreshDataBtn" class="btn-secondary-custom">🔄 Refresh</button>
-        </div>
+        
     </div>
     
     <div class="content">
         <div id="treasuryContent"></div>
     </div>
-    <footer>
-       
-    </footer>
+  
 </div>
 
+<!-- JS Resources (Local paths) -->
 <script src="./js/jquery.min.js"></script>
 <script src="./js/bootstrap.bundle.min.js"></script>
 <script src="./js/sweetalert2.all.min.js"></script>
 
 <script>
     // ================= CONFIGURATION =================
-    // IMPORTANT: Replace with your deployed Google Apps Script Web App URL
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzahzAr8GFDvUSJs4dDAWwZpwPM1nwWXcJDY2i19zju5V1NGCbtk3radTrjXIxZi85Gjg/exec";
+    // Google Apps Script Web App URL (UPDATE with your deployed URL)
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzl8MVzBw1EBT4eYsIxqodBiJ88PW2cv2YWDWJAugl1vrfS4LH7KS-0vx1_c5XdaP69jw/exec";
     
-    // Google Sheets API for reading (fallback)
+    // Google Sheets API fallback config (read-only fallback)
     const SHEET_ID = "1HvCqLHC8IyllKskBXX1MtMfjQMGUyhMP7KuTuJxDhmU";
     const SHEET_NAME = "Admin Contact Details";
     const API_KEY = "AIzaSyBB1V3vJpNZ9X1GIF-YOwoa6YSt_iXMLo0";
@@ -235,9 +254,9 @@
     let allRecords = [];
     let currentRecord = null;
     let editMode = false;
-    let originalValues = {};
+    let originalValues = {};      // stores original editable values before edit
     
-    // Helper functions
+    // Helper: Global loader
     function showGlobalLoading(msg = 'Processing...') {
         if($('#global-loading-overlay').length) return;
         $('body').append(`<div id="global-loading-overlay"><div style="background:white;padding:30px;border-radius:24px;text-align:center;"><i class="bi bi-arrow-repeat" style="font-size:48px;color:#0f3b5f;animation:spin 1s linear infinite;"></i><p style="margin-top:15px;">${msg}</p></div></div>`);
@@ -259,10 +278,9 @@
         }
     }
     
-    // Get BR Code from browser cache
+    // Get BR Code from cache (session/local storage) as per original logic
     function getBRCodeFromCache() {
         let brCode = null;
-        
         const sessionUser = sessionStorage.getItem('currentUser');
         if (sessionUser) {
             try {
@@ -270,7 +288,6 @@
                 brCode = userData.username || userData.branchCode || userData.brCode;
             } catch(e) {}
         }
-        
         if (!brCode) {
             const localUser = localStorage.getItem('currentUser');
             if (localUser) {
@@ -280,68 +297,57 @@
                 } catch(e) {}
             }
         }
-        
         if (!brCode) brCode = localStorage.getItem('selectedBranch');
         if (!brCode) brCode = sessionStorage.getItem('selectedBranch');
         if (!brCode) brCode = sessionStorage.getItem('brCode');
         if (!brCode) brCode = localStorage.getItem('brCode');
-        
         return brCode;
     }
     
-    // Fetch data using POST (like menu-list.html)
+    // Fetch data using Apps Script POST
     async function fetchTreasuryData() {
-        showGlobalLoading('Loading treasury data...');
-        
+        showGlobalLoading('Loading treasury information...');
         try {
             const payload = { action: "READ" };
             const response = await fetch(APPS_SCRIPT_URL, {
                 method: "POST",
                 body: JSON.stringify(payload)
             });
-            
             const result = await response.json();
-            
             if (result.success && result.data) {
                 allRecords = result.data;
                 hideGlobalLoading();
-                Swal.fire({ icon: 'success', title: 'Loaded!', text: `${allRecords.length} records found`, timer: 1500, showConfirmButton: false });
+                Swal.fire({ icon: 'success', title: 'Connected!', text: `${allRecords.length} records loaded`, timer: 1500, showConfirmButton: false });
                 return true;
             } else {
-                throw new Error(result.error || "Failed to load data");
+                throw new Error(result.error || "Apps Script fetch failed");
             }
         } catch(error) {
-            console.log("Apps Script failed, trying Sheets API:", error);
-            // Fallback to Google Sheets API
+            console.warn("Apps Script failed, fallback to Sheets API:", error);
             return await fetchFromSheetsAPI();
         }
     }
     
-    // Fallback: Direct Google Sheets API
+    // Fallback: Google Sheets API (read-only)
     async function fetchFromSheetsAPI() {
         try {
             const encodedSheetName = encodeURIComponent(SHEET_NAME);
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodedSheetName}?key=${API_KEY}`;
-            
             const response = await fetch(url);
             const data = await response.json();
-            
             if (data.error) {
                 hideGlobalLoading();
                 Swal.fire({ icon: 'error', title: 'API Error', text: data.error.message });
                 return false;
             }
-            
             const rows = data.values || [];
             if (rows.length < 2) {
                 hideGlobalLoading();
-                Swal.fire({ icon: 'warning', title: 'No Data', text: 'No data found in sheet' });
+                Swal.fire({ icon: 'warning', title: 'No Data', text: 'Sheet is empty' });
                 return false;
             }
-            
             const headers = rows[0];
             allRecords = [];
-            
             for (let i = 1; i < rows.length; i++) {
                 const record = {};
                 for (let j = 0; j < headers.length; j++) {
@@ -349,11 +355,9 @@
                 }
                 allRecords.push(record);
             }
-            
             hideGlobalLoading();
-            Swal.fire({ icon: 'success', title: 'Loaded!', text: `${allRecords.length} records found (read-only)`, timer: 1500, showConfirmButton: false });
+            Swal.fire({ icon: 'success', title: 'Loaded (Read-Only)', text: `${allRecords.length} records from Sheets API`, timer: 1500 });
             return true;
-            
         } catch(error) {
             hideGlobalLoading();
             Swal.fire({ icon: 'error', title: 'Connection Error', text: error.message });
@@ -361,24 +365,20 @@
         }
     }
     
-    // Find record by BR Code
+    // Find record by BR Code (flexible matching)
     function findRecordByBRCode(brCode) {
         if (!brCode || !allRecords.length) return null;
         const searchBr = brCode.toString().trim().toLowerCase();
-        
         for (const record of allRecords) {
             const recordBr = (record.BRCode || record.brCode || record['BR Code'] || '').toString().trim().toLowerCase();
-            if (recordBr === searchBr) {
-                return record;
-            }
+            if (recordBr === searchBr) return record;
         }
         return null;
     }
     
-    // Update record via Apps Script (same pattern as menu-list.html)
+    // UPDATE via Apps Script: supports Treasury Admin, Office Contacts, ADDRESS (Col K), PINCODE (Col L)
     async function updateRecord(updatedFields) {
         const brValue = currentRecord.BRCode || currentRecord.brCode || currentRecord['BR Code'];
-        
         const payload = {
             action: "UPDATE",
             brCode: brValue,
@@ -394,14 +394,12 @@
                 method: "POST",
                 body: JSON.stringify(payload)
             });
-            
             const result = await response.json();
-            
             if (result.success) {
-                Swal.fire({ icon: 'success', title: 'Updated!', text: result.message, timer: 2000, showConfirmButton: false });
+                Swal.fire({ icon: 'success', title: 'Updated!', text: result.message || 'Changes saved successfully', timer: 2000, showConfirmButton: false });
                 return true;
             } else {
-                Swal.fire({ icon: 'error', title: 'Update Failed', text: result.error });
+                Swal.fire({ icon: 'error', title: 'Update Failed', text: result.error || 'Unknown error' });
                 return false;
             }
         } catch(error) {
@@ -412,138 +410,181 @@
         }
     }
     
-    // Render treasury details
-    function renderTreasuryDetails() {
-        const container = $('#treasuryContent');
-        
-        if (!currentRecord) {
-            container.html(`
-                <div class="empty-state">
-                    <i class="bi bi-search" style="font-size: 3rem; opacity: 0.5;"></i>
-                    <p style="margin-top: 1rem;">No treasury record found for BR Code: <strong>${$('#currentBrCode').text()}</strong></p>
-                    <p class="text-muted">Please check the BR Code or click Refresh.</p>
-                </div>
-            `);
-            return;
-        }
-        
-        const displayFields = [
-            { label: "Treasury", sheetColumn: "Treasury", editable: false },
-            { label: "District", sheetColumn: "District", editable: false },
-            { label: "Network Admin Name", sheetColumn: "Network Admin Name", editable: false },
-            { label: "Network Admin Contact", sheetColumn: "Network Admin Contact", editable: false },
-            { label: "Treasury Admin Name", sheetColumn: "Treasury Admin Name", editable: true, fieldKey: "treasuryAdminName" },
-            { label: "Treasury Admin Contact", sheetColumn: "Treasury Admin Contact", editable: true, fieldKey: "treasuryAdminContact" },
-            { label: "Office Mail ID", sheetColumn: "Office Mail ID", editable: true, fieldKey: "officeMailId" },
-            { label: "Office Contact", sheetColumn: "Office Contact", editable: true, fieldKey: "officeContact" },
-            { label: "Office Mobile", sheetColumn: "Office Mobile", editable: true, fieldKey: "officeMobile" },
-            { label: "BR Code", sheetColumn: "BRCode", editable: false }
-        ];
-        
-        let html = `
-            <div class="treasury-card">
-                <div class="card-header">
-                    <h5><i class="bi bi-building"></i> Treasury Information</h5>
-                    <div>
-                        ${!editMode ? '<button id="enableEditBtn" class="btn-warning-custom"><i class="bi bi-pencil"></i> Enable Editing</button>' : ''}
-                        ${editMode ? '<button id="cancelEditBtn" class="btn-secondary-custom"><i class="bi bi-x-circle"></i> Cancel</button>' : ''}
-                        ${editMode ? '<button id="submitUpdateBtn" class="btn-primary-custom"><i class="bi bi-cloud-upload"></i> Update</button>' : ''}
-                    </div>
-                </div>
-        `;
-        
-        for (const field of displayFields) {
-            let value = currentRecord[field.sheetColumn] || '—';
-            const isEditing = editMode && field.editable;
-            
-            html += `
-                <div class="info-row">
-                    <div class="info-label">${field.label}</div>
-                    <div class="info-value">
-                        ${!isEditing ? `<span>${escapeHtml(value)}</span>` : `<input type="text" class="edit-input" data-sheetcolumn="${field.sheetColumn}" data-fieldkey="${field.fieldKey || ''}" value="${escapeHtml(value)}">`}
-                        ${!editMode && field.editable ? '<span class="badge-locked"><i class="bi bi-lock"></i> Locked</span>' : ''}
-                    </div>
-                </div>
-            `;
-        }
-        
-        html += `</div>`;
-        container.html(html);
-        
-        if (editMode) {
-            $('#cancelEditBtn').on('click', cancelEditMode);
-            $('#submitUpdateBtn').on('click', submitUpdate);
-            
-            $('.edit-input').on('input', function() {
-                const sheetColumn = $(this).data('sheetcolumn');
-                currentRecord[sheetColumn] = $(this).val();
-            });
-        } else {
-            $('#enableEditBtn').on('click', enableEditMode);
-        }
+    // Helper to ensure PIN Code column is properly mapped from sheet (handles variations)
+    function getPinCodeValue(record) {
+        // Try multiple possible column names for PIN code
+        if (record['PIN Code'] !== undefined && record['PIN Code'] !== '') return record['PIN Code'];
+        if (record['Pincode'] !== undefined && record['Pincode'] !== '') return record['Pincode'];
+        if (record['PINCODE'] !== undefined && record['PINCODE'] !== '') return record['PINCODE'];
+        if (record['Pin Code'] !== undefined && record['Pin Code'] !== '') return record['Pin Code'];
+        if (record['pincode'] !== undefined && record['pincode'] !== '') return record['pincode'];
+        return '';
     }
     
+    // Render treasury details including ADDRESS (K) and PINCODE (L)
+   function renderTreasuryDetails() {
+    const container = $('#treasuryContent');
+    if (!currentRecord) {
+        container.html(`
+            <div class="empty-state">
+                <i class="bi bi-building-slash" style="font-size: 3rem; opacity: 0.5;"></i>
+                <p style="margin-top: 1rem;">No treasury record found for BR Code: <strong>${$('#currentBrCode').text()}</strong></p>
+                <p class="text-muted">Please verify the BR Code or click Refresh.</p>
+            </div>
+        `);
+        return;
+    }
+    
+    // Ensure PIN Code is extracted correctly from record (handle column name variations)
+    const pinCodeValue = getPinCodeValue(currentRecord);
+    if (pinCodeValue && !currentRecord['PIN Code']) {
+        currentRecord['PIN Code'] = pinCodeValue;
+    }
+    
+    // Define display fields - no emoji icons in labels
+    const displayFields = [
+        { label: "Treasury", sheetColumn: "Treasury", editable: false },
+        { label: "District", sheetColumn: "District", editable: false },
+        { label: "Network Admin Name", sheetColumn: "Network Admin Name", editable: false },
+        { label: "Network Admin Contact", sheetColumn: "Network Admin Contact", editable: false },
+        { label: "Treasury Admin Name", sheetColumn: "Treasury Admin Name", editable: true, fieldKey: "treasuryAdminName" },
+        { label: "Treasury Admin Contact", sheetColumn: "Treasury Admin Contact", editable: true, fieldKey: "treasuryAdminContact" },
+        { label: "Office Mail ID", sheetColumn: "Office Mail ID", editable: true, fieldKey: "officeMailId" },
+        { label: "Office Contact", sheetColumn: "Office Contact", editable: true, fieldKey: "officeContact" },
+        { label: "Office Mobile", sheetColumn: "Office Mobile", editable: true, fieldKey: "officeMobile" },
+        { label: "Address", sheetColumn: "Address", editable: true, fieldKey: "address", note: "Column K" },
+        { label: "PIN Code", sheetColumn: "PIN Code", editable: true, fieldKey: "pincode", note: "Column L" },
+        { label: "BR Code", sheetColumn: "BRCode", editable: false }
+    ];
+    
+    let html = `
+        <div class="treasury-card">
+            <div class="card-header">
+                <h5><i class="bi bi-bank2"></i> Treasury Master Information</h5>
+                <div>
+                    ${!editMode ? '<button id="enableEditBtn" class="btn-warning-custom"><i class="bi bi-pencil-square"></i> Enable Editing</button>' : ''}
+                    ${editMode ? '<button id="cancelEditBtn" class="btn-secondary-custom"><i class="bi bi-x-lg"></i> Cancel</button>' : ''}
+                    ${editMode ? '<button id="submitUpdateBtn" class="btn-primary-custom"><i class="bi bi-cloud-upload"></i> Save Changes</button>' : ''}
+                </div>
+            </div>
+    `;
+    
+    for (const field of displayFields) {
+        let value = currentRecord[field.sheetColumn] !== undefined && currentRecord[field.sheetColumn] !== null ? currentRecord[field.sheetColumn] : '—';
+        const isEditing = editMode && field.editable;
+        
+        // For PIN Code, ensure we have the value if it exists in alternative column
+        if (field.sheetColumn === 'PIN Code' && (value === '—' || value === '')) {
+            const altValue = getPinCodeValue(currentRecord);
+            if (altValue && altValue !== '') value = altValue;
+        }
+        
+        if (value === '' || value === null) value = '—';
+        
+        html += `
+            <div class="info-row">
+                <div class="info-label">
+                    ${field.label}
+                    ${field.note ? `` : ''}
+                </div>
+                <div class="info-value">
+                    ${!isEditing ? `<span class="fw-normal">${escapeHtml(value)}</span>` : 
+                        (field.sheetColumn === 'Address' ? 
+                            `<textarea class="edit-input" data-sheetcolumn="${field.sheetColumn}" data-fieldkey="${field.fieldKey || ''}" rows="3" placeholder="Enter ${field.label}" style="resize: vertical; min-height: 80px; font-family: inherit;">${escapeHtml(value)}</textarea>` :
+                            `<input type="text" class="edit-input" data-sheetcolumn="${field.sheetColumn}" data-fieldkey="${field.fieldKey || ''}" value="${escapeHtml(value)}" placeholder="Enter ${field.label}">`
+                        )}
+                    ${!editMode && field.editable ? '<span class="badge-locked"><i class="bi bi-lock"></i> Locked</span>' : ''}
+                </div>
+            </div>
+        `;
+    }
+    
+    html += `</div>`;
+    container.html(html);
+    
+    if (editMode) {
+        $('#cancelEditBtn').on('click', cancelEditMode);
+        $('#submitUpdateBtn').on('click', submitUpdate);
+        // Handle both input and textarea changes
+        $('.edit-input').on('input change', function() {
+            const sheetColumn = $(this).data('sheetcolumn');
+            if (sheetColumn) {
+                currentRecord[sheetColumn] = $(this).val();
+            }
+        });
+    } else {
+        $('#enableEditBtn').on('click', enableEditMode);
+    }
+}    
+    // Enable edit mode: store original values for all editable fields including Address & PIN Code
     function enableEditMode() {
         if (!currentRecord) return;
         
-        // Save original values
-        const editableFields = ["Treasury Admin Name", "Treasury Admin Contact", "Office Mail ID", "Office Contact", "Office Mobile"];
+        // List all editable sheet columns - includes Address and PIN Code
+        const editableFieldsList = [
+            "Treasury Admin Name", "Treasury Admin Contact", "Office Mail ID", 
+            "Office Contact", "Office Mobile", "Address", "PIN Code"
+        ];
         originalValues = {};
-        editableFields.forEach(field => {
-            originalValues[field] = currentRecord[field];
+        editableFieldsList.forEach(field => {
+            originalValues[field] = currentRecord[field] || '';
         });
         
         editMode = true;
         renderTreasuryDetails();
-        Swal.fire({ icon: 'info', title: 'Edit Mode Enabled', text: 'Modify fields, then click "Update".', timer: 2000, showConfirmButton: false });
+        Swal.fire({ icon: 'info', title: 'Edit Mode Active', text: 'Modify any field including Address and PIN Code, then click Save.', timer: 2000, showConfirmButton: false });
     }
     
     function cancelEditMode() {
-        // Restore original values
-        const editableFields = ["Treasury Admin Name", "Treasury Admin Contact", "Office Mail ID", "Office Contact", "Office Mobile"];
-        editableFields.forEach(field => {
+        // Restore original values from before edit
+        const editableFieldsList = [
+            "Treasury Admin Name", "Treasury Admin Contact", "Office Mail ID", 
+            "Office Contact", "Office Mobile", "Address", "PIN Code"
+        ];
+        editableFieldsList.forEach(field => {
             if (originalValues[field] !== undefined) {
                 currentRecord[field] = originalValues[field];
             }
         });
-        
         editMode = false;
         renderTreasuryDetails();
-        Swal.fire({ icon: 'info', title: 'Cancelled', text: 'Changes discarded.', timer: 1000, showConfirmButton: false });
+        Swal.fire({ icon: 'info', title: 'Cancelled', text: 'Changes discarded.', timer: 1200, showConfirmButton: false });
     }
     
     async function submitUpdate() {
-        // Collect changed fields
+        // Collect updated fields (only those changed)
         const updatedFields = {};
         const changes = [];
         
-        const editableFields = [
+        // Editable mapping: sheet column -> fieldKey expected by backend (Apps Script)
+        const editableMapping = [
             { sheetColumn: "Treasury Admin Name", fieldKey: "treasuryAdminName" },
             { sheetColumn: "Treasury Admin Contact", fieldKey: "treasuryAdminContact" },
             { sheetColumn: "Office Mail ID", fieldKey: "officeMailId" },
             { sheetColumn: "Office Contact", fieldKey: "officeContact" },
-            { sheetColumn: "Office Mobile", fieldKey: "officeMobile" }
+            { sheetColumn: "Office Mobile", fieldKey: "officeMobile" },
+            { sheetColumn: "Address", fieldKey: "address" },          // Column K
+            { sheetColumn: "PIN Code", fieldKey: "pincode" }          // Column L
         ];
         
-        editableFields.forEach(field => {
-            const currentValue = currentRecord[field.sheetColumn] || '';
-            const originalValue = originalValues[field.sheetColumn] || '';
-            
+        for (const mapping of editableMapping) {
+            const currentValue = currentRecord[mapping.sheetColumn] || '';
+            const originalValue = originalValues[mapping.sheetColumn] || '';
             if (currentValue !== originalValue) {
-                updatedFields[field.fieldKey] = currentValue;
-                changes.push(`${field.sheetColumn}: "${originalValue}" → "${currentValue}"`);
+                updatedFields[mapping.fieldKey] = currentValue;
+                changes.push(`${mapping.sheetColumn}: "${originalValue || '—'}" → "${currentValue || '—'}"`);
             }
-        });
+        }
         
         if (Object.keys(updatedFields).length === 0) {
-            Swal.fire({ icon: 'warning', title: 'No Changes', text: 'No modifications were made to any field.' });
+            Swal.fire({ icon: 'warning', title: 'No Changes', text: 'No modifications detected. Nothing to save.' });
             return;
         }
         
         const success = await updateRecord(updatedFields);
         
         if (success) {
-            // Update local cache
+            // Sync local cache: update currentRecord and allRecords
             const brValue = currentRecord.BRCode || currentRecord.brCode || currentRecord['BR Code'];
             const index = allRecords.findIndex(r => (r.BRCode || r.brCode || r['BR Code']) === brValue);
             if (index !== -1) {
@@ -551,6 +592,7 @@
             }
             editMode = false;
             renderTreasuryDetails();
+            Swal.fire({ icon: 'success', title: 'Updated!', text: 'Address / PIN Code updated successfully', timer: 1800, showConfirmButton: false });
         }
     }
     
@@ -572,13 +614,26 @@
         const record = findRecordByBRCode(brCode);
         if (record) {
             currentRecord = { ...record };
+            
+            // Fix PIN Code mapping - ensure PIN Code is properly set from sheet data
+            if (currentRecord) {
+                const pinFromSheet = getPinCodeValue(record);
+                if (pinFromSheet && (!currentRecord['PIN Code'] || currentRecord['PIN Code'] === '')) {
+                    currentRecord['PIN Code'] = pinFromSheet;
+                }
+                // Also ensure Address is properly mapped
+                if (!currentRecord['Address'] && record['Address']) {
+                    currentRecord['Address'] = record['Address'];
+                }
+            }
+            
             editMode = false;
             renderTreasuryDetails();
-            Swal.fire({ icon: 'success', title: 'Found!', text: `${currentRecord.Treasury || 'Treasury'} / ${currentRecord.District || ''}`, timer: 1500, showConfirmButton: false });
+            Swal.fire({ icon: 'success', title: 'Treasury Found', text: `${currentRecord.Treasury || 'Treasury'} | District: ${currentRecord.District || '—'}`, timer: 1800, showConfirmButton: false });
         } else {
             currentRecord = null;
             renderTreasuryDetails();
-            Swal.fire({ icon: 'error', title: 'Not Found', text: `No record found for BR Code: ${brCode}` });
+            Swal.fire({ icon: 'error', title: 'Not Found', text: `No record exists for BR Code: ${brCode}` });
         }
     }
     
@@ -593,7 +648,7 @@
         if (manualBr) {
             loadAndDisplay(manualBr);
         } else {
-            Swal.fire({ icon: 'warning', title: 'Empty', text: 'Please enter a BR Code' });
+            Swal.fire({ icon: 'warning', title: 'Empty', text: 'Please enter a valid BR Code' });
         }
     });
     
@@ -601,34 +656,26 @@
         allRecords = [];
         await fetchTreasuryData();
         const currentBr = $('#currentBrCode').text();
-        if (currentBr && currentBr !== 'Not found') {
+        if (currentBr && currentBr !== 'Not found' && currentBr !== '—') {
             loadAndDisplay(currentBr);
+        } else {
+            Swal.fire({ icon: 'info', title: 'Refresh Complete', text: 'Data reloaded. Use manual fetch to load a branch.' });
         }
     });
     
-    // Initialize
+    // Initialize on document ready
     $(document).ready(async function() {
-        // Check if Apps Script URL is configured
-        if (APPS_SCRIPT_URL === "https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec") {
-            Swal.fire({ 
-                icon: 'warning', 
-                title: 'Configuration Required', 
-                text: 'Please update APPS_SCRIPT_URL with your Google Apps Script Web App URL.',
-                confirmButtonText: 'OK'
-            });
-        }
-        
         await fetchTreasuryData();
         const cachedBr = getBRCodeFromCache();
         if (cachedBr) {
             loadAndDisplay(cachedBr);
         } else {
-            $('#currentBrCode').text('Not found');
+            $('#currentBrCode').text('—');
             Swal.fire({ 
                 icon: 'info', 
-                title: 'No BR Code Detected', 
-                text: 'Please enter a BR Code manually.',
-                confirmButtonText: 'OK'
+                title: 'Welcome', 
+                text: 'Enter BR Code manually to view treasury details including Address & PIN Code.',
+                confirmButtonText: 'Proceed'
             });
         }
     });
