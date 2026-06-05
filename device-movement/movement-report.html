@@ -236,9 +236,8 @@
             </div>
             <div class="action-buttons">
                 <button id="generateReportBtn" class="btn btn-primary-custom"><i class="bi bi-search"></i> View</button>
-        <button id="resetBtn" class="btn btn-secondary-custom"><i class="bi bi-arrow-repeat"></i> Reset</button>
+                <button id="resetBtn" class="btn btn-secondary-custom"><i class="bi bi-arrow-repeat"></i> Reset</button>
                 <button id="exportCsvBtn" class="btn btn-success-custom" disabled><i class="bi bi-filetype-csv"></i> Export to CSV</button>
-        
             </div>
         </div>
         
@@ -282,11 +281,10 @@
                         <td colspan="15" class="placeholder-message">
                             <i class="bi bi-search-heart"></i>
                             <h5>No Report Generated</h5>
-                           
-                        </td>
+                         </td>
                     </tr>
                 </tbody>
-            </table>
+             </table>
         </div>
     </div>
 </div>
@@ -458,14 +456,14 @@
             return true;
         });
         
-        // Sort by complaint date descending (latest first)
+        // Sort by Complaint Date ASCENDING (oldest first)
         filteredRecords.sort((a, b) => {
             const dateA = parseDMYToDate(a.complaintDate);
             const dateB = parseDMYToDate(b.complaintDate);
             if(!dateA && !dateB) return 0;
             if(!dateA) return 1;
             if(!dateB) return -1;
-            return dateB - dateA;
+            return dateA - dateB;
         });
         
         // Update stats
@@ -493,7 +491,7 @@
                         <i class="bi bi-inbox"></i>
                         <h5>No Records Found</h5>
                         <p>No records match the selected filters. Try changing your criteria.</p>
-                    </tr>
+                      <tr>
                 </tr>
             `);
             dataTable = null;
@@ -525,7 +523,7 @@
                     return '<span class="badge-completed"><i class="bi bi-check-circle-fill me-1"></i>Delivered</span>';
                 } }
             ],
-            order: [[6, 'desc']],
+            order: [[0, 'asc']], // Sort by Serial Number column (index 0) in ascending order
             pageLength: 25,
             lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
             language: { search: "Filter:", searchPlaceholder: "Search records..." },
@@ -535,6 +533,9 @@
                 $('#exportCsvBtn').prop('disabled', false);
             }
         });
+        
+        // After DataTable is initialized, sort by Serial Number column (column 0) ascending
+        dataTable.order([0, 'asc']).draw();
         
         $('#exportCsvBtn').prop('disabled', false);
     }
@@ -596,7 +597,14 @@
         const rows = [];
         let serialNo = 1;
         
-        dataToExport.forEach(record => {
+        // Sort dataToExport by Serial Number (column index 2) for CSV export
+        const sortedForExport = [...dataToExport].sort((a, b) => {
+            const serialA = a.serialNo || '';
+            const serialB = b.serialNo || '';
+            return serialA.localeCompare(serialB);
+        });
+        
+        sortedForExport.forEach(record => {
             rows.push([
                 serialNo++,
                 record.treasury || '',
@@ -643,7 +651,7 @@
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
         
-        Swal.fire({ icon: 'success', title: 'Export Successful!', text: `${dataToExport.length} records exported.`, timer: 1500, showConfirmButton: false });
+        Swal.fire({ icon: 'success', title: 'Export Successful!', text: `${sortedForExport.length} records exported.`, timer: 1500, showConfirmButton: false });
     }
     
     function resetFilters() {
@@ -666,9 +674,9 @@
                     <i class="bi bi-search-heart"></i>
                     <h5>No Report Generated</h5>
                     <p>Select your filters and click "View" button to get data</p>
-                </td>
-            </tr>
-        `);
+                  </td>
+                </tr>
+            `);
         $('#statsContainer').hide();
         $('#exportCsvBtn').prop('disabled', true);
         isReportGenerated = false;
