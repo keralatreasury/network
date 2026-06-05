@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Fatpipe Device | Complaint Report - With Spare Device Inclusion</title>
+    <title>Fatpipe Device | Complaint Report</title>
     
     <!-- Local CSS Resources -->
     <link rel="stylesheet" href="../css/bootstrap.min.css">
@@ -122,8 +122,7 @@
             gap: 20px;
             align-items: center;
             flex: 1;
-            min-width: 240px;
-            flex-wrap: wrap;
+            min-width: 200px;
         }
         .checkbox-group .form-check {
             margin-bottom: 0;
@@ -174,7 +173,6 @@
         .badge-pending { background-color: #f59e0b; color: white; padding: 3px 8px; border-radius: 30px; font-size: 0.7rem; }
         .badge-processing { background-color: #3b82f6; color: white; padding: 3px 8px; border-radius: 30px; font-size: 0.7rem; }
         .badge-completed { background-color: #10b981; color: white; padding: 3px 8px; border-radius: 30px; font-size: 0.7rem; }
-        .badge-spare { background-color: #8b5cf6; color: white; padding: 3px 8px; border-radius: 30px; font-size: 0.7rem; }
         .placeholder-message {
             text-align: center;
             padding: 60px 20px;
@@ -193,15 +191,6 @@
         .content-pane {
             padding: 25px;
         }
-        .spare-note {
-            font-size: 0.7rem;
-            color: #5b21b6;
-            background: #ede9fe;
-            border-radius: 30px;
-            padding: 5px 12px;
-            display: inline-block;
-            margin-left: 8px;
-        }
     </style>
 </head>
 <body>
@@ -210,7 +199,7 @@
         <i class="bi bi-file-text-fill"></i>
         <div>
             <h4>Fatpipe Device - Complaint Report</h4>
-            <small class="opacity-75">Generate reports with complaint date or spare device transfer date inclusion</small>
+            <small class="opacity-75">Generate and export complaint reports with date filters</small>
         </div>
     </div>
     
@@ -224,11 +213,11 @@
                 </select>
             </div>
             <div class="filter-group">
-                <label><i class="bi bi-calendar"></i> From Date (Complaint / Transfer)</label>
+                <label><i class="bi bi-calendar"></i> From Date (Complaint Date)</label>
                 <input type="text" id="fromDate" class="form-control flatpickr-from" placeholder="DD/MM/YYYY">
             </div>
             <div class="filter-group">
-                <label><i class="bi bi-calendar"></i> To Date (Complaint / Transfer)</label>
+                <label><i class="bi bi-calendar"></i> To Date (Complaint Date)</label>
                 <input type="text" id="toDate" class="form-control flatpickr-to" placeholder="DD/MM/YYYY">
             </div>
             <div class="checkbox-group">
@@ -244,13 +233,6 @@
                         <i class="bi bi-check-circle"></i> Show Processed
                     </label>
                 </div>
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="includeSpareDevices">
-                    <label class="form-check-label" for="includeSpareDevices">
-                        <i class="bi bi-box-seam"></i> Include Spare Device Issue
-                    </label>
-                   
-                </div>
             </div>
             <div class="action-buttons">
                 <button id="generateReportBtn" class="btn btn-primary-custom"><i class="bi bi-search"></i> View</button>
@@ -264,7 +246,6 @@
             <div class="d-flex justify-content-between align-items-center flex-wrap mb-3">
                 <div>
                     <span class="stats-badge" id="recordCount">0 Records</span>
-                    <span class="stats-badge ms-2" id="spareIncludedBadge" style="background:#ede9fe;color:#5b21b6;">Spare Incl: 0</span>
                 </div>
                 <div>
                     <span class="stats-badge" id="pendingCount">Pending: 0</span>
@@ -300,11 +281,10 @@
                         <td colspan="15" class="placeholder-message">
                             <i class="bi bi-search-heart"></i>
                             <h5>No Report Generated</h5>
-                            <p>Select filters & click "View"</p>
-                        </td>
+                         </td>
                     </tr>
                 </tbody>
-            </table>
+             </table>
         </div>
     </div>
 </div>
@@ -329,7 +309,6 @@
     let dataTable = null;
     let flatpickrFrom, flatpickrTo;
     let isReportGenerated = false;
-    let spareIncludedCount = 0;
     
     function showGlobalLoading(msg) {
         if($('#global-loading-overlay').length) return;
@@ -339,19 +318,11 @@
     
     function escapeHtml(str) { if(!str) return ''; return String(str).replace(/[&<>]/g, m => m==='&'?'&amp;':m==='<'?'&lt;':'&gt;'); }
     
-    // Enhanced date parser for DD/MM/YYYY
     function parseDMYToDate(dateStr) {
-        if(!dateStr || dateStr === null) return null;
-        const trimmed = String(dateStr).trim();
-        if(trimmed === "" || trimmed.toUpperCase() === "N/A" || trimmed === "NA") return null;
-        let parts = trimmed.split('/');
+        if(!dateStr) return null;
+        let parts = dateStr.split('/');
         if(parts.length === 3) {
-            let day = parseInt(parts[0],10);
-            let month = parseInt(parts[1],10)-1;
-            let year = parseInt(parts[2],10);
-            if(!isNaN(day) && !isNaN(month) && !isNaN(year)) {
-                return new Date(year, month, day);
-            }
+            return new Date(parts[2], parts[1]-1, parts[0]);
         }
         return null;
     }
@@ -362,76 +333,34 @@
         return date.getTime();
     }
     
-    // Check if a date string is empty, blank, or "N/A" (case insensitive)
-    function isComplaintDateInvalidOrBlank(dateStr) {
-        if(!dateStr) return true;
-        const trimmed = String(dateStr).trim();
-        if(trimmed === "" || trimmed.toUpperCase() === "N/A" || trimmed === "NA") return true;
-        return false;
-    }
-    
-    // Primary date filter: Normal complaint date range, OR (if spare checkbox enabled) include records with invalid complaint date but valid transfer date in range
-    function isRecordInDateRange(record, fromDateStr, toDateStr, includeSpare) {
-        const complaintDate = record.complaintDate;
-        const transferDate = record.transferDate;
+    function isDateInRange(dateStr, fromDate, toDate) {
+        const dateTime = formatDateForCompare(dateStr);
+        if(!dateTime) return false;
         
-        const complaintDateTime = formatDateForCompare(complaintDate);
-        const fromTime = fromDateStr ? formatDateForCompare(fromDateStr) : null;
-        const toTime = toDateStr ? formatDateForCompare(toDateStr) : null;
+        const fromTime = fromDate ? formatDateForCompare(fromDate) : null;
+        const toTime = toDate ? formatDateForCompare(toDate) : null;
         
-        let complaintInRange = false;
-        if(complaintDateTime !== null) {
-            if(fromTime && toTime) complaintInRange = (complaintDateTime >= fromTime && complaintDateTime <= toTime);
-            else if(fromTime) complaintInRange = (complaintDateTime >= fromTime);
-            else if(toTime) complaintInRange = (complaintDateTime <= toTime);
-            else complaintInRange = true;
+        if(fromTime && toTime) {
+            return dateTime >= fromTime && dateTime <= toTime;
+        } else if(fromTime) {
+            return dateTime >= fromTime;
+        } else if(toTime) {
+            return dateTime <= toTime;
         }
-        
-        // If complaint date passes standard filter, include.
-        if(complaintInRange) return true;
-        
-        // SPARE DEVICE INCLUSION LOGIC: if includeSpare flag is true, and complaint date is invalid/blank/N/A,
-        // then check if transferDate exists and falls within the selected date range.
-        if(includeSpare) {
-            const isComplaintInvalid = isComplaintDateInvalidOrBlank(complaintDate);
-            if(isComplaintInvalid) {
-                const transferDateTime = formatDateForCompare(transferDate);
-                if(transferDateTime !== null) {
-                    if(fromTime && toTime) return (transferDateTime >= fromTime && transferDateTime <= toTime);
-                    else if(fromTime) return (transferDateTime >= fromTime);
-                    else if(toTime) return (transferDateTime <= toTime);
-                    else return true; // no date filters, but spare device record will be included if no range restriction
-                }
-            }
-        }
-        return false;
+        return true;
     }
     
     function getRecordStatus(row) {
-        if(row.receivedDate && row.receivedDate.trim() !== "" && row.receivedDate !== "N/A") {
+        if(row.receivedDate && row.receivedDate.trim() !== "") {
             return "Completed";
-        } else if((row.moveToOem && row.moveToOem.trim() !== "") || (row.returnFromOem && row.returnFromOem.trim() !== "") || (row.toBranch && row.toBranch.trim() !== "")) {
+        } else if(row.moveToOem || row.returnFromOem || row.toBranch) {
             return "Processing";
         } else {
             return "Pending";
         }
     }
     
-    // Helper to identify if a record was included via spare logic (for stats badge)
-    function isSpareIncludedRecord(record, fromDateStr, toDateStr, includeSpareFlag) {
-        if(!includeSpareFlag) return false;
-        const complaintInvalid = isComplaintDateInvalidOrBlank(record.complaintDate);
-        if(!complaintInvalid) return false;
-        const transferDateTime = formatDateForCompare(record.transferDate);
-        if(transferDateTime === null) return false;
-        const fromTime = fromDateStr ? formatDateForCompare(fromDateStr) : null;
-        const toTime = toDateStr ? formatDateForCompare(toDateStr) : null;
-        if(fromTime && toTime) return (transferDateTime >= fromTime && transferDateTime <= toTime);
-        else if(fromTime) return (transferDateTime >= fromTime);
-        else if(toTime) return (transferDateTime <= toTime);
-        return true;
-    }
-    
+    // Fetch unique branches from Movement_Data sheet column E (From Branch)
     async function fetchBranchesFromMovementData() {
         try {
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(MOVEMENT_SHEET)}!E:E?key=${API_KEY}`;
@@ -439,12 +368,21 @@
             const data = await resp.json();
             const rows = data.values || [];
             const branchesSet = new Set();
-            for(let i=1; i<rows.length; i++) {
+            
+            for(let i=1; i<rows.length; i++) { // Skip header row (index 0)
                 const branch = rows[i] && rows[i][0] ? rows[i][0].trim() : "";
-                if(branch && branch !== "") branchesSet.add(branch);
+                if(branch && branch !== "") {
+                    branchesSet.add(branch);
+                }
             }
-            return Array.from(branchesSet).sort((a,b) => a.localeCompare(b));
-        } catch(e) { console.error("Error fetching branches:", e); return []; }
+            
+            // Convert Set to Array and sort ascending
+            const branches = Array.from(branchesSet).sort((a, b) => a.localeCompare(b));
+            return branches;
+        } catch(e) { 
+            console.error("Error fetching branches from Movement_Data:", e); 
+            return []; 
+        }
     }
     
     function populateBranchDropdown(branches) {
@@ -502,14 +440,13 @@
         const toDate = $('#toDate').val();
         const showPending = $('#showPending').is(':checked');
         const showProcessed = $('#showProcessed').is(':checked');
-        const includeSpare = $('#includeSpareDevices').is(':checked');
         
         filteredRecords = allRecords.filter(record => {
             // Branch filter
             if(selectedBranch && selectedBranch !== "" && record.fromBranch !== selectedBranch) return false;
             
-            // Enhanced date filter: supports both complaint date OR transfer date (spare logic)
-            if(!isRecordInDateRange(record, fromDate, toDate, includeSpare)) return false;
+            // Date filter
+            if(!isDateInRange(record.complaintDate, fromDate, toDate)) return false;
             
             // Status filter
             const status = getRecordStatus(record);
@@ -519,34 +456,22 @@
             return true;
         });
         
-        // Sort by Complaint Date ASCENDING, but for spare records without complaint date, fallback to Transfer Date
+        // Sort by Complaint Date ASCENDING (oldest first)
         filteredRecords.sort((a, b) => {
             const dateA = parseDMYToDate(a.complaintDate);
             const dateB = parseDMYToDate(b.complaintDate);
-            if(dateA && dateB) return dateA - dateB;
-            if(dateA && !dateB) return -1;
-            if(!dateA && dateB) return 1;
-            // both missing complaint date -> sort by transfer date
-            const transferA = parseDMYToDate(a.transferDate);
-            const transferB = parseDMYToDate(b.transferDate);
-            if(transferA && transferB) return transferA - transferB;
-            if(transferA) return -1;
-            if(transferB) return 1;
-            return 0;
+            if(!dateA && !dateB) return 0;
+            if(!dateA) return 1;
+            if(!dateB) return -1;
+            return dateA - dateB;
         });
         
-        // Calculate spare included count for this filtered set (based on current spare flag & date range)
-        spareIncludedCount = 0;
-        filteredRecords.forEach(rec => {
-            if(isSpareIncludedRecord(rec, fromDate, toDate, includeSpare)) spareIncludedCount++;
-        });
-        
+        // Update stats
         const pendingCount = filteredRecords.filter(r => getRecordStatus(r) === "Pending").length;
         const processedCount = filteredRecords.length - pendingCount;
         $('#recordCount').text(`${filteredRecords.length} Records`);
         $('#pendingCount').text(`Pending: ${pendingCount}`);
         $('#processedCount').text(`Processed: ${processedCount}`);
-        $('#spareIncludedBadge').html(`<i class="bi bi-box-seam"></i> Spare Incl: ${spareIncludedCount}`);
         
         return filteredRecords;
     }
@@ -565,8 +490,8 @@
                     <td colspan="15" class="placeholder-message">
                         <i class="bi bi-inbox"></i>
                         <h5>No Records Found</h5>
-                        <p>No records match the selected filters. Try adjusting date range or enable 'Include Spare Device Issue'.</p>
-                    </td>
+                        <p>No records match the selected filters. Try changing your criteria.</p>
+                      <tr>
                 </tr>
             `);
             dataTable = null;
@@ -583,10 +508,7 @@
                 { data: "deviceType" },
                 { data: "fromBranch" },
                 { data: "complaintRemarks", render: d => d ? d : '—' },
-                { data: "complaintDate", render: d => {
-                    if(!d || d.trim() === "" || d.toUpperCase() === "N/A") return '<span class="text-muted fst-italic">N/A (Spare)</span>';
-                    return d;
-                } },
+                { data: "complaintDate", render: d => d ? d : '—' },
                 { data: "sentDate", render: d => d ? d : '—' },
                 { data: "receivedDate", render: d => d ? d : '—' },
                 { data: "moveToOem", render: d => d ? d : '—' },
@@ -596,16 +518,12 @@
                 { data: "remarks", render: d => d ? d : '—' },
                 { data: null, render: (row) => {
                     const status = getRecordStatus(row);
-                    const isSpareIncluded = isSpareIncludedRecord(row, $('#fromDate').val(), $('#toDate').val(), $('#includeSpareDevices').is(':checked'));
-                    if(isSpareIncluded) {
-                        return '<span class="badge-spare"><i class="bi bi-box-seam me-1"></i>Spare Device</span>';
-                    }
                     if(status === "Pending") return '<span class="badge-pending"><i class="bi bi-clock-history me-1"></i>Pending</span>';
                     if(status === "Processing") return '<span class="badge-processing"><i class="bi bi-arrow-repeat me-1"></i>Processing</span>';
                     return '<span class="badge-completed"><i class="bi bi-check-circle-fill me-1"></i>Delivered</span>';
                 } }
             ],
-            order: [[0, 'asc']],
+            order: [[0, 'asc']], // Sort by Serial Number column (index 0) in ascending order
             pageLength: 25,
             lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
             language: { search: "Filter:", searchPlaceholder: "Search records..." },
@@ -616,12 +534,14 @@
             }
         });
         
+        // After DataTable is initialized, sort by Serial Number column (column 0) ascending
         dataTable.order([0, 'asc']).draw();
+        
         $('#exportCsvBtn').prop('disabled', false);
     }
     
     async function generateReport() {
-        showGlobalLoading("Loading data from Google Sheets...");
+        showGlobalLoading("Loading data...");
         await fetchMovementRecords();
         renderTable();
         hideGlobalLoading();
@@ -629,12 +549,11 @@
         $('#statsContainer').show();
         
         if(filteredRecords.length === 0 && allRecords.length > 0) {
-            Swal.fire({ icon: 'info', title: 'No Records', text: 'No records match the selected filters. Try enabling "Include Spare Device Issue" for transfer-based entries.' });
+            Swal.fire({ icon: 'info', title: 'No Records', text: 'No records match the selected filters.', timer: 2000 });
         } else if(allRecords.length === 0) {
             Swal.fire({ icon: 'warning', title: 'No Data', text: 'No records found in the sheet.' });
         } else {
-            let spareMsg = spareIncludedCount > 0 ? ` (${spareIncludedCount} spare device issues included)` : '';
-            Swal.fire({ icon: 'success', title: 'Report Generated', text: `${filteredRecords.length} records found${spareMsg}.`, timer: 1800, showConfirmButton: false });
+            Swal.fire({ icon: 'success', title: 'Report Generated', text: `${filteredRecords.length} records found.`, timer: 1500, showConfirmButton: false });
         }
         isReportGenerated = true;
     }
@@ -645,29 +564,47 @@
             return;
         }
         
+        // Get current DataTable data (respects search/filter in the table itself)
         let dataToExport = filteredRecords;
+        
+        // If DataTable has search applied, use the currently displayed data
         if(dataTable) {
             const searchTerm = dataTable.search();
             if(searchTerm && searchTerm !== "") {
+                // Use DataTable's filtered data if search is applied
                 dataToExport = dataTable.rows({ search: 'applied' }).data().toArray();
             }
         }
         
         const headers = [
-            'Sl No', 'Treasury', 'Device Serial No.', 'Device Type', 'From Branch',
-            'Complaint Remarks', 'Complaint Date', 'Sent Date', 'Received Date',
-            'Date of Movement to OEM', 'Date of return from OEM', 'To Branch', 'Date of Transfer',
-            'Remarks', 'Status / Type'
+            'Sl No',
+            'Treasury',
+            'Device Serial No.',
+            'Device Type',
+            'From Branch',
+            'Complaint Remarks',
+            'Complaint Date',
+            'Sent Date',
+            'Received Date',
+            'Date of Movement to OEM',
+            'Date of return from OEM',
+            'To Branch',
+            'Date of Transfer',
+            'Remarks',
+            'Status'
         ];
         
         const rows = [];
         let serialNo = 1;
-        const sortedForExport = [...dataToExport].sort((a,b) => (a.serialNo || '').localeCompare(b.serialNo || ''));
+        
+        // Sort dataToExport by Serial Number (column index 2) for CSV export
+        const sortedForExport = [...dataToExport].sort((a, b) => {
+            const serialA = a.serialNo || '';
+            const serialB = b.serialNo || '';
+            return serialA.localeCompare(serialB);
+        });
         
         sortedForExport.forEach(record => {
-            const isSpare = isSpareIncludedRecord(record, $('#fromDate').val(), $('#toDate').val(), $('#includeSpareDevices').is(':checked'));
-            let displayStatus = getRecordStatus(record);
-            if(isSpare) displayStatus = `Spare Device (${displayStatus})`;
             rows.push([
                 serialNo++,
                 record.treasury || '',
@@ -675,7 +612,7 @@
                 record.deviceType || '',
                 record.fromBranch || '',
                 record.complaintRemarks || '',
-                (record.complaintDate && record.complaintDate.trim() !== "") ? record.complaintDate : 'N/A (Spare)',
+                record.complaintDate || '',
                 record.sentDate || '',
                 record.receivedDate || '',
                 record.moveToOem || '',
@@ -683,7 +620,7 @@
                 record.toBranch || '',
                 record.transferDate || '',
                 record.remarks || '',
-                displayStatus
+                getRecordStatus(record)
             ]);
         });
         
@@ -701,17 +638,19 @@
         const blob = new Blob(['\uFEFF' + csvString], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
         const url = URL.createObjectURL(blob);
+        
         const selectedBranch = $('#branchSelect').val() || 'all';
         const fromDate = $('#fromDate').val() || 'start';
         const toDate = $('#toDate').val() || 'end';
-        const spareFlag = $('#includeSpareDevices').is(':checked') ? '_withspare' : '';
-        const fileName = `fatpipe_report_${selectedBranch}_${fromDate}_to_${toDate}${spareFlag}.csv`;
+        const fileName = `fatpipe_report_${selectedBranch}_${fromDate}_to_${toDate}.csv`;
+        
         link.setAttribute('href', url);
         link.setAttribute('download', fileName);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
+        
         Swal.fire({ icon: 'success', title: 'Export Successful!', text: `${sortedForExport.length} records exported.`, timer: 1500, showConfirmButton: false });
     }
     
@@ -721,9 +660,10 @@
         $('#toDate').val('');
         $('#showPending').prop('checked', true);
         $('#showProcessed').prop('checked', true);
-        $('#includeSpareDevices').prop('checked', false);
+        
         if(flatpickrFrom) flatpickrFrom.clear();
         if(flatpickrTo) flatpickrTo.clear();
+        
         if(dataTable) {
             dataTable.destroy();
             dataTable = null;
@@ -734,15 +674,16 @@
                     <i class="bi bi-search-heart"></i>
                     <h5>No Report Generated</h5>
                     <p>Select your filters and click "View" button to get data</p>
-                </td>
-            </tr>
-        `);
+                  </td>
+                </tr>
+            `);
         $('#statsContainer').hide();
         $('#exportCsvBtn').prop('disabled', true);
         isReportGenerated = false;
         filteredRecords = [];
         allRecords = [];
-        Swal.fire({ icon: 'info', title: 'Reset Complete', text: 'Filters cleared. Click View to load data.', timer: 1500, showConfirmButton: false });
+        
+        Swal.fire({ icon: 'info', title: 'Reset Complete', text: 'Filters have been cleared. Click View button to load data.', timer: 1500, showConfirmButton: false });
     }
     
     function initFlatpickr() {
@@ -752,15 +693,19 @@
     
     $(async function() {
         showGlobalLoading("Loading branches...");
+        
+        // Fetch branches from Movement_Data sheet column E
         const branches = await fetchBranchesFromMovementData();
         branchesList = branches;
         populateBranchDropdown(branchesList);
+        
         initFlatpickr();
         hideGlobalLoading();
         
         $('#generateReportBtn').on('click', generateReport);
         $('#exportCsvBtn').on('click', exportToCSV);
         $('#resetBtn').on('click', resetFilters);
+        
         $('#exportCsvBtn').prop('disabled', true);
     });
 </script>
