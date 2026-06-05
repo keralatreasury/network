@@ -305,7 +305,7 @@
     const BRANCH_SHEET = "Branch and Device Details";
     const MOVEMENT_SHEET = "Movement_Data";
     const API_KEY = "AIzaSyDc8tegwi2rgHyDFYm7uWBqVqQ7Fwb3uWM";
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyjxYBOOdCF70eCtkuoihWYAzMBGY2oicJat_ox0-NOFCZwFrgpnTp0n26kX5SGMn2O/exec"; // REPLACE WITH YOUR DEPLOYED URL
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw21JXZ_cjcDccSCzLF4Dzu0MJgGIACJ8vApbz4ndItRD6lsB-KkILkKJSWXs9o97AV/exec"; // REPLACE WITH YOUR DEPLOYED URL
     
     let branchesList = [];
     let movementRecords = [];
@@ -613,18 +613,19 @@
         }
         
         const payload = {
-            action: "UPDATE_PROCESSING",
-            rowId: parseInt(id),
-            receivedDate: receivedDate,
-            moveToOem: moveToOem,
-            returnFromOem: returnFromOem,
-            toBranch: toBranch,
-            transferDate: transferDate,
-            remarks: remarks,
-            branch: branch,
-            updateMasterSheet: updateMaster,
-            deviceSerialNo: $("#editSerialNo").val()
-        };
+    action: "UPDATE_PROCESSING",
+    rowId: parseInt(id),
+    receivedDate: receivedDate,
+    moveToOem: moveToOem,
+    returnFromOem: returnFromOem,
+    toBranch: toBranch,
+    transferDate: transferDate,
+    remarks: remarks,
+    branch: branch,
+    updateMasterSheet: updateMaster,
+    deviceSerialNo: $("#editSerialNo").val(),
+    deviceType: $("#editDeviceType").val()  // This is already included!
+};
         
         const $btn = $("#confirmProcessingUpdateBtn");
         const originalHtml = $btn.html();
