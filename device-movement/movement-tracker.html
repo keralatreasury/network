@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Fatpipe Device | Complete Asset Tracker - Timeline View</title>
+    
+    <!-- Local CSS Resources -->
+    <link rel="stylesheet" href="../css/bootstrap.min.css">
+    <link rel="stylesheet" href="../css/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="../css/select2.min.css">
+    <link rel="stylesheet" href="../css/flatpickr.min.css">
+    <link rel="stylesheet" href="../css/sweetalert2.min.css">
+    
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #eef2f7 0%, #dce3ec 100%);
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            padding: 20px 16px;
+            margin: 0;
+            min-height: 100vh;
+        }
+        .tracker-card {
+            max-width: 100%;
+            margin: 0 auto;
+            background: white;
+            border-radius: 32px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+            overflow: hidden;
+        }
+        .page-header {
+            background: linear-gradient(135deg, #0f5b9c 0%, #1a4b7a 100%);
+            color: white;
+            padding: 20px 30px;
+        }
+        .page-header h2 {
+            margin: 0;
+            font-weight: 700;
+            font-size: 1.6rem;
+        }
+        .page-header p {
+            margin: 5px 0 0;
+            opacity: 0.85;
+            font-size: 0.85rem;
+        }
+        .content-pane {
+            padding: 30px;
+        }
+        .search-section {
+            background: #f8fafc;
+            border-radius: 24px;
+            padding: 20px 25px;
+            margin-bottom: 30px;
+            border: 1px solid #e2e8f0;
+        }
+        .form-label {
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+        }
+        /* Dropdown styling */
+        .select2-container--bootstrap-5 .select2-selection {
+            border-radius: 14px !important;
+            border: 2px solid #e2e8f0 !important;
+            padding: 6px 12px !important;
+            min-height: 46px !important;
+            font-size: 0.95rem !important;
+        }
+        .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
+            line-height: 30px !important;
+            padding-left: 8px !important;
+        }
+        .select2-container--bootstrap-5 .select2-dropdown {
+            border-radius: 14px !important;
+            border-color: #e2e8f0 !important;
+        }
+        .btn-track {
+            background: linear-gradient(135deg, #0f5b9c, #1a4b7a);
+            border: none;
+            padding: 12px 24px;
+            font-weight: 700;
+            border-radius: 40px;
+            transition: all 0.2s;
+            color: white;
+            font-size: 0.9rem;
+            width: 100%;
+            white-space: nowrap;
+        }
+        .btn-track:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px -5px rgba(15,91,156,0.3);
+        }
+        .btn-reset {
+            background: #64748b;
+            border: none;
+            padding: 12px 24px;
+            font-weight: 700;
+            border-radius: 40px;
+            color: white;
+            font-size: 0.9rem;
+            width: 100%;
+            white-space: nowrap;
+        }
+        .btn-reset:hover {
+            background: #475569;
+            transform: translateY(-1px);
+        }
+.bg-success {
+    --bs-bg-opacity: 1;
+    color: white;
+    background-color: rgba(var(--bs-success-rgb), var(--bs-bg-opacity)) !important;
+}
+        .stats-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding: 15px 20px;
+            background: #f1f5f9;
+            border-radius: 20px;
+        }
+        .stat-item {
+            background: white;
+            padding: 6px 16px;
+            border-radius: 40px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #0f5b9c;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .stat-item i {
+            margin-right: 6px;
+        }
+        .device-info-card {
+            background: linear-gradient(135deg, #0f5b9c, #1a4b7a);
+            color: white;
+            padding: 18px 25px;
+            border-radius: 24px;
+            margin-bottom: 25px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+        }
+        .device-info-card h3 {
+            margin: 0;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+        .device-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 5px 12px;
+            border-radius: 40px;
+            font-size: 0.75rem;
+        }
+        
+        /* Timeline Styles */
+        .timeline-container {
+            max-height: 55vh;
+            overflow-y: auto;
+            padding: 10px 20px 20px 10px;
+            background: #f8fafc;
+            border-radius: 24px;
+        }
+        .timeline-item {
+            display: flex;
+            margin-bottom: 30px;
+            position: relative;
+        }
+        .timeline-icon {
+            flex-shrink: 0;
+            width: 52px;
+            height: 52px;
+            background: linear-gradient(135deg, #0f5b9c, #1a4b7a);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+            margin-right: 18px;
+            z-index: 2;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+        }
+        .timeline-icon.completed {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+        .timeline-icon.inprogress {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+        }
+        .timeline-icon.info {
+            background: linear-gradient(135deg, #06b6d4, #0891b2);
+        }
+        .timeline-content {
+            flex: 1;
+            background: #ffffff;
+            padding: 14px 20px;
+            border-radius: 18px;
+            position: relative;
+            border-left: 4px solid #0f5b9c;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            transition: all 0.2s;
+        }
+        .timeline-content:hover {
+            transform: translateX(5px);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+        }
+        .timeline-date {
+            font-size: 0.65rem;
+            color: #64748b;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .timeline-title {
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 6px;
+            font-size: 0.9rem;
+        }
+        .timeline-desc {
+            font-size: 0.8rem;
+            color: #475569;
+            margin-bottom: 0;
+            line-height: 1.4;
+        }
+        .timeline-badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 30px;
+            font-size: 0.6rem;
+            font-weight: 700;
+        }
+        .timeline-connector {
+            position: absolute;
+            left: 26px;
+            top: 52px;
+            width: 2px;
+            height: calc(100% + 30px);
+            background: linear-gradient(to bottom, #cbd5e1, #94a3b8);
+            z-index: 1;
+        }
+        .timeline-item:last-child .timeline-connector {
+            display: none;
+        }
+        .empty-timeline {
+            text-align: center;
+            padding: 50px 20px;
+            color: #94a3b8;
+        }
+        .empty-timeline i {
+            font-size: 3.5rem;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+        #global-loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            backdrop-filter: blur(4px);
+        }
+        .loading-spinner {
+            background: white;
+            padding: 25px 35px;
+            border-radius: 30px;
+            text-align: center;
+        }
+        .timeline-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        .timeline-container::-webkit-scrollbar-track {
+            background: #e2e8f0;
+            border-radius: 10px;
+        }
+        .timeline-container::-webkit-scrollbar-thumb {
+            background: #0f5b9c;
+            border-radius: 10px;
+        }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .content-pane { padding: 20px; }
+            .search-section { padding: 15px; }
+            .btn-track, .btn-reset { padding: 10px 16px; font-size: 0.85rem; }
+            .device-info-card { flex-direction: column; text-align: center; }
+            .stats-grid { justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+<div class="tracker-card">
+    <div class="page-header">
+        <h2><i class="bi bi-diagram-3-fill"></i> Asset Movement Tracker</h2>
+        <p>Complete device journey timeline - Select a device to track its entire movement history</p>
+    </div>
+    
+    <div class="content-pane">
+        <!-- Search Section - All controls in one row -->
+        <div class="search-section">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-7 col-lg-8">
+                    <label class="form-label"><i class="bi bi-upc-scan"></i> Select Device Serial Number</label>
+                    <select id="deviceSelect" class="form-select" style="width: 100%;">
+                        <option value="">-- Loading devices... --</option>
+                    </select>
+                </div>
+                <div class="col-md-3 col-lg-2">
+                    <label class="form-label">&nbsp;</label>
+                    <button id="trackBtn" class="btn-track w-100"><i class="bi bi-search-heart"></i> Track</button>
+                </div>
+                <div class="col-md-2 col-lg-2">
+                    <label class="form-label">&nbsp;</label>
+                    <button id="resetBtn" class="btn-reset w-100"><i class="bi bi-arrow-repeat"></i> Reset</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Stats & Device Info (Dynamic) -->
+        <div id="statsArea" style="display: none;">
+            <div class="stats-grid" id="statsGrid"></div>
+            <div class="device-info-card" id="deviceInfoCard"></div>
+        </div>
+        
+        <!-- Timeline Title -->
+        <div id="timelineHeader" style="display: none;">
+            <h5 class="mb-3"><i class="bi bi-clock-history text-primary"></i> Complete Movement Timeline</h5>
+        </div>
+        
+        <!-- Timeline Container -->
+        <div id="timelineContainer" class="timeline-container" style="min-height: 280px;">
+            <div class="empty-timeline">
+                <i class="bi bi-map"></i>
+                <h5>No Device Selected</h5>
+                <p>Select a device serial number from the dropdown and click "Track" to see its complete movement timeline.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="../js/jquery.min.js"></script>
+<script src="../js/bootstrap.bundle.min.js"></script>
+<script src="../js/select2.min.js"></script>
+<script src="../js/sweetalert2.all.min.js"></script>
+
+<script>
+    // ================= CONFIGURATION =================
+    const SPREADSHEET_ID = "1MpftwfNIe82kORjP6xeLo1qUh3v6Cr8HHo0oSW2grYA";
+    const MOVEMENT_SHEET = "Movement_Data";
+    const API_KEY = "AIzaSyDc8tegwi2rgHyDFYm7uWBqVqQ7Fwb3uWM";
+    
+    let allRecords = [];
+    let devicesList = [];
+    let currentDeviceData = null;
+    
+    // Helper functions
+    function parseDMYToDate(dateStr) {
+        if(!dateStr) return null;
+        const trimmed = String(dateStr).trim();
+        if(trimmed === "" || trimmed.toUpperCase() === "N/A" || trimmed === "NA") return null;
+        let parts = trimmed.split('/');
+        if(parts.length === 3) {
+            let day = parseInt(parts[0],10);
+            let month = parseInt(parts[1],10)-1;
+            let year = parseInt(parts[2],10);
+            if(!isNaN(day) && !isNaN(month) && !isNaN(year) && day >= 1 && day <= 31 && month >= 0 && month <= 11) {
+                return new Date(year, month, day);
+            }
+        }
+        return null;
+    }
+    
+    function formatDateForCompare(dateStr) {
+        const d = parseDMYToDate(dateStr);
+        return d ? d.getTime() : null;
+    }
+    
+    function isDateValid(dateStr) {
+        if(!dateStr) return false;
+        const trimmed = String(dateStr).trim();
+        if(trimmed === "" || trimmed.toUpperCase() === "N/A" || trimmed === "NA") return false;
+        const parts = trimmed.split('/');
+        if(parts.length === 3) {
+            const day = parseInt(parts[0],10);
+            const month = parseInt(parts[1],10);
+            const year = parseInt(parts[2],10);
+            if(!isNaN(day) && !isNaN(month) && !isNaN(year) && day >= 1 && day <= 31 && month >= 1 && month <= 12) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    function isTextFieldValid(value) {
+        if(!value) return false;
+        const trimmed = String(value).trim();
+        return trimmed !== "" && trimmed !== "N/A" && trimmed !== "NA" && trimmed !== "-";
+    }
+    
+    // Fetch all records from Google Sheets
+    async function fetchAllRecords() {
+        try {
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(MOVEMENT_SHEET)}!A:O?key=${API_KEY}`;
+            const resp = await fetch(url);
+            const data = await resp.json();
+            const rows = data.values || [];
+            const records = [];
+            for(let i=1; i<rows.length; i++) {
+                const row = rows[i];
+                if(row && row[0]) {
+                    records.push({
+                        id: i,
+                        refId: row[0] || "",
+                        treasury: row[1] || "",
+                        serialNo: row[2] || "",
+                        deviceType: row[3] || "",
+                        fromBranch: row[4] || "",
+                        complaintRemarks: row[5] || "",
+                        complaintDate: row[6] || "",
+                        sentToAddress: row[7] || "",
+                        sentDate: row[8] || "",
+                        receivedDate: row[9] || "",
+                        moveToOem: row[10] || "",
+                        returnFromOem: row[11] || "",
+                        toBranch: row[12] || "",
+                        transferDate: row[13] || "",
+                        remarks: row[14] || ""
+                    });
+                }
+            }
+            allRecords = records;
+            return records;
+        } catch(e) { console.error(e); return []; }
+    }
+    
+    // Extract unique device serial numbers
+    function extractDevices() {
+        const uniqueSerials = new Set();
+        allRecords.forEach(record => {
+            if(record.serialNo && record.serialNo !== "NaN" && record.serialNo.trim() !== "") {
+                uniqueSerials.add(record.serialNo.trim());
+            }
+        });
+        devicesList = Array.from(uniqueSerials).sort();
+        return devicesList;
+    }
+    
+    // Populate device dropdown with Select2 for better UX
+    function populateDeviceDropdown() {
+        const $select = $('#deviceSelect');
+        $select.empty();
+        $select.append('<option value="">-- Select Device Serial Number --</option>');
+        devicesList.forEach(device => {
+            $select.append(`<option value="${escapeHtml(device)}">${escapeHtml(device)}</option>`);
+        });
+        
+        // Initialize Select2 with appropriate sizing
+        $select.select2({
+            theme: 'bootstrap-5',
+            width: '100%',
+            placeholder: 'Search or select device...',
+            allowClear: true,
+            dropdownAutoWidth: true,
+            containerCssClass: 'select2-container--bootstrap-5'
+        });
+        
+        // Set dropdown height properly
+        $select.next('.select2-container').find('.select2-selection').css({
+            'min-height': '46px',
+            'border-radius': '14px'
+        });
+    }
+    
+    // Get all records for a specific device
+    function getDeviceRecords(serialNo) {
+        return allRecords.filter(record => record.serialNo === serialNo);
+    }
+    
+    // Build timeline events from device records
+    function buildTimelineEvents(deviceRecords) {
+        if(!deviceRecords || deviceRecords.length === 0) return [];
+        
+        const device = deviceRecords[0];
+        const events = [];
+        
+        // 1. Complaint Initiated
+        if(isDateValid(device.complaintDate)) {
+            events.push({
+                date: device.complaintDate,
+                title: "📞 Complaint Initiated",
+                description: `Complaint registered for device. Remarks: ${device.complaintRemarks || 'N/A'}`,
+                icon: "bi bi-chat-dots-fill",
+                type: "info",
+                location: device.fromBranch || "Branch"
+            });
+        }
+        
+        // 2. Sent from Branch (Dispatched)
+        if(isDateValid(device.sentDate)) {
+            let destination = isTextFieldValid(device.sentToAddress) ? device.sentToAddress : "Destination";
+            events.push({
+                date: device.sentDate,
+                title: "📤 Device Dispatched",
+                description: `Device dispatched from ${device.fromBranch || 'Branch'} to ${destination}`,
+                icon: "bi bi-send-fill",
+                type: "inprogress",
+                location: device.fromBranch
+            });
+        }
+        
+        // 3. Received at Destination
+        if(isDateValid(device.receivedDate)) {
+            events.push({
+                date: device.receivedDate,
+                title: "📥 Device Received",
+                description: `Device received at the destination.`,
+                icon: "bi bi-inbox-fill",
+                type: "completed",
+                location: "Destination"
+            });
+        }
+        
+        // 4. Submitted to OEM
+        if(isDateValid(device.moveToOem)) {
+            events.push({
+                date: device.moveToOem,
+                title: "🔧 Submitted to OEM",
+                description: `Device sent to OEM for repair/maintenance.`,
+                icon: "bi bi-gear-fill",
+                type: "inprogress",
+                location: "OEM"
+            });
+        }
+        
+        // 5. Returned from OEM
+        if(isDateValid(device.returnFromOem)) {
+            events.push({
+                date: device.returnFromOem,
+                title: "✅ Returned from OEM",
+                description: `Device returned from OEM after repair/completion.`,
+                icon: "bi bi-arrow-return-left",
+                type: "completed",
+                location: "OEM"
+            });
+        }
+        
+        // 6. Transferred to another branch
+        if(isDateValid(device.transferDate) && isTextFieldValid(device.toBranch)) {
+            events.push({
+                date: device.transferDate,
+                title: "🔄 Transferred to Branch",
+                description: `Device transferred to ${device.toBranch} branch.`,
+                icon: "bi bi-diagram-3-fill",
+                type: "completed",
+                location: device.toBranch
+            });
+        }
+        
+        // Sort events by date (ascending)
+        events.sort((a, b) => {
+            const da = parseDMYToDate(a.date);
+            const db = parseDMYToDate(b.date);
+            if(da && db) return da - db;
+            if(da) return -1;
+            return 1;
+        });
+        
+        return events;
+    }
+    
+    // Get device summary stats
+    function getDeviceStats(deviceRecords) {
+        if(!deviceRecords || deviceRecords.length === 0) return null;
+        const device = deviceRecords[0];
+        
+        let lastStatus = "Initiated";
+        if(isDateValid(device.transferDate)) lastStatus = "Processed";
+        else if(isDateValid(device.returnFromOem)) lastStatus = "In Stock";
+        else if(isDateValid(device.moveToOem)) lastStatus = "Submitted to OEM";
+        else if(isDateValid(device.receivedDate)) lastStatus = "Received";
+        else if(isDateValid(device.sentDate)) lastStatus = "On Transit";
+        else if(isDateValid(device.complaintDate)) lastStatus = "Initiated";
+        
+        return {
+            serialNo: device.serialNo,
+            deviceType: device.deviceType,
+            treasury: device.treasury,
+            fromBranch: device.fromBranch,
+            complaintDate: device.complaintDate,
+            lastStatus: lastStatus,
+            hasTransfer: isDateValid(device.transferDate),
+            hasOemReturn: isDateValid(device.returnFromOem),
+            hasOemMove: isDateValid(device.moveToOem)
+        };
+    }
+    
+    // Render timeline to DOM
+    function renderTimeline(deviceRecords) {
+        const events = buildTimelineEvents(deviceRecords);
+        const container = document.getElementById('timelineContainer');
+        
+        if(events.length === 0) {
+            container.innerHTML = `
+                <div class="empty-timeline">
+                    <i class="bi bi-hourglass-split"></i>
+                    <h5>No Movement Data Available</h5>
+                    <p>This device has no recorded movement events in the system.</p>
+                </div>
+            `;
+            return;
+        }
+        
+        let timelineHtml = '';
+        events.forEach((event, index) => {
+            const isLast = index === events.length - 1;
+            let iconClass = '';
+            if(event.type === 'completed') iconClass = 'completed';
+            else if(event.type === 'inprogress') iconClass = 'inprogress';
+            else iconClass = 'info';
+            
+            let badgeClass = '';
+            let badgeText = '';
+            if(event.type === 'completed') { badgeClass = 'bg-success'; badgeText = 'Completed'; }
+            else if(event.type === 'inprogress') { badgeClass = 'bg-warning text-dark'; badgeText = 'In Progress'; }
+            else { badgeClass = 'bg-info'; badgeText = 'Information'; }
+            
+            timelineHtml += `
+                <div class="timeline-item">
+                    <div class="timeline-icon ${iconClass}">
+                        <i class="${event.icon}"></i>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-date">
+                            <i class="bi bi-calendar3"></i> ${event.date}
+                            <span class="timeline-badge ${badgeClass}">${badgeText}</span>
+                        </div>
+                        <div class="timeline-title">${event.title}</div>
+                        <div class="timeline-desc">${event.description}</div>
+                        ${event.location ? `<div class="timeline-desc mt-2"><i class="bi bi-geo-alt"></i> <strong>Location:</strong> ${escapeHtml(event.location)}</div>` : ''}
+                    </div>
+                    ${!isLast ? '<div class="timeline-connector"></div>' : ''}
+                </div>
+            `;
+        });
+        
+        container.innerHTML = timelineHtml;
+    }
+    
+    // Render device info and stats
+    function renderDeviceInfo(deviceRecords) {
+        const stats = getDeviceStats(deviceRecords);
+        if(!stats) return;
+        
+        // Stats Grid
+        const statsGrid = document.getElementById('statsGrid');
+        statsGrid.innerHTML = `
+            <div class="stat-item"><i class="bi bi-upc-scan"></i> S/N: ${escapeHtml(stats.serialNo)}</div>
+            <div class="stat-item"><i class="bi bi-device-ssd"></i> Type: ${escapeHtml(stats.deviceType || 'N/A')}</div>
+            <div class="stat-item"><i class="bi bi-building"></i> Treasury: ${escapeHtml(stats.treasury || 'N/A')}</div>
+            <div class="stat-item"><i class="bi bi-shop"></i> From: ${escapeHtml(stats.fromBranch || 'N/A')}</div>
+            <div class="stat-item"><i class="bi bi-calendar-event"></i> Complaint: ${stats.complaintDate || 'N/A'}</div>
+            <div class="stat-item"><i class="bi bi-flag"></i> Status: <strong>${stats.lastStatus}</strong></div>
+        `;
+        
+        // Device Info Card
+        const infoCard = document.getElementById('deviceInfoCard');
+        let movementSummary = [];
+        if(stats.hasTransfer) movementSummary.push("Transferred");
+        if(stats.hasOemReturn) movementSummary.push("OEM Returned");
+        if(stats.hasOemMove) movementSummary.push("OEM Sent");
+        
+        infoCard.innerHTML = `
+            <div>
+                <h3><i class="bi bi-pc-display"></i> ${escapeHtml(stats.serialNo)}</h3>
+                <div class="mt-1">${escapeHtml(stats.deviceType || 'Device')} | Treasury: ${escapeHtml(stats.treasury || 'N/A')}</div>
+            </div>
+            <div>
+                <span class="device-badge"><i class="bi bi-diagram-3"></i> ${movementSummary.length > 0 ? movementSummary.join(' • ') : 'No Movements'}</span>
+                <span class="device-badge ms-2"><i class="bi bi-clock"></i> Last: ${stats.lastStatus}</span>
+            </div>
+        `;
+    }
+    
+    // Main tracking function
+    async function trackDevice() {
+        const selectedSerial = $('#deviceSelect').val();
+        if(!selectedSerial || selectedSerial === "") {
+            Swal.fire({
+                icon: 'warning',
+                title: 'No Device Selected',
+                text: 'Please select a device serial number from the dropdown.',
+                confirmButtonColor: '#0f5b9c'
+            });
+            return;
+        }
+        
+        showLoading("Analyzing device movement data...");
+        
+        const deviceRecords = getDeviceRecords(selectedSerial);
+        
+        if(deviceRecords.length === 0) {
+            hideLoading();
+            Swal.fire({
+                icon: 'error',
+                title: 'No Data Found',
+                text: `No records found for device: ${selectedSerial}`,
+                confirmButtonColor: '#0f5b9c'
+            });
+            document.getElementById('timelineContainer').innerHTML = `
+                <div class="empty-timeline">
+                    <i class="bi bi-database-slash"></i>
+                    <h5>No Data Available</h5>
+                    <p>No movement records found for this device.</p>
+                </div>
+            `;
+            document.getElementById('statsArea').style.display = 'none';
+            document.getElementById('timelineHeader').style.display = 'none';
+            return;
+        }
+        
+        currentDeviceData = deviceRecords;
+        
+        renderDeviceInfo(deviceRecords);
+        renderTimeline(deviceRecords);
+        
+        document.getElementById('statsArea').style.display = 'block';
+        document.getElementById('timelineHeader').style.display = 'block';
+        
+        hideLoading();
+        
+        Swal.fire({
+            icon: 'success',
+            title: 'Journey Loaded',
+            text: `Found ${buildTimelineEvents(deviceRecords).length} movement events for this device.`,
+            timer: 2000,
+            showConfirmButton: false,
+            toast: true,
+            position: 'top-end'
+        });
+    }
+    
+    function resetTracker() {
+        $('#deviceSelect').val('').trigger('change');
+        document.getElementById('timelineContainer').innerHTML = `
+            <div class="empty-timeline">
+                <i class="bi bi-map"></i>
+                <h5>No Device Selected</h5>
+                <p>Select a device serial number from the dropdown and click "Track" to see its complete movement timeline.</p>
+            </div>
+        `;
+        document.getElementById('statsArea').style.display = 'none';
+        document.getElementById('timelineHeader').style.display = 'none';
+        currentDeviceData = null;
+        
+        Swal.fire({
+            icon: 'info',
+            title: 'Reset Complete',
+            text: 'Timeline cleared. Select a device to track.',
+            timer: 1500,
+            showConfirmButton: false,
+            toast: true,
+            position: 'top-end'
+        });
+    }
+    
+    function showLoading(msg) {
+        if($('#global-loading-overlay').length) return;
+        $('body').append(`
+            <div id="global-loading-overlay">
+                <div class="loading-spinner">
+                    <i class="bi bi-arrow-repeat" style="font-size: 48px; color: #0f5b9c; animation: spin 1s linear infinite;"></i>
+                    <p class="mt-3 mb-0">${msg}</p>
+                </div>
+            </div>
+        `);
+    }
+    
+    function hideLoading() { $('#global-loading-overlay').remove(); }
+    
+    function escapeHtml(str) { 
+        if(!str) return ''; 
+        return String(str).replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'})[m]);
+    }
+    
+    // Initialize the app
+    async function init() {
+        showLoading("Loading device inventory from Google Sheets...");
+        await fetchAllRecords();
+        extractDevices();
+        populateDeviceDropdown();
+        hideLoading();
+        
+        if(devicesList.length === 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'No Devices Found',
+                text: 'No device records found in the sheet. Please check the data source.',
+                confirmButtonColor: '#0f5b9c'
+            });
+            $('#deviceSelect').html('<option value="">-- No devices available --</option>');
+        } else {
+            Swal.fire({
+                icon: 'success',
+                title: 'Ready',
+                text: `${devicesList.length} devices loaded. Select a device to track.`,
+                timer: 2000,
+                showConfirmButton: false,
+                toast: true,
+                position: 'top-end'
+            });
+        }
+    }
+    
+    // Event bindings
+    $(document).ready(function() {
+        init();
+        $('#trackBtn').on('click', trackDevice);
+        $('#resetBtn').on('click', resetTracker);
+        
+        // Allow Enter key on dropdown to trigger track
+        $('#deviceSelect').on('select2:select', function(e) {
+            // Optional: auto-track on selection? For now just select, user clicks Track
+        });
+    });
+</script>
+</body>
+</html>
