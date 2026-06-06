@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Fatpipe Device | Complaint Report - Strict Field-Based Status</title>
+    <title>Fatpipe Device | Complaint Report - With Sent To Address</title>
     
     <!-- Local CSS Resources -->
     <link rel="stylesheet" href="../css/bootstrap.min.css">
@@ -200,7 +200,20 @@
         }
         .to-branch-highlight {
             font-weight: 600;
-            color: #6d28d9;
+            color: #0d6efd;
+            background-color: #f5f5f5;
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 16px;
+        }
+        .address-highlight {
+            font-weight: 500;
+            color: #2c3e50;
+            background-color: #f8f9fa;
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 16px;
+            font-size: 0.75rem;
         }
     </style>
 </head>
@@ -224,11 +237,11 @@
                 </select>
             </div>
             <div class="filter-group">
-                <label><i class="bi bi-calendar"></i> From Date (Complaint / Transfer)</label>
+                <label><i class="bi bi-calendar"></i> From Date</label>
                 <input type="text" id="fromDate" class="form-control flatpickr-from" placeholder="DD/MM/YYYY">
             </div>
             <div class="filter-group">
-                <label><i class="bi bi-calendar"></i> To Date (Complaint / Transfer)</label>
+                <label><i class="bi bi-calendar"></i> To Date</label>
                 <input type="text" id="toDate" class="form-control flatpickr-to" placeholder="DD/MM/YYYY">
             </div>
             <div class="filter-group">
@@ -281,7 +294,7 @@
             </div>
         </div>
         
-        <!-- Main Table -->
+        <!-- Main Table - Sent To Address column added (Column H) -->
         <div class="table-responsive">
             <table id="reportTable" class="table table-striped table-hover" style="width:100%">
                 <thead>
@@ -294,6 +307,7 @@
                         <th>Complaint Remarks</th>
                         <th>Complaint Date</th>
                         <th>Sent Date</th>
+                        <th>Sent To Address</th>
                         <th>Received Date</th>
                         <th>Date of Movement to OEM</th>
                         <th>Date of return from OEM</th>
@@ -305,7 +319,7 @@
                 </thead>
                 <tbody>
                     <tr class="placeholder-row">
-                        <td colspan="15" class="placeholder-message">
+                        <td colspan="16" class="placeholder-message">
                             <i class="bi bi-search-heart"></i>
                             <h5>No Report Generated</h5>
                             <p>Select filters & click "View"</p>
@@ -376,52 +390,35 @@
         return false;
     }
     
-    // Check if a text field (like To Branch) has a valid non-empty value
     function isTextFieldValid(value) {
         if(!value) return false;
         const trimmed = String(value).trim();
         return trimmed !== "" && trimmed !== "N/A" && trimmed !== "NA" && trimmed !== "-";
     }
     
-    // =============== STRICT FIELD-BASED STATUS CONDITIONS ===============
-    // Order of precedence (based on the LAST populated field in the sequence):
-    // 1. Processed: has "Date of Transfer"
-    // 2. In Stock: has "Date of return from OEM"
-    // 3. Submitted to OEM: has "Date of Movement to OEM"
-    // 4. Received: has "Received Date"
-    // 5. On Transit: has "Sent Date"
-    // 6. Initiated: has "Complaint Date"
-    
+    // Status conditions based on last populated field
     function getLifecycleStatus(record) {
-        // Processed: Date of Transfer exists
         if(isDateValid(record.transferDate)) {
             return "processed";
         }
-        // In Stock: Date of return from OEM exists
         if(isDateValid(record.returnFromOem)) {
             return "in_stock";
         }
-        // Submitted to OEM: Date of Movement to OEM exists
         if(isDateValid(record.moveToOem)) {
             return "submitted_oem";
         }
-        // Received: Received Date exists
         if(isDateValid(record.receivedDate)) {
             return "received";
         }
-        // On Transit: Sent Date exists
         if(isDateValid(record.sentDate)) {
             return "on_transit";
         }
-        // Initiated: Complaint Date exists
         if(isDateValid(record.complaintDate)) {
             return "initiated";
         }
-        // Fallback for rows with no valid dates
         return "initiated";
     }
     
-    // Check if record qualifies as Spare Device (invalid complaint date but valid transfer date)
     function isSpareRecord(record, fromDate, toDate, includeSpareFlag) {
         if(!includeSpareFlag) return false;
         const complaintInvalid = !isDateValid(record.complaintDate);
@@ -436,7 +433,6 @@
         return true;
     }
     
-    // Date range filter (complaint date OR transfer date for spare)
     function isRecordInDateRange(record, fromDateStr, toDateStr, includeSpare) {
         const complaintDateValid = isDateValid(record.complaintDate);
         const complaintTime = complaintDateValid ? formatDateForCompare(record.complaintDate) : null;
@@ -488,6 +484,7 @@
     
     async function fetchMovementRecords() {
         try {
+            // Fetch columns A to O (A:0, B:1, C:2, D:3, E:4, F:5, G:6, H:7, I:8, J:9, K:10, L:11, M:12, N:13, O:14)
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(MOVEMENT_SHEET)}!A:O?key=${API_KEY}`;
             const resp = await fetch(url);
             const data = await resp.json();
@@ -505,13 +502,14 @@
                         fromBranch: row[4] || "",
                         complaintRemarks: row[5] || "",
                         complaintDate: row[6] || "",
-                        sentDate: row[8] || "",
-                        receivedDate: row[9] || "",
-                        moveToOem: row[10] || "",
-                        returnFromOem: row[11] || "",
-                        toBranch: row[12] || "",
-                        transferDate: row[13] || "",
-                        remarks: row[14] || ""
+                        sentToAddress: row[7] || "",      // Column H - Sent To Address
+                        sentDate: row[8] || "",           // Column I - Sent Date
+                        receivedDate: row[9] || "",       // Column J - Received Date
+                        moveToOem: row[10] || "",         // Column K - Date of Movement to OEM
+                        returnFromOem: row[11] || "",     // Column L - Date of return from OEM
+                        toBranch: row[12] || "",          // Column M - To Branch
+                        transferDate: row[13] || "",      // Column N - Date of Transfer
+                        remarks: row[14] || ""            // Column O - Remarks
                     });
                 }
             }
@@ -530,15 +528,12 @@
         const statusFilter = $('#statusFilterSelect').val();
         
         filteredRecords = allRecords.filter(record => {
-            // Branch filter
             if(selectedBranch && selectedBranch !== "" && record.fromBranch !== selectedBranch) return false;
-            // Date filter
             if(!isRecordInDateRange(record, fromDate, toDate, includeSpare)) return false;
             
             const status = getLifecycleStatus(record);
             const isSpare = isSpareRecord(record, fromDate, toDate, includeSpare);
             
-            // Legacy Pending/Processed checkbox filter
             let isPendingStatus = (status === "initiated" || status === "on_transit");
             let passesLegacy = false;
             if(isPendingStatus && showPending) passesLegacy = true;
@@ -546,7 +541,6 @@
             if(!showPending && !showProcessed) passesLegacy = false;
             if(!passesLegacy) return false;
             
-            // Advanced status dropdown filter
             if(statusFilter !== "all") {
                 if(statusFilter === "spare" && !isSpare) return false;
                 if(statusFilter === "initiated" && status !== "initiated") return false;
@@ -559,7 +553,6 @@
             return true;
         });
         
-        // Sort by complaint date
         filteredRecords.sort((a,b) => {
             const da = parseDMYToDate(a.complaintDate);
             const db = parseDMYToDate(b.complaintDate);
@@ -595,7 +588,7 @@
         if(dataTable) { dataTable.destroy(); $('#reportTable tbody').empty(); }
         
         if(data.length === 0) {
-            $('#reportTable tbody').html(`<tr class="placeholder-row"><td colspan="15" class="placeholder-message"><i class="bi bi-inbox"></i><h5>No matching records</h5><p>Adjust filters or try different status</p></td></tr>`);
+            $('#reportTable tbody').html(`<tr class="placeholder-row"><td colspan="16" class="placeholder-message"><i class="bi bi-inbox"></i><h5>No matching records</h5><p>Adjust filters or try different status</p></td></tr>`);
             dataTable = null;
             $('#exportCsvBtn').prop('disabled', true);
             return;
@@ -616,11 +609,16 @@
                 { data: "complaintRemarks", render: v => (v && v !== "NaN") ? escapeHtml(v) : '—' },
                 { data: "complaintDate", render: d => isDateValid(d) ? d : '<span class="text-muted fst-italic">N/A</span>' },
                 { data: "sentDate", render: d => isDateValid(d) ? d : '—' },
+                { data: "sentToAddress", render: function(v) {
+                    if(isTextFieldValid(v)) {
+                        return `<span class="address-highlight">${escapeHtml(v)}</span>`;
+                    }
+                    return '—';
+                } },
                 { data: "receivedDate", render: d => isDateValid(d) ? d : '—' },
                 { data: "moveToOem", render: d => isDateValid(d) ? d : '—' },
                 { data: "returnFromOem", render: d => isDateValid(d) ? d : '—' },
                 { data: "toBranch", render: function(v) {
-                    // Fixed: Using isTextFieldValid instead of isDateValid for To Branch
                     if(isTextFieldValid(v)) {
                         return `<span class="to-branch-highlight">${escapeHtml(v)}</span>`;
                     }
@@ -632,7 +630,6 @@
                     const status = getLifecycleStatus(row);
                     const isSpare = isSpareRecord(row, $('#fromDate').val(), $('#toDate').val(), $('#includeSpareDevices').is(':checked'));
                     
-                    // Spare badge overrides
                     if(isSpare && status !== "processed") {
                         return '<span class="badge-spare">Spare Device</span>';
                     }
@@ -663,8 +660,6 @@
     async function generateReport() {
         showGlobalLoading("Loading movement data from Google Sheets...");
         await fetchMovementRecords();
-        // Apply status conditions AFTER data is fetched, BEFORE showing on table
-        // The status is computed in getLifecycleStatus during filtering/rendering
         renderTable();
         hideGlobalLoading();
         $('#statsContainer').show();
@@ -686,7 +681,7 @@
         let exportData = filteredRecords;
         if(dataTable && dataTable.search() !== "") exportData = dataTable.rows({ search: 'applied' }).data().toArray();
         
-        const headers = ['Sl No', 'Treasury', 'Device Serial No.', 'Device Type', 'From Branch', 'Complaint Remarks', 'Complaint Date', 'Sent Date', 'Received Date', 'Date of Movement to OEM', 'Date of return from OEM', 'To Branch', 'Date of Transfer', 'Remarks', 'Status'];
+        const headers = ['Sl No', 'Treasury', 'Device Serial No.', 'Device Type', 'From Branch', 'Complaint Remarks', 'Complaint Date', 'Sent Date', 'Sent To Address', 'Received Date', 'Date of Movement to OEM', 'Date of return from OEM', 'To Branch', 'Date of Transfer', 'Remarks', 'Status'];
         const rows = [];
         exportData.forEach((rec, idx) => {
             const statusVal = getLifecycleStatus(rec);
@@ -709,7 +704,7 @@
             rows.push([
                 idx+1, rec.treasury, cleanSerial, rec.deviceType, rec.fromBranch, rec.complaintRemarks,
                 isDateValid(rec.complaintDate) ? rec.complaintDate : 'N/A',
-                rec.sentDate || '', rec.receivedDate || '', rec.moveToOem || '', rec.returnFromOem || '',
+                rec.sentDate || '', rec.sentToAddress || '', rec.receivedDate || '', rec.moveToOem || '', rec.returnFromOem || '',
                 rec.toBranch || '', rec.transferDate || '', rec.remarks || '', statusLabel
             ]);
         });
@@ -738,7 +733,7 @@
         if(flatpickrFrom) flatpickrFrom.clear();
         if(flatpickrTo) flatpickrTo.clear();
         if(dataTable) dataTable.destroy();
-        $('#reportTable tbody').html(`<tr class="placeholder-row"><td colspan="15" class="placeholder-message"><i class="bi bi-search-heart"></i><h5>No Report Generated</h5><p>Select filters & click "View"</p></td></tr>`);
+        $('#reportTable tbody').html(`<tr class="placeholder-row"><td colspan="16" class="placeholder-message"><i class="bi bi-search-heart"></i><h5>No Report Generated</h5><p>Select filters & click "View"</p></td></tr>`);
         $('#statsContainer').hide();
         $('#exportCsvBtn').prop('disabled', true);
         isReportGenerated = false;
@@ -780,10 +775,19 @@
     .to-branch-highlight {
         font-weight: 600;
         color: #0d6efd;
-    background-color: #f5f5f5;
+        background-color: #f5f5f5;
         display: inline-block;
         padding: 2px 8px;
         border-radius: 16px;
+    }
+    .address-highlight {
+        font-weight: 500;
+        color: #2c3e50;
+        background-color: #e8f4f8;
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 16px;
+        font-size: 0.75rem;
     }
 </style>
 </body>
