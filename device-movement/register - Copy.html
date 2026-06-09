@@ -30,7 +30,7 @@
             box-shadow: 0 20px 35px -12px rgba(0,0,0,0.1);
             overflow: hidden;
         }
-   .page-header {
+        .page-header {
             background: linear-gradient(135deg, #0f5b9c 0%, #1a4b7a 100%);
             color: white;
             padding: 15px 25px;
@@ -201,6 +201,21 @@
             width: 300px;
             background-color: #f1f5f9;
         }
+        .address-details-box {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 12px 15px;
+            margin-top: 8px;
+            border-left: 3px solid #0f3b5f;
+            font-size: 0.85rem;
+        }
+        .address-details-box i {
+            color: #0f3b5f;
+            margin-right: 8px;
+        }
+        .address-details-box .address-line {
+            margin-bottom: 4px;
+        }
     </style>
 </head>
 <body>
@@ -208,8 +223,7 @@
     <div class="page-header d-flex align-items-center">
         <i class="bi bi-file-text-fill"></i>
         <div>
-            <h4>Fatpipe Device - Complaint Report</h4>
-           
+            <h4>Fatpipe Device - Complaint & Movement Register</h4>
         </div>
     </div>
     <div class="tab-header">
@@ -222,7 +236,8 @@
         <h4 class="mb-3"><i class="bi bi-exclamation-triangle-fill"></i> Register New Complaint / Movement</h4>
         
         <div class="info-banner">
-            <i class="bi bi-info-circle-fill"></i> Fill the details below to register a device complaint.</div>
+            <i class="bi bi-info-circle-fill"></i> Fill the details below to register a device complaint.
+        </div>
         
         <form id="complaintForm">
             <div class="row g-4">
@@ -274,6 +289,17 @@
                     <select id="sentToAddress" class="form-select" required>
                         <option value="">-- Select Address --</option>
                     </select>
+                </div>
+                
+                <!-- Address Details Display -->
+                <div class="col-12" id="addressDetailsContainer" style="display: none;">
+                    <div class="address-details-box">
+                        <div class="address-line"><i class="bi bi-building"></i> <strong>Address Details:</strong></div>
+                        <div class="address-line" id="addressLine1">—</div>
+                        <div class="address-line" id="addressLine2">—</div>
+                        <div class="address-line"><i class="bi bi-geo-alt-fill"></i> <span id="addressPin">—</span></div>
+                        <div class="address-line"><i class="bi bi-telephone-fill"></i> <span id="addressContact">—</span></div>
+                    </div>
                 </div>
                 
                 <div class="col-md-6">
@@ -374,11 +400,12 @@
     const MOVEMENT_SHEET = "Movement_Data";
     const TO_ADDRESS_SHEET = "To Address";
     const API_KEY = "AIzaSyDc8tegwi2rgHyDFYm7uWBqVqQ7Fwb3uWM";
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzK1kMAjrOUU-ofZVND_tUMP-qEySDqz38vFzPY3NzDZ1tvS_a3MK3h0I9ZUlGBu9cx/exec"; // REPLACE WITH YOUR DEPLOYED URL
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzK1kMAjrOUU-ofZVND_tUMP-qEySDqz38vFzPY3NzDZ1tvS_a3MK3h0I9ZUlGBu9cx/exec";
     
     let branchesList = [];
     let branchDataMap = {};
     let addressesList = [];
+    let addressesFullData = []; // Store full address details
     let movementRecords = [];
     let dataTable = null;
     let flatpickrComplaintDate, flatpickrSentDate, flatpickrEditSentDate;
@@ -425,6 +452,19 @@
         return sentDate >= complaintDate;
     }
     
+    function displayAddressDetails(selectedOffice) {
+        const addressData = addressesFullData.find(addr => addr.office === selectedOffice);
+        if(addressData && addressData.address1) {
+            $('#addressLine1').text(addressData.address1 || '—');
+            $('#addressLine2').text(addressData.address2 || '—');
+            $('#addressPin').text(addressData.pin || '—');
+            $('#addressContact').text(addressData.contact || '—');
+            $('#addressDetailsContainer').show();
+        } else {
+            $('#addressDetailsContainer').hide();
+        }
+    }
+    
     async function fetchBranches() {
         try {
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(BRANCH_SHEET)}!A:F?key=${API_KEY}`;
@@ -452,16 +492,26 @@
     
     async function fetchAddresses() {
         try {
-            const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(TO_ADDRESS_SHEET)}!A:A?key=${API_KEY}`;
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(TO_ADDRESS_SHEET)}!A:E?key=${API_KEY}`;
             const resp = await fetch(url);
             const data = await resp.json();
             const rows = data.values || [];
             const addresses = [];
+            const fullData = [];
             for(let i=1; i<rows.length; i++) {
-                const office = rows[i] && rows[i][0] ? rows[i][0].trim() : "";
-                if(office) addresses.push(office);
+                const row = rows[i];
+                const office = row[0] ? row[0].trim() : "";
+                const address1 = row[1] ? row[1].trim() : "";
+                const address2 = row[2] ? row[2].trim() : "";
+                const pin = row[3] ? row[3].trim() : "";
+                const contact = row[4] ? row[4].trim() : "";
+                if(office) {
+                    addresses.push(office);
+                    fullData.push({ office, address1, address2, pin, contact });
+                }
             }
             addressesList = addresses;
+            addressesFullData = fullData;
             return addresses;
         } catch(e) { console.error("Error fetching addresses:", e); return []; }
     }
@@ -543,6 +593,16 @@
             placeholder: 'Select destination address',
             allowClear: true
         });
+        
+        // Add change event to display address details
+        $select.off('change').on('change', function() {
+            const selected = $(this).val();
+            if(selected) {
+                displayAddressDetails(selected);
+            } else {
+                $('#addressDetailsContainer').hide();
+            }
+        });
     }
     
     function initFlatpickr() {
@@ -571,7 +631,6 @@
             $('#referenceId').val(refId);
             hideGlobalLoading();
             
-            // Update edit tab branch display
             updateEditTabBranch(branch);
         } else {
             $('#treasury').val('');
@@ -673,10 +732,10 @@
             $('#complaintDate').val(formatDateDMY(new Date()));
             $('#sentDate').val('');
             $('#sentToAddress').val(null).trigger('change');
+            $('#addressDetailsContainer').hide();
             if(flatpickrComplaintDate) flatpickrComplaintDate.setDate(new Date());
             if(flatpickrSentDate) flatpickrSentDate.setDate('');
             
-            // Refresh edit tab if same branch
             if(currentSelectedBranch === branch) {
                 await loadAndRenderTable();
             }
@@ -696,12 +755,12 @@
         $('#complaintDate').val(formatDateDMY(new Date()));
         $('#sentDate').val('');
         $('#sentToAddress').val(null).trigger('change');
+        $('#addressDetailsContainer').hide();
         if(flatpickrComplaintDate) flatpickrComplaintDate.setDate(new Date());
         if(flatpickrSentDate) flatpickrSentDate.setDate('');
     }
     
     function getStatusBadge(row) {
-        // Check if Received Date (column J) has a value
         if(row.receivedDate && row.receivedDate.trim() !== "") {
             return '<span class="badge-delivered"><i class="bi bi-check-circle-fill me-1"></i>Delivered</span>';
         } else if(row.moveToOem || row.returnFromOem || row.toBranch) {
@@ -729,7 +788,6 @@
         const records = await fetchMovementRecords();
         movementRecords = records;
         
-        // Filter by selected branch only
         const filteredRecords = records.filter(r => r.fromBranch === currentSelectedBranch);
         const sortedRecords = [...filteredRecords].sort((a, b) => b.id - a.id);
         
@@ -759,7 +817,6 @@
                     { data: null, render: (row) => {
                         const delivered = isDelivered(row);
                         if(delivered) {
-                            // No action buttons for delivered records
                             return '<span class="text-muted"><i class="bi bi-lock-fill"></i> Locked</span>';
                         }
                         return `<div class="action-icons">
@@ -951,7 +1008,6 @@
         $('#tabEditBtn').on('click', () => switchTab('edit'));
         $('#confirmUpdateBtn').on('click', updateRecord);
         
-        // Load edit tab data if branch was previously selected
         if(currentSelectedBranch) {
             updateEditTabBranch(currentSelectedBranch);
         }

@@ -368,13 +368,13 @@
                     <div class="col-md-6"><label class="form-label">Branch</label><input type="text" id="editBranch" class="form-control" readonly></div>
                     <div class="col-md-6"><label class="form-label">Serial No</label><input type="text" id="editSerialNo" class="form-control" readonly></div>
                     <div class="col-md-6"><label class="form-label">Device Type</label><input type="text" id="editDeviceType" class="form-control" readonly></div>
-                    <div class="col-md-6"><label class="form-label">Complaint Date</label><input type="text" id="editComplaintDate" class="form-control" readonly></div>
+                    <div class="col-md-6"><label class="form-label required">Complaint Date</label><input type="text" id="editComplaintDate" class="form-control flatpickr-edit" placeholder="DD/MM/YYYY"></div>
                     <div class="col-12"><label class="form-label required">Complaint Remarks</label><textarea id="editComplaint" class="form-control" rows="2" required></textarea></div>
                     <div class="col-md-6"><label class="form-label required">Sent To Address</label><select id="editSentToAddress" class="form-select" required></select></div>
-                    <div class="col-md-6"><label class="form-label">Sent Date</label><input type="text" id="editSentDate" class="form-control flatpickr-edit" placeholder="DD/MM/YYYY"></div>
+                    <div class="col-md-6"><label class="form-label">Sent Date</label><input type="text" id="editSentDate" class="form-control flatpickr-edit-sent" placeholder="DD/MM/YYYY"></div>
                 </div>
                 <div class="alert alert-info mt-3 mb-0">
-                    <i class="bi bi-info-circle"></i> Note: Only Complaint Remarks, Sent To Address, and Sent Date can be edited.
+                    <i class="bi bi-info-circle"></i> Note: Complaint Date, Complaint Remarks, Sent To Address, and Sent Date can be edited.
                 </div>
             </div>
             <div class="modal-footer">
@@ -400,15 +400,15 @@
     const MOVEMENT_SHEET = "Movement_Data";
     const TO_ADDRESS_SHEET = "To Address";
     const API_KEY = "AIzaSyDc8tegwi2rgHyDFYm7uWBqVqQ7Fwb3uWM";
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzK1kMAjrOUU-ofZVND_tUMP-qEySDqz38vFzPY3NzDZ1tvS_a3MK3h0I9ZUlGBu9cx/exec";
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwhe5_2Z18Yc745DwyUni5LAm2-eXPx-bhL984wXcVVNAEcUUvXzaH5a6MpDI4H6r7K/exec";
     
     let branchesList = [];
     let branchDataMap = {};
     let addressesList = [];
-    let addressesFullData = []; // Store full address details
+    let addressesFullData = [];
     let movementRecords = [];
     let dataTable = null;
-    let flatpickrComplaintDate, flatpickrSentDate, flatpickrEditSentDate;
+    let flatpickrComplaintDate, flatpickrSentDate, flatpickrEditComplaintDate, flatpickrEditSentDate;
     let currentSelectedBranch = "";
     
     function showGlobalLoading(msg) {
@@ -594,7 +594,6 @@
             allowClear: true
         });
         
-        // Add change event to display address details
         $select.off('change').on('change', function() {
             const selected = $(this).val();
             if(selected) {
@@ -873,14 +872,21 @@
         $("#editBranch").val(record.fromBranch);
         $("#editSerialNo").val(record.serialNo);
         $("#editDeviceType").val(record.deviceType);
-        $("#editComplaintDate").val(record.complaintDate);
         $("#editComplaint").val(record.complaintRemarks);
         
+        // Initialize complaint date picker
+        if(flatpickrEditComplaintDate) flatpickrEditComplaintDate.destroy();
+        flatpickrEditComplaintDate = flatpickr("#editComplaintDate", { 
+            dateFormat: "d/m/Y",
+            maxDate: new Date()
+        });
+        $("#editComplaintDate").val(record.complaintDate);
+        
         populateAddressDropdown("#editSentToAddress", addressesList, record.sentToAddress);
-        $("#editSentDate").val(record.sentDate || '');
         
         if(flatpickrEditSentDate) flatpickrEditSentDate.destroy();
         flatpickrEditSentDate = flatpickr("#editSentDate", { dateFormat: "d/m/Y" });
+        $("#editSentDate").val(record.sentDate || '');
         
         const modal = new bootstrap.Modal(document.getElementById('editRecordModal'));
         modal.show();
@@ -889,12 +895,16 @@
     async function updateRecord() {
         const id = $("#editRowId").val();
         const complaintRemarks = $("#editComplaint").val().trim();
+        const complaintDate = $("#editComplaintDate").val();
         const sentToAddress = $("#editSentToAddress").val();
         const sentDate = $("#editSentDate").val() || "";
-        const complaintDate = $("#editComplaintDate").val();
         
         if(!complaintRemarks) {
             Swal.fire({ icon: 'warning', title: 'Missing', text: 'Complaint remarks cannot be empty' });
+            return;
+        }
+        if(!complaintDate) {
+            Swal.fire({ icon: 'warning', title: 'Missing', text: 'Complaint date is required' });
             return;
         }
         if(!sentToAddress) {
@@ -902,6 +912,10 @@
             return;
         }
         
+        if(isFutureDate(complaintDate)) {
+            Swal.fire({ icon: 'warning', title: 'Invalid Date', text: 'Complaint Date cannot be a future date.' });
+            return;
+        }
         if(sentDate && !isSentDateBeforeComplaintDate(sentDate, complaintDate)) {
             Swal.fire({ icon: 'warning', title: 'Invalid Date', text: 'Sent Date cannot be before Complaint Date.' });
             return;
@@ -911,6 +925,7 @@
             action: "UPDATE_REGISTER",
             rowId: parseInt(id),
             complaintRemarks: complaintRemarks,
+            complaintDate: complaintDate,
             sentToAddress: sentToAddress,
             sentDate: sentDate
         };
