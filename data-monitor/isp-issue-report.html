@@ -156,6 +156,28 @@
             border-bottom: 1px solid #e2e8f0;
         }
         .btn-group-export { display: flex; gap: 10px; }
+        /* Critical Alert Modal Custom Styling */
+        .critical-modal-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .critical-treasury-item {
+            background: #fff3cd;
+            border-left: 4px solid #dc2626;
+            margin-bottom: 8px;
+            padding: 10px 12px;
+            border-radius: 8px;
+        }
+        .critical-treasury-name {
+            font-weight: 700;
+            color: #b91c1c;
+            font-size: 1rem;
+        }
+        .critical-connections {
+            font-size: 0.85rem;
+            color: #856404;
+            margin-top: 4px;
+        }
         /* PDF Print Styles */
         @media print {
             body { background: white; padding: 0; margin: 0; }
@@ -175,7 +197,7 @@
 <div class="app-card">
     <div class="page-header d-flex align-items-center">
         <i class="bi bi-file-text-fill"></i>
-        <div><h4>ISP Fault Reports </h4></div>
+        <div><h4>ISP Fault Reports | Critical Down Alert</h4></div>
     </div>
     
     <div class="filter-bar no-print">
@@ -213,7 +235,7 @@
         <div class="filter-group text-end">
             <label>&nbsp;</label>
             <div class="btn-group-export">
-                <button id="exportPdfBtn" class="btn btn-export-pdf"><i class="bi bi-file-pdf-fill"></i>  PDF</button>
+                <button id="exportPdfBtn" class="btn btn-export-pdf"><i class="bi bi-file-pdf-fill"></i> PDF</button>
                 <button id="exportCsvBtn" class="btn btn-export-csv">CSV</button>
             </div>
         </div>
@@ -274,6 +296,7 @@
     let linkStatusOptions = [];
     let dataTable = null;
     let flatpickrFrom, flatpickrTo;
+    let criticalTreasuries = [];
     
     function showLoading(msg) { 
         if($('#global-loading-overlay').length) return; 
@@ -300,6 +323,97 @@
         if (!status || status.trim() === "") return true;
         const lowerStatus = status.toString().toLowerCase().trim();
         return lowerStatus === "pending";
+    }
+    
+    // Analyze Critical Down Treasuries
+    // A treasury is in Critical Down if it has more than 1 pending record with different connections
+    function analyzeCriticalDownTreasuries() {
+        const pendingRecords = faultRecords.filter(record => isPendingStatus(record.resolveStatus));
+        
+        // Group by treasury name
+        const treasuryMap = new Map();
+        
+        pendingRecords.forEach(record => {
+            const treasury = record.treasuryName;
+            if (!treasury || treasury.trim() === "") return;
+            
+            if (!treasuryMap.has(treasury)) {
+                treasuryMap.set(treasury, new Set());
+            }
+            if (record.connection && record.connection.trim()) {
+                treasuryMap.get(treasury).add(record.connection.trim());
+            }
+        });
+        
+        // Find treasuries with more than 1 unique connection (2 or more connections)
+        const critical = [];
+        for (const [treasury, connections] of treasuryMap.entries()) {
+            if (connections.size > 1) {
+                critical.push({
+                    treasury: treasury,
+                    connections: Array.from(connections),
+                    connectionCount: connections.size
+                });
+            }
+        }
+        
+        criticalTreasuries = critical;
+        return critical;
+    }
+    
+    // Show Critical Down Alert Modal
+    function showCriticalDownAlert() {
+        const critical = analyzeCriticalDownTreasuries();
+        
+        if (critical.length === 0) return;
+        
+        let connectionsListHtml = '';
+        critical.forEach(item => {
+            connectionsListHtml += `
+                <div class="critical-treasury-item">
+                    <div class="critical-treasury-name">
+                        <i class="bi bi-exclamation-triangle-fill"></i> ${escapeHtml(item.treasury)}
+                    </div>
+                    <div class="critical-connections">
+                        <strong>Critical Issue:</strong> Multiple connections down (${item.connectionCount} connections affected: ${escapeHtml(item.connections.join(', '))})
+                    </div>
+                </div>
+            `;
+        });
+        
+        Swal.fire({
+            title: '<span style="color: #b91c1c;"><i class="bi bi-bell-fill"></i> CRITICAL DOWN ALERT</span>',
+            html: `
+                <div style="text-align: left;">
+                    <p style="font-weight: 600; margin-bottom: 12px;">
+                        The following treasuries have <span style="color: #dc2626;">${critical.length} critical issue(s)</span>:
+                    </p>
+                    <p style="font-size: 13px; color: #666; margin-bottom: 12px;">
+                        <i class="bi bi-info-circle"></i> A treasury is marked as CRITICAL when it has pending issues across multiple connections.
+                    </p>
+                    <div class="critical-modal-list">
+                        ${connectionsListHtml}
+                    </div>
+                    <p style="margin-top: 15px; font-size: 12px; color: #856404; background: #fff3cd; padding: 8px; border-radius: 6px;">
+                        <i class="bi bi-exclamation-diamond-fill"></i> Immediate attention required for these treasuries!
+                    </p>
+                </div>
+            `,
+            icon: 'error',
+            confirmButtonText: 'View Report',
+            confirmButtonColor: '#dc2626',
+            cancelButtonText: 'Dismiss',
+            showCancelButton: true,
+            cancelButtonColor: '#6c757d',
+            backdrop: true,
+            allowOutsideClick: false
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Optionally filter to show only critical treasuries or just close
+                // For now, just close the modal
+                console.log("User acknowledged critical alerts");
+            }
+        });
     }
     
     // Google Sheets API fetch
@@ -343,7 +457,7 @@
                 if(linkStatusVal && linkStatusVal.trim()) {
                     linkStatusSet.add(linkStatusVal.trim());
                 } else {
-                    linkStatusSet.add("Link Down"); // default for empty
+                    linkStatusSet.add("Link Down");
                 }
                 records.push({
                     slNo: i,
@@ -361,14 +475,11 @@
         }
         records.sort((a, b) => (parseFloat(a.refNo) || 0) - (parseFloat(b.refNo) || 0));
         faultRecords = records;
-        // Extract unique connection values
         connectionOptions = Array.from(connectionSet).sort();
-        // Extract unique link status values and sort
         linkStatusOptions = Array.from(linkStatusSet).sort();
         return records;
     }
     
-    // Populate connection filter dropdown
     function populateConnectionFilter() {
         const connectionSelect = $('#connectionFilterSelect');
         connectionSelect.empty();
@@ -378,7 +489,6 @@
         });
     }
     
-    // Populate link status filter dropdown from fetched data
     function populateLinkStatusFilter() {
         const linkStatusSelect = $('#linkStatusFilterSelect');
         linkStatusSelect.empty();
@@ -388,7 +498,6 @@
         });
     }
     
-    // Smart Date: automatically find min and max callDate among pending records
     function setSmartPendingDateRange() {
         const pendingRecords = faultRecords.filter(record => isPendingStatus(record.resolveStatus) && record.callDate && record.callDate.trim() !== "");
         if(pendingRecords.length === 0) {
@@ -415,7 +524,6 @@
         return true;
     }
     
-    // Apply filters (Status + Connection Filter + Link Status Filter + Date Range)
     function applyFilters() {
         const statusFilter = $('#resolveStatusFilter').val();
         const connectionFilter = $('#connectionFilterSelect').val();
@@ -429,7 +537,6 @@
         
         let filtered = [...faultRecords];
         
-        // Status filtering - "Pending" includes blank/empty status
         if (statusFilter === "ALL") {
             // all records
         } else if (statusFilter === "Pending") {
@@ -438,12 +545,10 @@
             filtered = filtered.filter(record => record.resolveStatus === statusFilter);
         }
         
-        // Connection Filter
         if (connectionFilter !== "ALL") {
             filtered = filtered.filter(record => record.connection === connectionFilter);
         }
         
-        // Link Status Filter
         if (linkStatusFilter !== "ALL") {
             filtered = filtered.filter(record => {
                 const recordStatus = record.linkStatus || "Link Down";
@@ -451,7 +556,6 @@
             });
         }
         
-        // Date range filter
         filtered = filtered.filter(record => {
             if (!record.callDate) return (!fromDate && !toDate);
             const recordDate = parseDateDMY(record.callDate);
@@ -461,7 +565,6 @@
             return true;
         });
         
-        // Default sort by Ref No
         filtered.sort((a,b) => (parseFloat(a.refNo) || 0) - (parseFloat(b.refNo) || 0));
         
         filteredRecords = filtered;
@@ -482,7 +585,12 @@
         else if (fromDate) dateRangeText = ` | From: ${fromDate}`;
         else if (toDate) dateRangeText = ` | To: ${toDate}`;
         
-        $('#pdfCriteriaInfo').html(`<strong>Criteria:</strong> Status: ${statusText} | Connection: ${connectionText !== "-- All Connections --" ? connectionText : "All"} | Link Status: ${linkStatusText !== "-- All Link Status --" ? linkStatusText : "All"}${dateRangeText} | Total: ${filteredRecords.length}`);
+        let criticalAlertText = "";
+        if (criticalTreasuries.length > 0) {
+            criticalAlertText = ` | <span style="color: #dc2626; font-weight: bold;">⚠️ CRITICAL: ${criticalTreasuries.length} Treasury(s) with multiple connections down</span>`;
+        }
+        
+        $('#pdfCriteriaInfo').html(`<strong>Criteria:</strong> Status: ${statusText} | Connection: ${connectionText !== "-- All Connections --" ? connectionText : "All"} | Link Status: ${linkStatusText !== "-- All Link Status --" ? linkStatusText : "All"}${dateRangeText}${criticalAlertText} | Total: ${filteredRecords.length}`);
     }
     
     function updateReportTable() {
@@ -534,6 +642,12 @@
         const statusText = $('#resolveStatusFilter option:selected').text();
         $('#recordCountBadge').text(`${filteredRecords.length} Record${filteredRecords.length !== 1 ? 's' : ''}`);
         $('#filterStatusBadge').text(`Status: ${statusText}`);
+        
+        if (criticalTreasuries.length > 0) {
+            $('#filterStatusBadge').css('background', '#fee2e2').css('color', '#b91c1c');
+        } else {
+            $('#filterStatusBadge').css('background', '#e6f0fa').css('color', '#0f5b9c');
+        }
     }
     
     function populateFilterDropdown() {
@@ -544,18 +658,15 @@
         resolveStatusOptions.forEach(opt => {
             if (opt !== "Pending") filterSelect.append(`<option value="${escapeHtml(opt)}">${escapeHtml(opt)}</option>`);
         });
-        // Initialize Select2 with proper styling
         filterSelect.select2({
             theme: "bootstrap-5",
             placeholder: "Select Status",
             width: '100%',
             dropdownParent: $('.app-card')
         });
-        // Ensure Pending is selected by default
         filterSelect.val("Pending").trigger('change');
     }
     
-    // PDF Export function
     async function exportToPDF() {
         if (filteredRecords.length === 0) {
             Swal.fire({ icon: "warning", title: "No Data", text: "No records found to export.", confirmButtonColor: "#0f3b5f" });
@@ -700,16 +811,14 @@
         $('#reportDate').text(now.toLocaleDateString('en-GB', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }));
     }
     
-    // Event handlers
     $('#applyFilterBtn').on('click', () => { applyFilters(); Swal.fire({ icon:"success", title:"Filter Applied", text:`Showing ${filteredRecords.length} records`, timer:1500, showConfirmButton:false }); });
     $('#connectionFilterSelect').on('change', () => applyFilters());
     $('#linkStatusFilterSelect').on('change', () => applyFilters());
     $('#exportPdfBtn').on('click', exportToPDF);
     $('#exportCsvBtn').on('click', exportToCSV);
     
-    // Initialize - Load Pending Details by Default
     $(async function() {
-        showLoading("Loading pending fault records...");
+        showLoading("Loading ...");
         await loadResolveStatusOptions();
         await loadFaultRecords();
         populateConnectionFilter();
@@ -717,10 +826,14 @@
         populateFilterDropdown();
         initFlatpickr();
         setReportDate();
-        // Auto-set smart date range based on pending faults
         setSmartPendingDateRange();
-        // Apply filters - this will show Pending status by default
         applyFilters();
+        
+        // Show Critical Down Alert Modal after data is loaded
+        setTimeout(() => {
+            showCriticalDownAlert();
+        }, 500);
+        
         hideLoading();
     });
 </script>
