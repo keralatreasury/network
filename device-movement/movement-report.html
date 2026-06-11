@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Fatpipe Device | Complaint Report - With Sent To Address</title>
+    <title>Fatpipe Device | Complaint Report - Master Match Warning (Enhanced)</title>
     
     <!-- Local CSS Resources -->
     <link rel="stylesheet" href="../css/bootstrap.min.css">
@@ -202,8 +202,10 @@
             font-weight: 600;
             color: #0d6efd;
             background-color: #f5f5f5;
-            display: inline-block;
-            padding: 2px 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 2px;
             border-radius: 16px;
         }
         .address-highlight {
@@ -215,6 +217,30 @@
             border-radius: 16px;
             font-size: 0.75rem;
         }
+        .warning-icon-master {
+            font-size: 1rem;
+            cursor: pointer;
+            margin-left: 4px;
+            vertical-align: middle;
+            transition: 0.2s;
+        }
+        .warning-icon-master.yellow-warning {
+            color: #f7d73b;
+        }
+        .warning-icon-master.red-warning {
+            color: #dc2626;
+        }
+        .warning-icon-master.yellow-warning:hover {
+            color: #d39c00;
+            transform: scale(1.1);
+        }
+        .warning-icon-master.red-warning:hover {
+            color: #b91c1c;
+            transform: scale(1.1);
+        }
+        .master-match-tooltip {
+            cursor: help;
+        }
     </style>
 </head>
 <body>
@@ -223,7 +249,7 @@
         <i class="bi bi-file-text-fill"></i>
         <div>
             <h4>Fatpipe Device - Complaint & Movement Report</h4>
-            <small class="opacity-75">Status: Initiated → On Transit → Received → Submitted to OEM → In Stock → Processed</small>
+            <small class="opacity-75">Status: Initiated → On Transit → Received → Submitted to OEM → In Stock → Processed | 🔔 Mismatch alerts: Last branch = RED, others = YELLOW</small>
         </div>
     </div>
     
@@ -294,7 +320,7 @@
             </div>
         </div>
         
-        <!-- Main Table - Sent To Address column added (Column H) -->
+        <!-- Main Table - Sent To Address column and To Branch with warning icon based on Master Sheet (Enhanced: multiple mismatches -> last red, others yellow) -->
         <div class="table-responsive">
             <table id="reportTable" class="table table-striped table-hover" style="width:100%">
                 <thead>
@@ -345,12 +371,19 @@
     const MOVEMENT_SHEET = "Movement_Data";
     const API_KEY = "AIzaSyDc8tegwi2rgHyDFYm7uWBqVqQ7Fwb3uWM";
     
+    // Master sheet configuration (Installation Status)
+    const MASTER_SPREADSHEET_ID = "1HvCqLHC8IyllKskBXX1MtMfjQMGUyhMP7KuTuJxDhmU";
+    const MASTER_SHEET_NAME = "Installation Status";
+    
     let allRecords = [];
     let filteredRecords = [];
     let branchesList = [];
     let dataTable = null;
     let flatpickrFrom, flatpickrTo;
     let isReportGenerated = false;
+    
+    // Master lookup map: key = branch code (from column D), value = expected Device Serial No (from column E)
+    let masterSerialMap = new Map(); // branchCode -> expectedSerialNo (trimmed, normalized)
     
     // Helper functions
     function parseDMYToDate(dateStr) {
@@ -460,6 +493,48 @@
         return false;
     }
     
+    // Fetch master installation data: Branch code (Col D) and Device Serial No (Col E)
+    async function fetchMasterInstallationMap() {
+        try {
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${MASTER_SPREADSHEET_ID}/values/${encodeURIComponent(MASTER_SHEET_NAME)}!D:E?key=${API_KEY}`;
+            const resp = await fetch(url);
+            const data = await resp.json();
+            const rows = data.values || [];
+            const tempMap = new Map();
+            // Start from row 1 to skip header if present (assuming row0 header)
+            for(let i = 1; i < rows.length; i++) {
+                const row = rows[i];
+                if(row && row.length >= 2) {
+                    let branchCode = row[0] ? String(row[0]).trim() : "";
+                    let expectedSerial = row[1] ? String(row[1]).trim() : "";
+                    if(branchCode !== "" && expectedSerial !== "" && expectedSerial !== "NaN" && expectedSerial !== "null") {
+                        tempMap.set(branchCode, expectedSerial);
+                    }
+                }
+            }
+            console.log("Master map loaded with", tempMap.size, "entries");
+            return tempMap;
+        } catch(e) {
+            console.error("Error fetching master sheet:", e);
+            return new Map();
+        }
+    }
+    
+    // Function to check if device serial number mismatches with master record for a given branch (To Branch)
+    function isSerialMismatchWithMaster(branchToCheck, deviceSerial) {
+        if(!branchToCheck || !deviceSerial) return false;
+        const trimmedBranch = String(branchToCheck).trim();
+        const trimmedSerial = String(deviceSerial).trim();
+        if(trimmedSerial === "" || trimmedSerial === "NaN" || trimmedSerial === "null") return false;
+        const expectedMasterSerial = masterSerialMap.get(trimmedBranch);
+        if(!expectedMasterSerial) return false; // No master record for this branch, no warning
+        
+        // Compare normalized (trimmed, case-insensitive optional but strict match recommended)
+        const normalizedDevice = trimmedSerial.replace(/\s+/g, '');
+        const normalizedMaster = expectedMasterSerial.replace(/\s+/g, '');
+        return normalizedDevice !== normalizedMaster;
+    }
+    
     async function fetchBranches() {
         try {
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(MOVEMENT_SHEET)}!E:E?key=${API_KEY}`;
@@ -484,7 +559,6 @@
     
     async function fetchMovementRecords() {
         try {
-            // Fetch columns A to O (A:0, B:1, C:2, D:3, E:4, F:5, G:6, H:7, I:8, J:9, K:10, L:11, M:12, N:13, O:14)
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(MOVEMENT_SHEET)}!A:O?key=${API_KEY}`;
             const resp = await fetch(url);
             const data = await resp.json();
@@ -502,14 +576,14 @@
                         fromBranch: row[4] || "",
                         complaintRemarks: row[5] || "",
                         complaintDate: row[6] || "",
-                        sentToAddress: row[7] || "",      // Column H - Sent To Address
-                        sentDate: row[8] || "",           // Column I - Sent Date
-                        receivedDate: row[9] || "",       // Column J - Received Date
-                        moveToOem: row[10] || "",         // Column K - Date of Movement to OEM
-                        returnFromOem: row[11] || "",     // Column L - Date of return from OEM
-                        toBranch: row[12] || "",          // Column M - To Branch
-                        transferDate: row[13] || "",      // Column N - Date of Transfer
-                        remarks: row[14] || ""            // Column O - Remarks
+                        sentToAddress: row[7] || "",
+                        sentDate: row[8] || "",
+                        receivedDate: row[9] || "",
+                        moveToOem: row[10] || "",
+                        returnFromOem: row[11] || "",
+                        toBranch: row[12] || "",
+                        transferDate: row[13] || "",
+                        remarks: row[14] || ""
                     });
                 }
             }
@@ -562,7 +636,6 @@
             return 0;
         });
         
-        // Update statistics
         const initiated = filteredRecords.filter(r => getLifecycleStatus(r) === "initiated").length;
         const onTransit = filteredRecords.filter(r => getLifecycleStatus(r) === "on_transit").length;
         const received = filteredRecords.filter(r => getLifecycleStatus(r) === "received").length;
@@ -583,6 +656,7 @@
         return filteredRecords;
     }
     
+    // Enhanced render function: identify all mismatched rows and apply red for last mismatched, yellow for others
     function renderTable() {
         const data = applyAllFilters();
         if(dataTable) { dataTable.destroy(); $('#reportTable tbody').empty(); }
@@ -593,6 +667,20 @@
             $('#exportCsvBtn').prop('disabled', true);
             return;
         }
+        
+        // Precompute mismatch info for each row to know which rows are mismatched
+        const mismatchPositions = [];
+        data.forEach((row, idx) => {
+            const toBranchVal = row.toBranch && row.toBranch !== "NaN" ? row.toBranch : '';
+            const serial = row.serialNo && row.serialNo !== "NaN" ? row.serialNo : '';
+            const isMismatch = (toBranchVal && serial && isSerialMismatchWithMaster(toBranchVal, serial));
+            if(isMismatch) {
+                mismatchPositions.push({ idx, row });
+            }
+        });
+        
+        // Determine which mismatch gets red (last in data order)
+        const lastMismatchIndex = mismatchPositions.length > 0 ? mismatchPositions[mismatchPositions.length - 1].idx : -1;
         
         dataTable = $('#reportTable').DataTable({
             data: data,
@@ -618,9 +706,25 @@
                 { data: "receivedDate", render: d => isDateValid(d) ? d : '—' },
                 { data: "moveToOem", render: d => isDateValid(d) ? d : '—' },
                 { data: "returnFromOem", render: d => isDateValid(d) ? d : '—' },
-                { data: "toBranch", render: function(v) {
-                    if(isTextFieldValid(v)) {
-                        return `<span class="to-branch-highlight">${escapeHtml(v)}</span>`;
+                { data: null, render: (row, type, full, meta) => {
+                    const toBranchVal = row.toBranch && row.toBranch !== "NaN" ? row.toBranch : '';
+                    const serial = row.serialNo && row.serialNo !== "NaN" ? row.serialNo : '';
+                    const mismatch = (toBranchVal && serial && isSerialMismatchWithMaster(toBranchVal, serial));
+                    const branchDisplay = isTextFieldValid(toBranchVal) ? escapeHtml(toBranchVal) : '—';
+                    const rowIndex = meta.row;
+                    const isLastMismatch = (mismatch && rowIndex === lastMismatchIndex);
+                    
+                    if(mismatch && branchDisplay !== '—') {
+                        const warningClass = isLastMismatch ? "red-warning" : "yellow-warning";
+                        const tooltipMsg = isLastMismatch ? 
+                            `⚠️ LAST MISMATCH: Device Serial ${escapeHtml(serial)} does NOT match Master record for branch '${escapeHtml(toBranchVal)}'` :
+                            `⚠️ Device Serial ${escapeHtml(serial)} does NOT match Master record for branch '${escapeHtml(toBranchVal)}'`;
+                        return `<span class="to-branch-highlight master-match-tooltip" title="${tooltipMsg}">
+                                    ${branchDisplay}
+                                    <i class="bi bi-exclamation-triangle warning-icon-master ${warningClass}"></i>
+                                </span>`;
+                    } else if(branchDisplay !== '—') {
+                        return `<span class="to-branch-highlight">${branchDisplay}</span>`;
                     }
                     return '—';
                 } },
@@ -628,12 +732,13 @@
                 { data: "remarks", render: v => (v && v !== "NaN") ? escapeHtml(v) : '—' },
                 { data: null, render: (row) => {
                     const status = getLifecycleStatus(row);
-                    const isSpare = isSpareRecord(row, $('#fromDate').val(), $('#toDate').val(), $('#includeSpareDevices').is(':checked'));
-                    
+                    const fromDate = $('#fromDate').val();
+                    const toDate = $('#toDate').val();
+                    const includeSpare = $('#includeSpareDevices').is(':checked');
+                    const isSpare = isSpareRecord(row, fromDate, toDate, includeSpare);
                     if(isSpare && status !== "processed") {
                         return '<span class="badge-spare">Spare Device</span>';
                     }
-                    
                     switch(status) {
                         case "initiated": return '<span class="badge-initiated">Initiated</span>';
                         case "on_transit": return '<span class="badge-on-transit">On Transit</span>';
@@ -652,14 +757,23 @@
             autoWidth: false,
             drawCallback: function() {
                 $('#exportCsvBtn').prop('disabled', false);
+                $('.master-match-tooltip').attr('data-bs-toggle', 'tooltip');
+                // Reinitialize tooltips optionally (Bootstrap 5)
+                if(typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+                    $('[data-bs-toggle="tooltip"]').each(function() {
+                        new bootstrap.Tooltip(this);
+                    });
+                }
             }
         });
         $('#exportCsvBtn').prop('disabled', false);
     }
     
     async function generateReport() {
-        showGlobalLoading("Loading ...");
+        showGlobalLoading("Loading movement data & master installation records...");
         await fetchMovementRecords();
+        // Load master map before rendering
+        masterSerialMap = await fetchMasterInstallationMap();
         renderTable();
         hideGlobalLoading();
         $('#statsContainer').show();
@@ -668,7 +782,9 @@
         } else if(allRecords.length === 0) {
             Swal.fire({ icon: 'warning', title: 'No Data', text: 'No records found in the Movement sheet.' });
         } else {
-            Swal.fire({ icon: 'success', title: 'Report Generated', text: `${filteredRecords.length} records loaded with updated status.`, timer: 1800, showConfirmButton: false });
+            let warnMsg = '';
+            if(masterSerialMap.size === 0) warnMsg = ' (No master data loaded)';
+            Swal.fire({ icon: 'success', title: 'Report Generated', text: `${filteredRecords.length} records loaded${warnMsg}. `, timer: 2800, showConfirmButton: false });
         }
         isReportGenerated = true;
     }
@@ -681,7 +797,7 @@
         let exportData = filteredRecords;
         if(dataTable && dataTable.search() !== "") exportData = dataTable.rows({ search: 'applied' }).data().toArray();
         
-        const headers = ['Sl No', 'Treasury', 'Device Serial No.', 'Device Type', 'From Branch', 'Complaint Remarks', 'Complaint Date', 'Sent Date', 'Sent To Address', 'Received Date', 'Date of Movement to OEM', 'Date of return from OEM', 'To Branch', 'Date of Transfer', 'Remarks', 'Status'];
+        const headers = ['Sl No', 'Treasury', 'Device Serial No.', 'Device Type', 'From Branch', 'Complaint Remarks', 'Complaint Date', 'Sent Date', 'Sent To Address', 'Received Date', 'Date of Movement to OEM', 'Date of return from OEM', 'To Branch', 'Date of Transfer', 'Remarks', 'Status', 'Master Match Warning'];
         const rows = [];
         exportData.forEach((rec, idx) => {
             const statusVal = getLifecycleStatus(rec);
@@ -695,17 +811,21 @@
                 case 'processed': statusLabel = 'Processed'; break;
                 default: statusLabel = 'Initiated';
             }
-            const isSpare = isSpareRecord(rec, $('#fromDate').val(), $('#toDate').val(), $('#includeSpareDevices').is(':checked'));
+            const fromDate = $('#fromDate').val();
+            const toDate = $('#toDate').val();
+            const includeSpare = $('#includeSpareDevices').is(':checked');
+            const isSpare = isSpareRecord(rec, fromDate, toDate, includeSpare);
             if(isSpare && statusVal !== 'processed') statusLabel = 'Spare Device';
             
             let cleanSerial = rec.serialNo;
             if(cleanSerial === "NaN" || cleanSerial === "null") cleanSerial = '';
+            const mismatchFlag = (rec.toBranch && rec.toBranch !== "NaN" && cleanSerial && isSerialMismatchWithMaster(rec.toBranch, cleanSerial)) ? '⚠️ Mismatch with Master' : '';
             
             rows.push([
                 idx+1, rec.treasury, cleanSerial, rec.deviceType, rec.fromBranch, rec.complaintRemarks,
                 isDateValid(rec.complaintDate) ? rec.complaintDate : 'N/A',
                 rec.sentDate || '', rec.sentToAddress || '', rec.receivedDate || '', rec.moveToOem || '', rec.returnFromOem || '',
-                rec.toBranch || '', rec.transferDate || '', rec.remarks || '', statusLabel
+                rec.toBranch || '', rec.transferDate || '', rec.remarks || '', statusLabel, mismatchFlag
             ]);
         });
         
@@ -775,9 +895,11 @@
     .to-branch-highlight {
         font-weight: 600;
         color: #0d6efd;
-        background-color: #f5f5f5;
-        display: inline-block;
-        padding: 2px 8px;
+        background-color: #f5f5f500;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 2px;
         border-radius: 16px;
     }
     .address-highlight {
@@ -788,6 +910,23 @@
         padding: 2px 8px;
         border-radius: 16px;
         font-size: 0.75rem;
+    }
+    .warning-icon-master.yellow-warning {
+        color: #e67e226b;
+    }
+    .warning-icon-master.red-warning {
+        color: ##ff0000;
+    }
+    .warning-icon-master.yellow-warning:hover {
+        color: #d35400;
+        transform: scale(1.1);
+    }
+    .warning-icon-master.red-warning:hover {
+        color: ##ff0000;
+        transform: scale(1.1);
+    }
+    .master-match-tooltip {
+        cursor: help;
     }
 </style>
 </body>
