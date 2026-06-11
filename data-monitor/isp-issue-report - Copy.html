@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>ISP Fault Reports | Smart Filter + PDF Export</title>
+    <title>ISP Fault Reports | Generate & Export PDF/CSV</title>
     <!-- Local CSS Resources -->
     <link rel="stylesheet" href="../css/bootstrap.min.css">
     <link rel="stylesheet" href="../css/bootstrap-icons.min.css">
@@ -42,6 +42,11 @@
             font-size: 1.5rem;
             margin-right: 10px;
         }
+        .report-header {
+            background: #f8fafc;
+            padding: 20px 25px;
+            border-bottom: 2px solid #e2e8f0;
+        }
         .filter-bar {
             background: #ffffff;
             padding: 20px 25px;
@@ -64,7 +69,7 @@
         .btn-export-pdf {
             background: #dc2626;
             border: none;
-            padding: 10px 25px;
+            padding: 10px 24px;
             font-weight: 600;
             border-radius: 40px;
             color: white;
@@ -85,6 +90,7 @@
         }
         .btn-export-csv:hover {
             background: #059669;
+            transform: translateY(-1px);
         }
         .btn-primary-custom {
             background: #0f3b5f;
@@ -105,23 +111,9 @@
             font-size: 0.85rem;
             font-weight: 500;
         }
-        /* Fix Select2 styling - ensure border visibility */
         .select2-container--bootstrap-5 .select2-selection {
             border-radius: 12px !important;
             min-height: 42px;
-            border: 1px solid #ced4da !important;
-            background-color: #fff !important;
-        }
-        .select2-container--bootstrap-5 .select2-selection:hover {
-            border-color: #86b7fe !important;
-        }
-        .select2-container--bootstrap-5.select2-container--focus .select2-selection {
-            border-color: #86b7fe !important;
-            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
-        }
-        .select2-dropdown {
-            border-radius: 12px !important;
-            border-color: #ced4da !important;
         }
         .badge-pending { background-color: #f59e0b; color: white; padding: 4px 12px; border-radius: 30px; font-size: 0.7rem; font-weight: 500; }
         .badge-resolved { background-color: #10b981; color: white; padding: 4px 12px; border-radius: 30px; font-size: 0.7rem; font-weight: 500; }
@@ -156,18 +148,56 @@
             border-bottom: 1px solid #e2e8f0;
         }
         .btn-group-export { display: flex; gap: 10px; }
-        /* PDF Print Styles */
+        /* PDF Print Styles - Black & White, no colors, plain rows */
         @media print {
-            body { background: white; padding: 0; margin: 0; }
-            .no-print { display: none !important; }
-            .app-card { box-shadow: none; border-radius: 0; }
-            .table { width: 100%; border-collapse: collapse; }
-            .table th, .table td { border: 1px solid #000 !important; color: black !important; background: white !important; }
-            .table tr td { background: white !important; }
-            .table th { background: #ddd !important; font-weight: bold; }
-            .badge-down, .badge-up, .badge-pending, .badge-resolved, .badge-other { background: none !important; color: black !important; border: none; padding: 0; }
-            .stats-badge { background: none !important; color: black !important; border: 1px solid #ccc; }
-            .dataTables_filter, .dataTables_length, .dataTables_paginate, .dataTables_info { display: none !important; }
+            body {
+                background: white;
+                padding: 0;
+                margin: 0;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .app-card {
+                box-shadow: none;
+                border-radius: 0;
+            }
+            .table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+            .table th, .table td {
+                border: 1px solid #000 !important;
+                color: black !important;
+                background: white !important;
+            }
+            .table tr:nth-child(even) td {
+                background: white !important;
+            }
+            .table tr:nth-child(odd) td {
+                background: white !important;
+            }
+            .table th {
+                background: #ddd !important;
+                font-weight: bold;
+            }
+            .badge-down, .badge-up, .badge-pending, .badge-resolved, .badge-other {
+                background: none !important;
+                color: black !important;
+                border: none !important;
+                padding: 0 !important;
+            }
+            .stats-badge {
+                background: none !important;
+                color: black !important;
+                border: 1px solid #ccc;
+            }
+            .dataTables_filter, .dataTables_length, .dataTables_paginate, .dataTables_info {
+                display: none !important;
+            }
+            .footer-note {
+                display: none !important;
+            }
         }
     </style>
 </head>
@@ -175,15 +205,17 @@
 <div class="app-card">
     <div class="page-header d-flex align-items-center">
         <i class="bi bi-file-text-fill"></i>
-        <div><h4>ISP Fault Reports | Smart Pending Tracker</h4></div>
+        <div>
+            <h4>ISP Fault Reports</h4>
+           
+        </div>
     </div>
     
-    <div class="filter-bar no-print">
-       
+       <div class="filter-bar no-print">
         <div class="filter-group">
-            <label><i class="bi bi-hdd-stack"></i> Filter by Connection (ISP)</label>
-            <select id="connectionFilterSelect" class="form-select">
-                <option value="ALL">-- All Connections --</option>
+            <label><i class="bi bi-tag"></i> Resolve Status</label>
+            <select id="resolveStatusFilter" class="form-select select2-filter" style="width:100%">
+                <option value="ALL">-- All Records --</option>
             </select>
         </div>
         <div class="filter-group">
@@ -193,25 +225,18 @@
                 <input type="text" id="toDate" class="form-control flatpickr-date" placeholder="To Date" style="width:140px">
             </div>
         </div>
-
- <div class="filter-group">
-            <label><i class="bi bi-tag"></i> Resolve Status</label>
-            <select id="resolveStatusFilter" class="form-select" style="width:100%">
-                <option value="ALL">-- All Records --</option>
-            </select>
-        </div>
-
         <div class="filter-group">
             <label>&nbsp;</label>
             <div>
-                <button id="applyFilterBtn" class="btn btn-primary-custom"><i class="bi bi-search"></i> View</button>
+                <button id="applyFilterBtn" class="btn btn-primary-custom"><i class="bi bi-search"></i> Apply </button>
+                <button id="resetFilterBtn" class="btn btn-outline-secondary ms-2"><i class="bi bi-arrow-repeat"></i> Reset</button>
             </div>
         </div>
         <div class="filter-group text-end">
             <label>&nbsp;</label>
             <div class="btn-group-export">
-                <button id="exportPdfBtn" class="btn btn-export-pdf"> PDF</button>
-                <button id="exportCsvBtn" class="btn btn-export-csv"> CSV</button>
+                <button id="exportPdfBtn" class="btn btn-export-pdf"><i class="bi bi-file-pdf-fill"></i> PDF</button>
+                <button id="exportCsvBtn" class="btn btn-export-csv"><i class="bi bi-file-spreadsheet-fill"></i> CSV</button>
             </div>
         </div>
     </div>
@@ -229,15 +254,22 @@
                     <span class="stats-badge ms-2" id="filterStatusBadge">Status: All</span>
                 </div>
             </div>
-            <div id="pdfCriteriaInfo" style="margin-top: 12px; font-size: 14px; color: #0d6efd; border-top: 1px solid #e0e0e0; padding-top: 8px;"></div>
+            <!-- Criteria Header for PDF (no footer) -->
+            <div id="pdfCriteriaInfo" style="margin-top: 12px; font-size: 11px; color: #555; border-top: 1px solid #e0e0e0; padding-top: 8px;"></div>
         </div>
         
         <div class="table-responsive" style="padding: 0 25px 25px 25px;">
             <table id="reportTable" class="table table-striped table-hover table-bordered" style="width:100%">
                 <thead>
-                    <tr>
-                        <th>Sl. No</th><th>Treasury Name</th><th>Connection</th><th>Circuit ID/Telephone</th>
-                        <th>Call Registered Date</th><th>Last Followed up Details</th><th>Remarks</th><th>Link Status</th>
+                    <tr style="background: #f1f5f9;">
+                        <th>Sl. No</th>
+                        <th>Treasury Name</th>
+                        <th>Connection</th>
+                        <th>Circuit ID/Telephone</th>
+                        <th>Call Registered Date</th>
+                        <th>Last Followed up Details</th>
+                        <th>Remarks</th>
+                        <th>Link Status</th>
                     </tr>
                 </thead>
                 <tbody></tbody>
@@ -246,6 +278,7 @@
     </div>
 </div>
 
+<!-- Local JS Libraries -->
 <script src="../js/jquery.min.js"></script>
 <script src="../js/bootstrap.bundle.min.js"></script>
 <script src="../js/jquery.dataTables.min.js"></script>
@@ -253,7 +286,10 @@
 <script src="../js/select2.min.js"></script>
 <script src="../js/flatpickr.min.js"></script>
 <script src="../js/sweetalert2.all.min.js"></script>
+<!-- PDF Libraries (local) -->
 <script src="../js/html2pdf.bundle.min.js"></script>
+<script src="../js/html2canvas.min.js"></script>
+<script src="../js/jspdf.umd.min.js"></script>
 
 <script>
     // =====================================================
@@ -261,13 +297,13 @@
     // =====================================================
     const SPREADSHEET_ID = "1T7GsX08h9B6tT7doDjfg4MgULk7JZaOa1YT7cF_otQI";
     const API_KEY = "AIzaSyDc8tegwi2rgHyDFYm7uWBqVqQ7Fwb3uWM";
+    
     const SHEET_FAULTS = "Details";
     const SHEET_RESOLVE = "Resolve Status";
     
     let faultRecords = [];
     let filteredRecords = [];
     let resolveStatusOptions = [];
-    let connectionOptions = [];
     let dataTable = null;
     let flatpickrFrom, flatpickrTo;
     
@@ -277,6 +313,22 @@
     }
     function hideLoading() { $('#global-loading-overlay').remove(); }
     function escapeHtml(str) { if(!str) return ''; return String(str).replace(/[&<>]/g, m => m==='&'?'&amp;':m==='<'?'&lt;':'&gt;'); }
+    
+    // Get first and last date of current month
+    function getCurrentMonthRange() {
+        const now = new Date();
+        const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+        const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        
+        const formatDate = (date) => {
+            const day = date.getDate().toString().padStart(2, '0');
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const year = date.getFullYear();
+            return `${day}/${month}/${year}`;
+        };
+        
+        return { fromDate: formatDate(firstDay), toDate: formatDate(lastDay) };
+    }
     
     // Parse date in DD/MM/YYYY format
     function parseDateDMY(dateStr) {
@@ -291,14 +343,24 @@
         return null;
     }
     
-    // Check if resolve status is considered "Pending" (including blank or empty)
+    // Check if date is within range
+    function isDateInRange(dateStr, fromDate, toDate) {
+        if (!fromDate && !toDate) return true;
+        const recordDate = parseDateDMY(dateStr);
+        if (!recordDate) return true;
+        if (fromDate && recordDate < fromDate) return false;
+        if (toDate && recordDate > toDate) return false;
+        return true;
+    }
+    
+    // Check if resolve status is considered "Pending"
     function isPendingStatus(status) {
         if (!status || status.trim() === "") return true;
         const lowerStatus = status.toString().toLowerCase().trim();
         return lowerStatus === "pending";
     }
     
-    // Google Sheets API fetch
+    // Google Sheets API direct read
     async function fetchSheetDataDirect(sheetName, range = "A:Z") {
         try {
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(sheetName)}!${range}?key=${API_KEY}`;
@@ -308,6 +370,7 @@
         } catch(e) { console.error(`Error fetching ${sheetName}:`, e); return []; }
     }
     
+    // Load resolve status options
     async function loadResolveStatusOptions() {
         let resolveRows = await fetchSheetDataDirect(SHEET_RESOLVE, "A:A");
         resolveStatusOptions = [];
@@ -317,22 +380,24 @@
                 if(val && val !== "Resolve Status") resolveStatusOptions.push(val);
             }
         }
-        if (!resolveStatusOptions.includes("Pending")) resolveStatusOptions.unshift("Pending");
-        if (!resolveStatusOptions.includes("Resolved")) resolveStatusOptions.push("Resolved");
+        if (!resolveStatusOptions.includes("Pending")) {
+            resolveStatusOptions.unshift("Pending");
+        }
+        if (!resolveStatusOptions.includes("Resolved")) {
+            resolveStatusOptions.push("Resolved");
+        }
     }
     
+    // Load all fault records (excluding Ref No for display)
     async function loadFaultRecords() {
         showLoading("Loading fault records...");
         const rows = await fetchSheetDataDirect(SHEET_FAULTS, "A:I");
         hideLoading();
         if(!rows || rows.length < 2) return [];
         const records = [];
-        const connectionSet = new Set();
         for(let i = 1; i < rows.length; i++) {
             const row = rows[i];
             if(row.length > 0 && row[0] && row[0].toString().trim() !== "") {
-                const connectionVal = row[2] || "";
-                if(connectionVal.trim()) connectionSet.add(connectionVal.trim());
                 records.push({
                     slNo: i,
                     refNo: row[0] || "",
@@ -347,54 +412,18 @@
                 });
             }
         }
-        records.sort((a, b) => (parseFloat(a.refNo) || 0) - (parseFloat(b.refNo) || 0));
+        records.sort((a, b) => {
+            let numA = parseFloat(a.refNo) || 0;
+            let numB = parseFloat(b.refNo) || 0;
+            return numA - numB;
+        });
         faultRecords = records;
-        // Extract unique connection values for filter dropdown
-        connectionOptions = Array.from(connectionSet).sort();
         return records;
     }
     
-    // Populate connection filter dropdown
-    function populateConnectionFilter() {
-        const connectionSelect = $('#connectionFilterSelect');
-        connectionSelect.empty();
-        connectionSelect.append('<option value="ALL">-- All Connections --</option>');
-        connectionOptions.forEach(conn => {
-            connectionSelect.append(`<option value="${escapeHtml(conn)}">${escapeHtml(conn)}</option>`);
-        });
-    }
-    
-    // Smart Date: automatically find min and max callDate among pending records
-    function setSmartPendingDateRange() {
-        const pendingRecords = faultRecords.filter(record => isPendingStatus(record.resolveStatus) && record.callDate && record.callDate.trim() !== "");
-        if(pendingRecords.length === 0) {
-            $('#fromDate').val('');
-            $('#toDate').val('');
-            if(flatpickrFrom) flatpickrFrom.clear();
-            if(flatpickrTo) flatpickrTo.clear();
-            return false;
-        }
-        const sortedByDate = [...pendingRecords].sort((a,b) => {
-            let dateA = parseDateDMY(a.callDate);
-            let dateB = parseDateDMY(b.callDate);
-            if(!dateA && !dateB) return 0;
-            if(!dateA) return 1;
-            if(!dateB) return -1;
-            return dateA - dateB;
-        });
-        const earliestDate = sortedByDate[0].callDate;
-        const latestDate = sortedByDate[sortedByDate.length-1].callDate;
-        if(earliestDate) $('#fromDate').val(earliestDate);
-        if(latestDate) $('#toDate').val(latestDate);
-        if(flatpickrFrom && earliestDate) flatpickrFrom.setDate(earliestDate, false);
-        if(flatpickrTo && latestDate) flatpickrTo.setDate(latestDate, false);
-        return true;
-    }
-    
-    // Apply filters (Status + Connection Filter + Date Range)
+    // Apply filters
     function applyFilters() {
         const statusFilter = $('#resolveStatusFilter').val();
-        const connectionFilter = $('#connectionFilterSelect').val();
         const fromDateVal = $('#fromDate').val();
         const toDateVal = $('#toDate').val();
         
@@ -404,43 +433,27 @@
         
         let filtered = [...faultRecords];
         
-        // Status filtering
         if (statusFilter === "ALL") {
             // all records
-        } else if (statusFilter === "Pending") {
+        } else if (statusFilter === "Pending (Including Blank)") {
             filtered = filtered.filter(record => isPendingStatus(record.resolveStatus));
         } else {
             filtered = filtered.filter(record => record.resolveStatus === statusFilter);
         }
         
-        // Connection Filter
-        if (connectionFilter !== "ALL") {
-            filtered = filtered.filter(record => record.connection === connectionFilter);
-        }
-        
-        // Date range filter
-        filtered = filtered.filter(record => {
-            if (!record.callDate) return (!fromDate && !toDate);
-            const recordDate = parseDateDMY(record.callDate);
-            if (!recordDate) return true;
-            if (fromDate && recordDate < fromDate) return false;
-            if (toDate && recordDate > toDate) return false;
-            return true;
-        });
-        
-        // Default sort by Ref No
-        filtered.sort((a,b) => (parseFloat(a.refNo) || 0) - (parseFloat(b.refNo) || 0));
+        filtered = filtered.filter(record => isDateInRange(record.callDate, fromDate, toDate));
         
         filteredRecords = filtered;
         updateReportTable();
         updateStats();
         updateCriteriaInfo();
+        
         return filteredRecords;
     }
     
+    // Update Criteria header (label changed from "Filter Criteria" to "Criteria")
     function updateCriteriaInfo() {
         const statusText = $('#resolveStatusFilter option:selected').text();
-        const connectionText = $('#connectionFilterSelect option:selected').text();
         const fromDate = $('#fromDate').val();
         const toDate = $('#toDate').val();
         let dateRangeText = "";
@@ -448,9 +461,10 @@
         else if (fromDate) dateRangeText = ` | From Date: ${fromDate}`;
         else if (toDate) dateRangeText = ` | To Date: ${toDate}`;
         
-        $('#pdfCriteriaInfo').html(`<strong>Criteria:</strong> Status: ${statusText} | Connection: ${connectionText !== "-- All Connections --" ? connectionText : "All"}${dateRangeText} | Total Records: ${filteredRecords.length}`);
+        $('#pdfCriteriaInfo').html(`<strong>Criteria:</strong> ${statusText}${dateRangeText} | Total Records: ${filteredRecords.length}`);
     }
     
+    // Update DataTable (without Ref No column)
     function updateReportTable() {
         const tableData = filteredRecords.map((record, idx) => ({
             slNo: idx + 1,
@@ -472,8 +486,12 @@
         }
     }
     
+    // Initialize DataTable (8 columns only, no Ref No)
     function initDataTable(data) {
-        if (dataTable) dataTable.destroy();
+        if (dataTable) {
+            dataTable.destroy();
+        }
+        
         dataTable = $('#reportTable').DataTable({
             data: data,
             columns: [
@@ -484,15 +502,25 @@
                 { data: "callDate", render: d => d ? escapeHtml(d) : '-' },
                 { data: "lastFollowup", render: d => d ? (d.length > 50 ? escapeHtml(d.substring(0, 50)) + "..." : escapeHtml(d)) : '-' },
                 { data: "remarks", render: d => d ? (d.length > 40 ? escapeHtml(d.substring(0, 40)) + "..." : escapeHtml(d)) : '-' },
-                { data: "linkStatus", render: function(d) {
-                    if (!d || d === "Link Down") return '<span class="badge-down">Link Down</span>';
-                    if (d === "Link Up") return '<span class="badge-up">Link Up</span>';
-                    return `<span class="badge-other">${escapeHtml(d)}</span>`;
-                }}
+                { 
+                    data: "linkStatus", 
+                    render: function(d) {
+                        if (!d || d === "Link Down") return '<span class="badge-down">Link Down</span>';
+                        if (d === "Link Up") return '<span class="badge-up">Link Up</span>';
+                        return `<span class="badge-other">${escapeHtml(d)}</span>`;
+                    }
+                }
             ],
             order: [[0, 'asc']],
             pageLength: 25,
-            language: { search: "Search:", lengthMenu: "Show _MENU_ entries", info: "Showing _START_ to _END_ of _TOTAL_ records", zeroRecords: "No records found", emptyTable: "No data available" }
+            language: {
+                search: "Search:",
+                lengthMenu: "Show _MENU_ entries",
+                info: "Showing _START_ to _END_ of _TOTAL_ records",
+                zeroRecords: "No records found",
+                emptyTable: "No data available"
+            },
+            drawCallback: function() {}
         });
     }
     
@@ -502,185 +530,270 @@
         $('#filterStatusBadge').text(`Status: ${statusText}`);
     }
     
+    // Populate filter dropdown
     function populateFilterDropdown() {
         const filterSelect = $('#resolveStatusFilter');
         filterSelect.empty();
+        
         filterSelect.append('<option value="ALL">-- All Records --</option>');
-        filterSelect.append('<option value="Pending" selected>Pending</option>');
-
+        filterSelect.append('<option value="Pending (Including Blank)" selected>Pending</option>');
+        
         resolveStatusOptions.forEach(opt => {
-            if (opt !== "Pending") filterSelect.append(`<option value="${escapeHtml(opt)}">${escapeHtml(opt)}</option>`);
+            if (opt !== "Pending") {
+                filterSelect.append(`<option value="${escapeHtml(opt)}">${escapeHtml(opt)}</option>`);
+            }
         });
-        // Initialize Select2 with proper styling
-        filterSelect.select2({
+        
+        if ($('#resolveStatusFilter').hasClass('select2-hidden-accessible')) {
+            $('#resolveStatusFilter').select2('destroy');
+        }
+        $('#resolveStatusFilter').select2({
             theme: "bootstrap-5",
             placeholder: "Filter by status",
-            width: '100%',
-            dropdownParent: $('.app-card')
+            width: '100%'
         });
-        filterSelect.val("Pending (Including Blank)").trigger('change');
+        
+        $('#resolveStatusFilter').val("Pending (Including Blank)").trigger('change');
     }
     
-    // PDF Export function
+    function resetFilters() {
+        const monthRange = getCurrentMonthRange();
+        $('#resolveStatusFilter').val("Pending (Including Blank)").trigger('change');
+        $('#fromDate').val(monthRange.fromDate);
+        $('#toDate').val(monthRange.toDate);
+        if (flatpickrFrom) flatpickrFrom.setDate(monthRange.fromDate, false);
+        if (flatpickrTo) flatpickrTo.setDate(monthRange.toDate, false);
+        applyFilters();
+        Swal.fire({
+            icon: "success",
+            title: "Reset",
+            text: "Filters reset to current month range and Pending status",
+            timer: 1500,
+            showConfirmButton: false
+        });
+    }
+    
+    // Export to PDF - Black & White, plain rows, no footer, "Criteria" label
     async function exportToPDF() {
         if (filteredRecords.length === 0) {
             Swal.fire({ icon: "warning", title: "No Data", text: "No records found to export.", confirmButtonColor: "#0f3b5f" });
             return;
         }
-        showLoading("Generating PDF with all displayed rows...");
+        
+        showLoading("Generating PDF (Black & White)...");
+        
         try {
+            // Create a clone for PDF
             const originalElement = document.getElementById('reportPreview');
             const cloneElement = originalElement.cloneNode(true);
             
+            // Remove all color badges and replace with plain text
             $(cloneElement).find('.badge-down, .badge-up, .badge-pending, .badge-resolved, .badge-other').each(function() {
                 const plainText = $(this).text().trim();
-                $(this).replaceWith(`<span style="color: black; font-weight: normal;">${plainText}</span>`);
+                $(this).replaceWith(`<span style="color: black;">${plainText}</span>`);
             });
-            $(cloneElement).find('.stats-badge').each(function() { $(this).css({ background: 'none', border: '1px solid #999', color: 'black' }); });
+            
+            // Remove all colored badges from stats
+            $(cloneElement).find('.stats-badge').each(function() {
+                $(this).css({ background: 'none', border: '1px solid #999', color: 'black' });
+            });
+            
+            // Hide DataTables controls in clone
             $(cloneElement).find('.dataTables_filter, .dataTables_length, .dataTables_paginate, .dataTables_info').remove();
             
-            const tableBody = cloneElement.querySelector('#reportTable tbody');
-            if(tableBody) {
-                const newTbody = document.createElement('tbody');
-                filteredRecords.forEach((record, idx) => {
-                    let linkStatusText = record.linkStatus || 'Link Down';
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td style="border:1px solid #000; padding:6px;">${idx+1}</td>
-                        <td style="border:1px solid #000; padding:6px;">${escapeHtml(record.treasuryName || '')}</td>
-                        <td style="border:1px solid #000; padding:6px;">${escapeHtml(record.connection || '')}</td>
-                        <td style="border:1px solid #000; padding:6px;">${escapeHtml(record.circuitId || '-')}</td>
-                        <td style="border:1px solid #000; padding:6px;">${escapeHtml(record.callDate || '-')}</td>
-                        <td style="border:1px solid #000; padding:6px;">${escapeHtml((record.lastFollowup || '-').substring(0, 100))}</td>
-                        <td style="border:1px solid #000; padding:6px;">${escapeHtml((record.remarks || '-').substring(0, 80))}</td>
-                        <td style="border:1px solid #000; padding:6px;">${escapeHtml(linkStatusText)}</td>
-                    `;
-                    newTbody.appendChild(row);
-                });
-                tableBody.innerHTML = newTbody.innerHTML;
-            }
+            // Remove footer if exists
+            $(cloneElement).find('.footer-note').remove();
             
-            const thead = cloneElement.querySelector('#reportTable thead');
-            if(thead) {
-                thead.querySelectorAll('th').forEach(th => th.setAttribute('style', 'border:1px solid #000; background:#ddd; padding:6px;'));
-            }
+            // Get criteria info
+            const statusText = $('#resolveStatusFilter option:selected').text();
+            const fromDate = $('#fromDate').val();
+            const toDate = $('#toDate').val();
+            let dateRangeText = "";
+            if (fromDate && toDate) dateRangeText = ` | Date Range: ${fromDate} to ${toDate}`;
+            else if (fromDate) dateRangeText = ` | From Date: ${fromDate}`;
+            else if (toDate) dateRangeText = ` | To Date: ${toDate}`;
             
+            // Update header in clone
             const now = new Date();
-            const dateStr = now.toLocaleDateString('en-GB', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+            const dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
             $(cloneElement).find('#reportDate').text(dateStr);
             
-            const criteriaDiv = cloneElement.querySelector('#pdfCriteriaInfo');
-            if(criteriaDiv) {
-                const statusText = $('#resolveStatusFilter option:selected').text();
-                const connectionText = $('#connectionFilterSelect option:selected').text();
-                const fromDate = $('#fromDate').val();
-                const toDate = $('#toDate').val();
-                let dateRangeText = (fromDate && toDate) ? ` | Date: ${fromDate} to ${toDate}` : ((fromDate||toDate) ? ` | Date Filter Active` : '');
-                criteriaDiv.innerHTML = `<strong>Criteria:</strong> Status: ${statusText} | Connection: ${connectionText !== "-- All Connections --" ? connectionText : "All"}${dateRangeText} | Total: ${filteredRecords.length}`;
+            // Update criteria info in clone (using "Criteria" label)
+            let criteriaDiv = cloneElement.querySelector('#pdfCriteriaInfo');
+            if (!criteriaDiv) {
+                criteriaDiv = document.createElement('div');
+                criteriaDiv.id = 'pdfCriteriaInfo';
+                criteriaDiv.style.cssText = 'margin-top: 12px; font-size: 10px; border-top: 1px solid #ccc; padding-top: 8px;';
+                const titleSection = cloneElement.querySelector('.report-title-section');
+                if (titleSection) titleSection.appendChild(criteriaDiv);
             }
+            criteriaDiv.innerHTML = `<strong>Criteria:</strong> ${statusText}${dateRangeText} | Total Records: ${filteredRecords.length}`;
             
+            // Apply black and white print styling with plain rows
             const style = document.createElement('style');
             style.textContent = `
                 body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 20px; background: white; }
-                .table { width: 100%; border-collapse: collapse; font-size: 9pt; }
+                .table { width: 100%; border-collapse: collapse; font-size: 10pt; }
                 .table th, .table td { border: 1px solid #000 !important; padding: 6px; text-align: left; }
                 .table th { background: #ddd !important; font-weight: bold; }
                 .table tr td { background: white !important; }
-                .dataTables_filter, .dataTables_length, .dataTables_paginate, .dataTables_info { display: none; }
+                .dataTables_filter, .dataTables_length, .dataTables_paginate, .dataTables_info { display: none !important; }
                 .stats-badge { background: none !important; border: 1px solid #999; color: black; }
-                .no-print, .btn, .select2, .filter-bar { display: none; }
-                #reportPreview { margin: 0; padding: 0; }
+                .badge-down, .badge-up, .badge-pending, .badge-resolved, .badge-other { background: none !important; color: black; padding: 0; }
+                .report-title-section { margin-bottom: 10px; }
+                .no-print { display: none; }
+                .btn, .select2, .filter-bar { display: none; }
+                .footer-note { display: none; }
             `;
             cloneElement.prepend(style);
             
+            // Create temporary container
             const tempContainer = document.createElement('div');
             tempContainer.style.position = 'absolute';
             tempContainer.style.left = '-9999px';
             tempContainer.style.top = '0';
-            tempContainer.style.width = '1200px';
             tempContainer.appendChild(cloneElement);
             document.body.appendChild(tempContainer);
             
+            // PDF Options - Landscape
             const opt = {
                 margin: [0.5, 0.5, 0.5, 0.5],
-                filename: `ISP_Fault_Report_${now.toISOString().slice(0,19).replace(/:/g, '-')}.pdf`,
+                filename: `ISP_Fault_Report_${now.toISOString().slice(0, 19).replace(/:/g, '-')}.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: { scale: 2, letterRendering: true, useCORS: true, logging: false, backgroundColor: '#ffffff' },
                 jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
             };
             
-            if (typeof html2pdf !== 'undefined' && html2pdf) {
+            if (typeof html2pdf !== 'undefined') {
                 await html2pdf().set(opt).from(cloneElement).save();
+            } else if (window.jspdf && window.html2canvas) {
+                const { jsPDF } = window.jspdf;
+                const canvas = await html2canvas(cloneElement, { scale: 2, logging: false, backgroundColor: '#ffffff' });
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+                const imgWidth = 280;
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
+                pdf.save(opt.filename);
             } else {
-                throw new Error("html2pdf library not loaded properly");
+                throw new Error("PDF libraries not loaded");
             }
             
             document.body.removeChild(tempContainer);
             hideLoading();
-            Swal.fire({ icon: "success", title: "PDF Exported!", text: `Exported ${filteredRecords.length} rows.`, timer: 2000, showConfirmButton: false });
+            Swal.fire({ icon: "success", title: "PDF Exported!", text: "Black & white report downloaded.", timer: 2000, showConfirmButton: false });
         } catch(err) {
             hideLoading();
-            console.error("PDF Export Error:", err);
-            Swal.fire({ icon: "error", title: "Export Failed", text: "Failed to generate PDF. Please ensure libraries are loaded.", confirmButtonColor: "#dc2626" });
+            console.error("PDF Error:", err);
+            Swal.fire({ icon: "error", title: "Export Failed", text: "Failed to generate PDF. Please try again.", confirmButtonColor: "#dc2626" });
         }
     }
     
+    // Export to CSV - without Ref No column
     function exportToCSV() {
         if (filteredRecords.length === 0) {
             Swal.fire({ icon: "warning", title: "No Data", text: "No records found to export.", confirmButtonColor: "#0f3b5f" });
             return;
         }
+        
         showLoading("Generating CSV...");
+        
         try {
-            const headers = ["Sl. No","Treasury Name","Connection","Circuit ID/Telephone","Call Registered Date","Last Followed up Details","Remarks","Link Status"];
+            const headers = [
+                "Sl. No",
+                "Treasury Name",
+                "Connection",
+                "Circuit ID/Telephone",
+                "Call Registered Date",
+                "Last Followed up Details",
+                "Remarks",
+                "Link Status"
+            ];
+            
             const rows = filteredRecords.map((record, idx) => [
-                idx+1, record.treasuryName, record.connection, record.circuitId || "", record.callDate || "",
-                (record.lastFollowup || "").replace(/,/g,' ').replace(/\n/g,' '),
-                (record.remarks || "").replace(/,/g,' ').replace(/\n/g,' '),
+                idx + 1,
+                record.treasuryName,
+                record.connection,
+                record.circuitId || "",
+                record.callDate || "",
+                (record.lastFollowup || "").replace(/,/g, ' ').replace(/\n/g, ' '),
+                (record.remarks || "").replace(/,/g, ' ').replace(/\n/g, ' '),
                 record.linkStatus || ""
             ]);
-            const csvContent = [headers.join(','), ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))].join('\n');
+            
+            const csvContent = [
+                headers.join(','),
+                ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+            ].join('\n');
+            
             const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
             const url = URL.createObjectURL(blob);
             const now = new Date();
+            const filename = `ISP_Fault_Report_${now.toISOString().slice(0, 19).replace(/:/g, '-')}.csv`;
+            
             link.setAttribute('href', url);
-            link.setAttribute('download', `ISP_Fault_Report_${now.toISOString().slice(0,19).replace(/:/g,'-')}.csv`);
+            link.setAttribute('download', filename);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
+            
             hideLoading();
             Swal.fire({ icon: "success", title: "CSV Exported!", text: `Exported ${filteredRecords.length} records.`, timer: 2000, showConfirmButton: false });
-        } catch(err) { hideLoading(); Swal.fire({ icon: "error", title: "Export Failed", text: "CSV generation error." }); }
+        } catch(err) {
+            hideLoading();
+            console.error("CSV Error:", err);
+            Swal.fire({ icon: "error", title: "Export Failed", text: "Failed to generate CSV file.", confirmButtonColor: "#dc2626" });
+        }
     }
     
     function initFlatpickr() {
-        flatpickrFrom = flatpickr("#fromDate", { dateFormat: "d/m/Y", placeholder: "DD/MM/YYYY", allowInput: true });
-        flatpickrTo = flatpickr("#toDate", { dateFormat: "d/m/Y", placeholder: "DD/MM/YYYY", allowInput: true });
+        const monthRange = getCurrentMonthRange();
+        flatpickrFrom = flatpickr("#fromDate", { 
+            dateFormat: "d/m/Y", 
+            placeholder: "DD/MM/YYYY", 
+            allowInput: true,
+            defaultDate: monthRange.fromDate
+        });
+        flatpickrTo = flatpickr("#toDate", { 
+            dateFormat: "d/m/Y", 
+            placeholder: "DD/MM/YYYY", 
+            allowInput: true,
+            defaultDate: monthRange.toDate
+        });
     }
     
     function setReportDate() {
         const now = new Date();
-        $('#reportDate').text(now.toLocaleDateString('en-GB', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }));
+        const dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        $('#reportDate').text(dateStr);
     }
     
     // Event handlers
-    $('#applyFilterBtn').on('click', () => { applyFilters(); Swal.fire({ icon:"success", title:"Filter Applied", text:`Showing ${filteredRecords.length} records`, timer:1500, showConfirmButton:false }); });
-    $('#connectionFilterSelect').on('change', () => applyFilters());
+    $('#applyFilterBtn').on('click', function() {
+        applyFilters();
+        Swal.fire({ icon: "success", title: "Filter Applied", text: `Showing ${filteredRecords.length} record${filteredRecords.length !== 1 ? 's' : ''}`, timer: 1500, showConfirmButton: false });
+    });
+    
+    $('#resetFilterBtn').on('click', resetFilters);
     $('#exportPdfBtn').on('click', exportToPDF);
     $('#exportCsvBtn').on('click', exportToCSV);
     
     // Initialize
     $(async function() {
-        showLoading("Initializing & loading data...");
+        showLoading("Loading report data...");
         await loadResolveStatusOptions();
         await loadFaultRecords();
-        populateConnectionFilter();
         populateFilterDropdown();
         initFlatpickr();
         setReportDate();
-        setSmartPendingDateRange();
+        
+        // Set default date range to current month
+        const monthRange = getCurrentMonthRange();
+        $('#fromDate').val(monthRange.fromDate);
+        $('#toDate').val(monthRange.toDate);
+        
         applyFilters();
         hideLoading();
     });
