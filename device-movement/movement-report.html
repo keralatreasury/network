@@ -658,7 +658,7 @@
     }
     
     async function generateReport() {
-        showGlobalLoading("Loading movement data from Google Sheets...");
+        showGlobalLoading("Loading ...");
         await fetchMovementRecords();
         renderTable();
         hideGlobalLoading();
