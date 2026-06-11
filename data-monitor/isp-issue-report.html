@@ -105,7 +105,6 @@
             font-size: 0.85rem;
             font-weight: 500;
         }
-        /* Fix Select2 styling - ensure border visibility */
         .select2-container--bootstrap-5 .select2-selection {
             border-radius: 12px !important;
             min-height: 42px;
@@ -156,7 +155,6 @@
             border-bottom: 1px solid #e2e8f0;
         }
         .btn-group-export { display: flex; gap: 10px; }
-        /* Critical Alert Modal Custom Styling */
         .critical-modal-list {
             max-height: 400px;
             overflow-y: auto;
@@ -167,18 +165,40 @@
             margin-bottom: 8px;
             padding: 10px 12px;
             border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .critical-treasury-item:hover {
+            background: #ffeaa7;
+            transform: translateX(4px);
         }
         .critical-treasury-name {
             font-weight: 700;
             color: #b91c1c;
             font-size: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .view-details-btn {
+            background: #dc2626;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .view-details-btn:hover {
+            background: #b91c1c;
         }
         .critical-connections {
             font-size: 0.85rem;
             color: #856404;
             margin-top: 4px;
         }
-        /* PDF Print Styles */
         @media print {
             body { background: white; padding: 0; margin: 0; }
             .no-print { display: none !important; }
@@ -241,7 +261,6 @@
         </div>
     </div>
     
-    <!-- Report Preview Section -->
     <div id="reportPreview">
         <div class="report-title-section">
             <div class="d-flex justify-content-between align-items-center flex-wrap">
@@ -281,9 +300,6 @@
 <script src="../js/html2pdf.bundle.min.js"></script>
 
 <script>
-    // =====================================================
-    // CONFIGURATION - Google Sheets API
-    // =====================================================
     const SPREADSHEET_ID = "1T7GsX08h9B6tT7doDjfg4MgULk7JZaOa1YT7cF_otQI";
     const API_KEY = "AIzaSyDc8tegwi2rgHyDFYm7uWBqVqQ7Fwb3uWM";
     const SHEET_FAULTS = "Details";
@@ -305,7 +321,6 @@
     function hideLoading() { $('#global-loading-overlay').remove(); }
     function escapeHtml(str) { if(!str) return ''; return String(str).replace(/[&<>]/g, m => m==='&'?'&amp;':m==='<'?'&lt;':'&gt;'); }
     
-    // Parse date in DD/MM/YYYY format
     function parseDateDMY(dateStr) {
         if (!dateStr) return null;
         const parts = dateStr.split('/');
@@ -318,25 +333,19 @@
         return null;
     }
     
-    // Check if resolve status is considered "Pending" (including blank or empty)
     function isPendingStatus(status) {
         if (!status || status.trim() === "") return true;
         const lowerStatus = status.toString().toLowerCase().trim();
         return lowerStatus === "pending";
     }
     
-    // Analyze Critical Down Treasuries
-    // A treasury is in Critical Down if it has more than 1 pending record with different connections
     function analyzeCriticalDownTreasuries() {
         const pendingRecords = faultRecords.filter(record => isPendingStatus(record.resolveStatus));
-        
-        // Group by treasury name
         const treasuryMap = new Map();
         
         pendingRecords.forEach(record => {
             const treasury = record.treasuryName;
             if (!treasury || treasury.trim() === "") return;
-            
             if (!treasuryMap.has(treasury)) {
                 treasuryMap.set(treasury, new Set());
             }
@@ -345,7 +354,6 @@
             }
         });
         
-        // Find treasuries with more than 1 unique connection (2 or more connections)
         const critical = [];
         for (const [treasury, connections] of treasuryMap.entries()) {
             if (connections.size > 1) {
@@ -356,26 +364,76 @@
                 });
             }
         }
-        
         criticalTreasuries = critical;
         return critical;
     }
     
-    // Show Critical Down Alert Modal
+    // Filter table to show only a specific treasury
+    function filterByTreasury(treasuryName) {
+        // Reset resolve status filter to Pending
+        $('#resolveStatusFilter').val("Pending").trigger('change');
+        
+        // Clear connection filter
+        $('#connectionFilterSelect').val("ALL").trigger('change');
+        
+        // Clear link status filter
+        $('#linkStatusFilterSelect').val("ALL").trigger('change');
+        
+        // Apply filter with treasury name
+        const fromDateVal = $('#fromDate').val();
+        const toDateVal = $('#toDate').val();
+        let fromDate = null, toDate = null;
+        if (fromDateVal) fromDate = parseDateDMY(fromDateVal);
+        if (toDateVal) toDate = parseDateDMY(toDateVal);
+        
+        let filtered = faultRecords.filter(record => isPendingStatus(record.resolveStatus));
+        
+        // Filter by specific treasury
+        filtered = filtered.filter(record => record.treasuryName === treasuryName);
+        
+        if (fromDate || toDate) {
+            filtered = filtered.filter(record => {
+                if (!record.callDate) return (!fromDate && !toDate);
+                const recordDate = parseDateDMY(record.callDate);
+                if (!recordDate) return true;
+                if (fromDate && recordDate < fromDate) return false;
+                if (toDate && recordDate > toDate) return false;
+                return true;
+            });
+        }
+        
+        filtered.sort((a,b) => (parseFloat(a.refNo) || 0) - (parseFloat(b.refNo) || 0));
+        filteredRecords = filtered;
+        updateReportTable();
+        updateStats();
+        updateCriteriaInfo();
+        
+        // Show success message
+        Swal.fire({
+            icon: "info",
+            title: "Filtered by Treasury",
+            text: `Showing ${filtered.length} pending record(s) for ${treasuryName}`,
+            timer: 2000,
+            showConfirmButton: false
+        });
+    }
+    
     function showCriticalDownAlert() {
         const critical = analyzeCriticalDownTreasuries();
-        
         if (critical.length === 0) return;
         
         let connectionsListHtml = '';
         critical.forEach(item => {
             connectionsListHtml += `
-                <div class="critical-treasury-item">
+                <div class="critical-treasury-item" data-treasury="${escapeHtml(item.treasury)}">
                     <div class="critical-treasury-name">
-                        <i class="bi bi-exclamation-triangle-fill"></i> ${escapeHtml(item.treasury)}
+                        <span><i class="bi bi-exclamation-triangle-fill"></i> ${escapeHtml(item.treasury)}</span>
+                        <button class="view-details-btn" data-treasury="${escapeHtml(item.treasury)}">
+                            <i class="bi bi-eye-fill"></i> View Details
+                        </button>
                     </div>
                     <div class="critical-connections">
-                        <strong>Critical Issue:</strong> Multiple connections down (${item.connectionCount} connections affected: ${escapeHtml(item.connections.join(', '))})
+                        <strong>Critical Issue:</strong> ${item.connectionCount} connections affected (${escapeHtml(item.connections.join(', '))})
                     </div>
                 </div>
             `;
@@ -395,28 +453,39 @@
                         ${connectionsListHtml}
                     </div>
                     <p style="margin-top: 15px; font-size: 12px; color: #856404; background: #fff3cd; padding: 8px; border-radius: 6px;">
-                        <i class="bi bi-exclamation-diamond-fill"></i> Immediate attention required for these treasuries!
+                        <i class="bi bi-exclamation-diamond-fill"></i> Click "View Details" to see pending records for that treasury.
                     </p>
                 </div>
             `,
             icon: 'error',
-            confirmButtonText: 'View Report',
-            confirmButtonColor: '#dc2626',
-            cancelButtonText: 'Dismiss',
-            showCancelButton: true,
-            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Close',
+            confirmButtonColor: '#0f3b5f',
+            showCancelButton: false,
             backdrop: true,
-            allowOutsideClick: false
-        }).then((result) => {
-            if (result.isConfirmed) {
-                // Optionally filter to show only critical treasuries or just close
-                // For now, just close the modal
-                console.log("User acknowledged critical alerts");
+            allowOutsideClick: false,
+            didOpen: () => {
+                // Add click handlers to View Details buttons
+                document.querySelectorAll('.view-details-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const treasury = btn.getAttribute('data-treasury');
+                        Swal.close();
+                        filterByTreasury(treasury);
+                    });
+                });
+                // Also make the whole item clickable
+                document.querySelectorAll('.critical-treasury-item').forEach(item => {
+                    item.addEventListener('click', (e) => {
+                        if (e.target.classList.contains('view-details-btn')) return;
+                        const treasury = item.getAttribute('data-treasury');
+                        Swal.close();
+                        filterByTreasury(treasury);
+                    });
+                });
             }
         });
     }
     
-    // Google Sheets API fetch
     async function fetchSheetDataDirect(sheetName, range = "A:Z") {
         try {
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(sheetName)}!${range}?key=${API_KEY}`;
@@ -538,7 +607,6 @@
         let filtered = [...faultRecords];
         
         if (statusFilter === "ALL") {
-            // all records
         } else if (statusFilter === "Pending") {
             filtered = filtered.filter(record => isPendingStatus(record.resolveStatus));
         } else {
@@ -566,7 +634,6 @@
         });
         
         filtered.sort((a,b) => (parseFloat(a.refNo) || 0) - (parseFloat(b.refNo) || 0));
-        
         filteredRecords = filtered;
         updateReportTable();
         updateStats();
@@ -581,16 +648,15 @@
         const fromDate = $('#fromDate').val();
         const toDate = $('#toDate').val();
         let dateRangeText = "";
-        if (fromDate && toDate) dateRangeText = ` | Date range: ${fromDate} to ${toDate}`;
+        if (fromDate && toDate) dateRangeText = ` | Date: ${fromDate} to ${toDate}`;
         else if (fromDate) dateRangeText = ` | From: ${fromDate}`;
         else if (toDate) dateRangeText = ` | To: ${toDate}`;
         
         let criticalAlertText = "";
         if (criticalTreasuries.length > 0) {
-            criticalAlertText = ` | <span style="color: #dc2626; font-weight: bold;">⚠️ CRITICAL: ${criticalTreasuries.length} Treasury(s) with multiple connections down</span>`;
+            criticalAlertText = ` | <span style="color: #dc2626; font-weight: bold;">⚠️ CRITICAL: ${criticalTreasuries.length} Treasury(s)</span>`;
         }
-        
-        $('#pdfCriteriaInfo').html(`<strong>Criteria:</strong> Status: ${statusText} | Connection: ${connectionText !== "-- All Connections --" ? connectionText : "All"} | Link Status: ${linkStatusText !== "-- All Link Status --" ? linkStatusText : "All"}${dateRangeText}${criticalAlertText} | Total: ${filteredRecords.length}`);
+        $('#pdfCriteriaInfo').html(`<strong>Criteria:</strong> Status: ${statusText} | Connection: ${connectionText !== "-- All Connections --" ? connectionText : "All"} | Link: ${linkStatusText !== "-- All Link Status --" ? linkStatusText : "All"}${dateRangeText}${criticalAlertText} | Total: ${filteredRecords.length}`);
     }
     
     function updateReportTable() {
@@ -672,7 +738,7 @@
             Swal.fire({ icon: "warning", title: "No Data", text: "No records found to export.", confirmButtonColor: "#0f3b5f" });
             return;
         }
-        showLoading("Generating PDF with all displayed rows...");
+        showLoading("Generating PDF...");
         try {
             const originalElement = document.getElementById('reportPreview');
             const cloneElement = originalElement.cloneNode(true);
@@ -767,7 +833,7 @@
         } catch(err) {
             hideLoading();
             console.error("PDF Export Error:", err);
-            Swal.fire({ icon: "error", title: "Export Failed", text: "Failed to generate PDF. Please ensure libraries are loaded.", confirmButtonColor: "#dc2626" });
+            Swal.fire({ icon: "error", title: "Export Failed", text: "Failed to generate PDF.", confirmButtonColor: "#dc2626" });
         }
     }
     
@@ -818,7 +884,7 @@
     $('#exportCsvBtn').on('click', exportToCSV);
     
     $(async function() {
-        showLoading("Loading ...");
+        showLoading("Loading pending fault records & analyzing critical issues...");
         await loadResolveStatusOptions();
         await loadFaultRecords();
         populateConnectionFilter();
@@ -829,7 +895,6 @@
         setSmartPendingDateRange();
         applyFilters();
         
-        // Show Critical Down Alert Modal after data is loaded
         setTimeout(() => {
             showCriticalDownAlert();
         }, 500);
