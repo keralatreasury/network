@@ -154,6 +154,22 @@
             background-color: #f1f5f9;
             opacity: 0.7;
         }
+        .treasury-info-card {
+            background: #f0f9ff;
+            border-left: 4px solid #0f5b9c;
+            padding: 8px 12px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            margin-top: 8px;
+        }
+        .device-match-success {
+            color: #10b981;
+            font-weight: 600;
+        }
+        .device-match-fail {
+            color: #ef4444;
+            font-weight: 500;
+        }
         /* Modal Select2 dropdown z-index fix */
         .select2-container--bootstrap-5 .select2-dropdown {
             z-index: 1060 !important;
@@ -225,21 +241,21 @@
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
             <div class="modal-header bg-dark text-white">
-                <h5 class="modal-title"><i class="bi bi-pencil-square"></i>Manage  Details</h5>
+                <h5 class="modal-title"><i class="bi bi-pencil-square"></i> Manage Details</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="editRowId">
                 <div class="row g-3">
-                    <div class="col-md-4"><label class="form-label">Reference ID</label><input type="text" id="editRefId" class="form-control" ></div>
-                    <div class="col-md-4"><label class="form-label">Treasury</label><input type="text" id="editTreasury" class="form-control" ></div>
+                    <div class="col-md-4"><label class="form-label">Reference ID</label><input type="text" id="editRefId" class="form-control" readonly></div>
+                    <div class="col-md-4"><label class="form-label">Treasury</label><input type="text" id="editTreasury" class="form-control" readonly></div>
                     <div class="col-md-4"><label class="form-label">Branch</label>
                         <select id="editBranch" class="form-select" required></select>
                     </div>
-                    <div class="col-md-4"><label class="form-label">Serial No</label><input type="text" id="editSerialNo" class="form-control" ></div>
-                    <div class="col-md-4"><label class="form-label">Device Type</label><input type="text" id="editDeviceType" class="form-control" ></div>
-                    <div class="col-md-4"><label class="form-label">Complaint Date</label><input type="text" id="editComplaintDate" class="form-control" ></div>
-                    <div class="col-12"><label class="form-label">Remarks with Tracking ID</label><textarea id="editComplaint" class="form-control" rows="2" ></textarea></div>
+                    <div class="col-md-4"><label class="form-label">Serial No</label><input type="text" id="editSerialNo" class="form-control" readonly></div>
+                    <div class="col-md-4"><label class="form-label">Device Type</label><input type="text" id="editDeviceType" class="form-control" readonly></div>
+                    <div class="col-md-4"><label class="form-label">Complaint Date</label><input type="text" id="editComplaintDate" class="form-control" readonly></div>
+                    <div class="col-12"><label class="form-label">Complaint Remarks</label><textarea id="editComplaint" class="form-control" rows="2" readonly></textarea></div>
                     
                     <div class="col-12"><hr><h6 class="mt-2">Processing Details</h6></div>
                     
@@ -260,6 +276,11 @@
                         <select id="editToBranch" class="form-select">
                             <option value="">-- Select Branch --</option>
                         </select>
+                        <!-- Treasury & Device Status Display -->
+                        <div id="toBranchInfoCard" class="treasury-info-card mt-2" style="display: none;">
+                            <div id="treasuryDisplay"><i class="bi bi-building"></i> <strong>Treasury:</strong> <span id="fetchedTreasury">-</span></div>
+                            <div id="deviceMatchDisplay" class="mt-1"><i class="bi bi-device-ssd"></i> <strong>Device Status:</strong> <span id="deviceMatchText">Checking...</span></div>
+                        </div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">Date of Transfer</label>
@@ -276,12 +297,12 @@
                             <label class="form-check-label" for="updateMasterSheetCheckbox">
                                 <i class="bi bi-cloud-upload"></i> Also update Device Serial Number in Master 
                             </label>
-                          
                         </div>
                     </div>
                 </div>
                 <div class="alert alert-info mt-3 mb-0">
-                    <i class="bi bi-info-circle"></i>                 </div>
+                    <i class="bi bi-info-circle"></i> When "To Branch" is selected, Treasury name and device mapping status will be fetched automatically from Master Sheet.
+                </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -305,13 +326,16 @@
     const BRANCH_SHEET = "Branch and Device Details";
     const MOVEMENT_SHEET = "Movement_Data";
     const API_KEY = "AIzaSyDc8tegwi2rgHyDFYm7uWBqVqQ7Fwb3uWM";
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw21JXZ_cjcDccSCzLF4Dzu0MJgGIACJ8vApbz4ndItRD6lsB-KkILkKJSWXs9o97AV/exec"; // REPLACE WITH YOUR DEPLOYED URL
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw21JXZ_cjcDccSCzLF4Dzu0MJgGIACJ8vApbz4ndItRD6lsB-KkILkKJSWXs9o97AV/exec";
     
     let branchesList = [];
     let movementRecords = [];
     let dataTable = null;
     let currentFilterBranch = "";
     let flatpickrReceived, flatpickrMove, flatpickrReturn, flatpickrTransfer;
+    
+    // Master Sheet Data: Array of { treasury, branch, serialNo }
+    let masterDevicesList = [];
     
     function showGlobalLoading(msg) {
         if($('#global-loading-overlay').length) return;
@@ -320,6 +344,60 @@
     function hideGlobalLoading() { $('#global-loading-overlay').remove(); }
     
     function escapeHtml(str) { if(!str) return ''; return String(str).replace(/[&<>]/g, m => m==='&'?'&amp;':m==='<'?'&lt;':'&gt;'); }
+    
+    // Fetch Master Sheet Data (Columns: A=Treasury, B=Branch, C=Serial No)
+    async function fetchMasterDeviceData() {
+        try {
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(BRANCH_SHEET)}!A:C?key=${API_KEY}`;
+            const resp = await fetch(url);
+            const data = await resp.json();
+            const rows = data.values || [];
+            const devices = [];
+            for(let i=1; i<rows.length; i++) {
+                const row = rows[i];
+                const treasury = row[0] ? row[0].trim() : "";
+                const branch = row[1] ? row[1].trim() : "";
+                const serialNo = row[2] ? row[2].trim() : "";
+                if(branch && serialNo) {
+                    devices.push({ treasury, branch, serialNo });
+                } else if(branch) {
+                    devices.push({ treasury, branch, serialNo: "" });
+                }
+            }
+            masterDevicesList = devices;
+            console.log("Master data loaded:", masterDevicesList.length, "entries");
+            return devices;
+        } catch(e) { console.error("Error fetching master data:", e); return []; }
+    }
+    
+    // Get Treasury and Device Mapping Status for a given branch and serial number
+    function getTreasuryAndDeviceStatus(toBranch, deviceSerialNo) {
+        if(!toBranch || toBranch === "") {
+            return { treasury: "", deviceMatched: false, message: "" };
+        }
+        // Find matching branch in master sheet
+        const branchEntries = masterDevicesList.filter(item => item.branch === toBranch);
+        if(branchEntries.length === 0) {
+            return { treasury: "Not Found", deviceMatched: false, message: "No treasury mapping for this branch." };
+        }
+        // Get treasury (take first occurrence, usually consistent per branch)
+        const treasuryValue = branchEntries[0].treasury || "—";
+        
+        // Check if device serial number exists in any entry for this branch
+        const deviceExists = branchEntries.some(item => item.serialNo === deviceSerialNo && deviceSerialNo !== "");
+        let deviceMatched = deviceExists;
+        let deviceMessage = "";
+        if(deviceMatched) {
+            deviceMessage = "✓ Device Serial Number is registered in Master Sheet for this branch.";
+        } else {
+            if(deviceSerialNo === "") {
+                deviceMessage = "⚠ No Device Serial Number available to verify.";
+            } else {
+                deviceMessage = "✗ Device Serial Number NOT found in Master Sheet for this branch. Update Master required.";
+            }
+        }
+        return { treasury: treasuryValue, deviceMatched, message: deviceMessage };
+    }
     
     function parseDMYToDate(dateStr) {
         if(!dateStr) return null;
@@ -365,8 +443,8 @@
                 const branch = rows[i] && rows[i][0] ? rows[i][0].trim() : "";
                 if(branch) branches.push(branch);
             }
-            branchesList = branches;
-            return branches;
+            branchesList = [...new Set(branches)]; // unique branches
+            return branchesList;
         } catch(e) { console.error("Error fetching branches:", e); return []; }
     }
     
@@ -428,29 +506,47 @@
         branches.forEach(branch => {
             $editToBranch.append(`<option value="${escapeHtml(branch)}">${escapeHtml(branch)}</option>`);
         });
-        
-        // Initialize Select2 with search enabled
         $editToBranch.select2({
             theme: 'bootstrap-5',
             width: '100%',
             placeholder: 'Search and select destination branch',
             allowClear: true,
-            dropdownParent: $('#editProcessingModal') // This ensures dropdown is attached to modal
+            dropdownParent: $('#editProcessingModal')
         });
         
-        // Add change event listener to enable/disable checkbox based on To Branch selection
         $editToBranch.on('change', function() {
             const $checkbox = $('#updateMasterSheetCheckbox');
             const $container = $('#masterCheckboxContainer');
-            if($(this).val() && $(this).val() !== "") {
+            const selectedBranch = $(this).val();
+            if(selectedBranch && selectedBranch !== "") {
                 $checkbox.prop('disabled', false);
                 $container.removeClass('disabled');
+                // Fetch treasury & device status for this branch + current serial no
+                const serialNo = $("#editSerialNo").val();
+                const statusInfo = getTreasuryAndDeviceStatus(selectedBranch, serialNo);
+                updateTreasuryAndDeviceUI(statusInfo);
             } else {
                 $checkbox.prop('disabled', true);
                 $checkbox.prop('checked', false);
                 $container.addClass('disabled');
+                $('#toBranchInfoCard').hide();
             }
         });
+    }
+    
+    function updateTreasuryAndDeviceUI(statusInfo) {
+        if(statusInfo.treasury) {
+            $('#fetchedTreasury').html(escapeHtml(statusInfo.treasury));
+            $('#treasuryDisplay').show();
+            if(statusInfo.deviceMatched) {
+                $('#deviceMatchText').html(`<span class="device-match-success"><i class="bi bi-check-circle-fill"></i> ${escapeHtml(statusInfo.message)}</span>`);
+            } else {
+                $('#deviceMatchText').html(`<span class="device-match-fail"><i class="bi bi-exclamation-triangle-fill"></i> ${escapeHtml(statusInfo.message)}</span>`);
+            }
+            $('#toBranchInfoCard').show();
+        } else {
+            $('#toBranchInfoCard').hide();
+        }
     }
     
     function getStatusBadge(row) {
@@ -477,7 +573,6 @@
     
     async function loadAndRenderTable() {
         showGlobalLoading("Loading records...");
-        
         const records = await fetchMovementRecords();
         movementRecords = records;
         
@@ -485,7 +580,6 @@
         if(currentFilterBranch && currentFilterBranch !== "") {
             filteredRecords = records.filter(r => r.fromBranch === currentFilterBranch);
         }
-        
         const sortedRecords = [...filteredRecords].sort((a, b) => b.id - a.id);
         $('#recordCount').text(`${sortedRecords.length} Records`);
         
@@ -520,7 +614,6 @@
                 attachTableEvents();
             }
         });
-        
         attachTableEvents();
         hideGlobalLoading();
     }
@@ -530,7 +623,6 @@
         if(flatpickrMove) flatpickrMove.destroy();
         if(flatpickrReturn) flatpickrReturn.destroy();
         if(flatpickrTransfer) flatpickrTransfer.destroy();
-        
         flatpickrReceived = flatpickr("#editReceivedDate", { dateFormat: "d/m/Y" });
         flatpickrMove = flatpickr("#editMoveToOem", { dateFormat: "d/m/Y" });
         flatpickrReturn = flatpickr("#editReturnFromOem", { dateFormat: "d/m/Y" });
@@ -546,7 +638,6 @@
         $("#editDeviceType").val(record.deviceType);
         $("#editComplaintDate").val(record.complaintDate);
         $("#editComplaint").val(record.complaintRemarks);
-        
         $("#editReceivedDate").val(record.receivedDate || '');
         $("#editMoveToOem").val(record.moveToOem || '');
         $("#editReturnFromOem").val(record.returnFromOem || '');
@@ -554,31 +645,28 @@
         $("#editTransferDate").val(record.transferDate || '');
         $("#editRemarks").val(record.remarks || '');
         
-        // Checkbox is disabled by default and will be enabled only if To Branch has a value
-        // The change event on editToBranch will handle the enable/disable logic
         const $checkbox = $('#updateMasterSheetCheckbox');
         const $container = $('#masterCheckboxContainer');
         if(record.toBranch && record.toBranch !== "") {
             $checkbox.prop('disabled', false);
             $container.removeClass('disabled');
-            $checkbox.prop('checked', false);
+            const serialNo = record.serialNo;
+            const statusInfo = getTreasuryAndDeviceStatus(record.toBranch, serialNo);
+            updateTreasuryAndDeviceUI(statusInfo);
         } else {
             $checkbox.prop('disabled', true);
             $checkbox.prop('checked', false);
             $container.addClass('disabled');
+            $('#toBranchInfoCard').hide();
         }
         
         initFlatpickrForModal();
-        
         const modal = new bootstrap.Modal(document.getElementById('editProcessingModal'));
         modal.show();
         
-        // Reinitialize Select2 dropdown after modal is shown to ensure proper positioning
         setTimeout(() => {
             const $editToBranch = $('#editToBranch');
-            if ($editToBranch.data('select2')) {
-                $editToBranch.select2('destroy');
-            }
+            if ($editToBranch.data('select2')) $editToBranch.select2('destroy');
             $editToBranch.select2({
                 theme: 'bootstrap-5',
                 width: '100%',
@@ -600,12 +688,13 @@
         const remarks = $("#editRemarks").val().trim() || "";
         const branch = $("#editBranch").val();
         const updateMaster = $("#updateMasterSheetCheckbox").is(":checked");
+        const deviceSerialNo = $("#editSerialNo").val();
+        const deviceType = $("#editDeviceType").val();
         
         if(!branch) {
             Swal.fire({ icon: 'warning', title: 'Missing', text: 'Please select a branch' });
             return;
         }
-        
         const dateValidation = validateDateOrder(receivedDate, moveToOem, returnFromOem, transferDate);
         if(!dateValidation.valid) {
             Swal.fire({ icon: 'warning', title: 'Invalid Date Order', text: dateValidation.message });
@@ -613,25 +702,24 @@
         }
         
         const payload = {
-    action: "UPDATE_PROCESSING",
-    rowId: parseInt(id),
-    receivedDate: receivedDate,
-    moveToOem: moveToOem,
-    returnFromOem: returnFromOem,
-    toBranch: toBranch,
-    transferDate: transferDate,
-    remarks: remarks,
-    branch: branch,
-    updateMasterSheet: updateMaster,
-    deviceSerialNo: $("#editSerialNo").val(),
-    deviceType: $("#editDeviceType").val()  // This is already included!
-};
+            action: "UPDATE_PROCESSING",
+            rowId: parseInt(id),
+            receivedDate: receivedDate,
+            moveToOem: moveToOem,
+            returnFromOem: returnFromOem,
+            toBranch: toBranch,
+            transferDate: transferDate,
+            remarks: remarks,
+            branch: branch,
+            updateMasterSheet: updateMaster,
+            deviceSerialNo: deviceSerialNo,
+            deviceType: deviceType
+        };
         
         const $btn = $("#confirmProcessingUpdateBtn");
         const originalHtml = $btn.html();
         $btn.html('<i class="bi bi-arrow-repeat"></i> Updating...').prop('disabled', true);
         showGlobalLoading("Updating processing details...");
-        
         try {
             await fetch(APPS_SCRIPT_URL, { 
                 method: "POST", 
@@ -659,19 +747,14 @@
     
     $(async function() {
         showGlobalLoading("Loading application data...");
-        
-        await fetchBranches();
+        await Promise.all([fetchBranches(), fetchMasterDeviceData()]);
         populateBranchDropdown(branchesList);
-        
         currentFilterBranch = "";
         await loadAndRenderTable();
-        
         hideGlobalLoading();
-        
         $('#viewRecordsBtn').on('click', applyFilter);
         $('#confirmProcessingUpdateBtn').on('click', updateProcessingDetails);
         $('#branchFilterSelect').on('change', function() { applyFilter(); });
-        
         initFlatpickrForModal();
     });
 </script>

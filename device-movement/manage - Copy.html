@@ -154,6 +154,10 @@
             background-color: #f1f5f9;
             opacity: 0.7;
         }
+        /* Modal Select2 dropdown z-index fix */
+        .select2-container--bootstrap-5 .select2-dropdown {
+            z-index: 1060 !important;
+        }
         @media (max-width: 700px) {
             .content-pane { padding: 20px; }
             .filter-row select { width: 100%; }
@@ -227,15 +231,15 @@
             <div class="modal-body">
                 <input type="hidden" id="editRowId">
                 <div class="row g-3">
-                    <div class="col-md-4"><label class="form-label">Reference ID</label><input type="text" id="editRefId" class="form-control" readonly></div>
-                    <div class="col-md-4"><label class="form-label">Treasury</label><input type="text" id="editTreasury" class="form-control" readonly></div>
+                    <div class="col-md-4"><label class="form-label">Reference ID</label><input type="text" id="editRefId" class="form-control" ></div>
+                    <div class="col-md-4"><label class="form-label">Treasury</label><input type="text" id="editTreasury" class="form-control" ></div>
                     <div class="col-md-4"><label class="form-label">Branch</label>
                         <select id="editBranch" class="form-select" required></select>
                     </div>
-                    <div class="col-md-4"><label class="form-label">Serial No</label><input type="text" id="editSerialNo" class="form-control" readonly></div>
-                    <div class="col-md-4"><label class="form-label">Device Type</label><input type="text" id="editDeviceType" class="form-control" readonly></div>
-                    <div class="col-md-4"><label class="form-label">Complaint Date</label><input type="text" id="editComplaintDate" class="form-control" readonly></div>
-                    <div class="col-12"><label class="form-label">Remarks with Tracking ID</label><textarea id="editComplaint" class="form-control" rows="2" readonly></textarea></div>
+                    <div class="col-md-4"><label class="form-label">Serial No</label><input type="text" id="editSerialNo" class="form-control" ></div>
+                    <div class="col-md-4"><label class="form-label">Device Type</label><input type="text" id="editDeviceType" class="form-control" ></div>
+                    <div class="col-md-4"><label class="form-label">Complaint Date</label><input type="text" id="editComplaintDate" class="form-control" ></div>
+                    <div class="col-12"><label class="form-label">Remarks with Tracking ID</label><textarea id="editComplaint" class="form-control" rows="2" ></textarea></div>
                     
                     <div class="col-12"><hr><h6 class="mt-2">Processing Details</h6></div>
                     
@@ -301,7 +305,7 @@
     const BRANCH_SHEET = "Branch and Device Details";
     const MOVEMENT_SHEET = "Movement_Data";
     const API_KEY = "AIzaSyDc8tegwi2rgHyDFYm7uWBqVqQ7Fwb3uWM";
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyjxYBOOdCF70eCtkuoihWYAzMBGY2oicJat_ox0-NOFCZwFrgpnTp0n26kX5SGMn2O/exec"; // REPLACE WITH YOUR DEPLOYED URL
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw21JXZ_cjcDccSCzLF4Dzu0MJgGIACJ8vApbz4ndItRD6lsB-KkILkKJSWXs9o97AV/exec"; // REPLACE WITH YOUR DEPLOYED URL
     
     let branchesList = [];
     let movementRecords = [];
@@ -424,7 +428,15 @@
         branches.forEach(branch => {
             $editToBranch.append(`<option value="${escapeHtml(branch)}">${escapeHtml(branch)}</option>`);
         });
-        $editToBranch.select2({ theme: 'bootstrap-5', width: '100%', placeholder: 'Select destination branch', allowClear: true });
+        
+        // Initialize Select2 with search enabled
+        $editToBranch.select2({
+            theme: 'bootstrap-5',
+            width: '100%',
+            placeholder: 'Search and select destination branch',
+            allowClear: true,
+            dropdownParent: $('#editProcessingModal') // This ensures dropdown is attached to modal
+        });
         
         // Add change event listener to enable/disable checkbox based on To Branch selection
         $editToBranch.on('change', function() {
@@ -560,6 +572,22 @@
         
         const modal = new bootstrap.Modal(document.getElementById('editProcessingModal'));
         modal.show();
+        
+        // Reinitialize Select2 dropdown after modal is shown to ensure proper positioning
+        setTimeout(() => {
+            const $editToBranch = $('#editToBranch');
+            if ($editToBranch.data('select2')) {
+                $editToBranch.select2('destroy');
+            }
+            $editToBranch.select2({
+                theme: 'bootstrap-5',
+                width: '100%',
+                placeholder: 'Search and select destination branch',
+                allowClear: true,
+                dropdownParent: $('#editProcessingModal')
+            });
+            $editToBranch.val(record.toBranch || '').trigger('change');
+        }, 100);
     }
     
     async function updateProcessingDetails() {
@@ -585,18 +613,19 @@
         }
         
         const payload = {
-            action: "UPDATE_PROCESSING",
-            rowId: parseInt(id),
-            receivedDate: receivedDate,
-            moveToOem: moveToOem,
-            returnFromOem: returnFromOem,
-            toBranch: toBranch,
-            transferDate: transferDate,
-            remarks: remarks,
-            branch: branch,
-            updateMasterSheet: updateMaster,
-            deviceSerialNo: $("#editSerialNo").val()
-        };
+    action: "UPDATE_PROCESSING",
+    rowId: parseInt(id),
+    receivedDate: receivedDate,
+    moveToOem: moveToOem,
+    returnFromOem: returnFromOem,
+    toBranch: toBranch,
+    transferDate: transferDate,
+    remarks: remarks,
+    branch: branch,
+    updateMasterSheet: updateMaster,
+    deviceSerialNo: $("#editSerialNo").val(),
+    deviceType: $("#editDeviceType").val()  // This is already included!
+};
         
         const $btn = $("#confirmProcessingUpdateBtn");
         const originalHtml = $btn.html();
