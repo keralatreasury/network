@@ -53,7 +53,7 @@
         }
         .filter-group {
             flex: 1;
-            
+            min-width: 160px;
         }
         .filter-group label {
             font-weight: 600;
@@ -199,14 +199,69 @@
             color: #856404;
             margin-top: 4px;
         }
+        /* PDF specific styles for proper table formatting */
+        .pdf-report-container {
+            width: 100%;
+            padding: 20px;
+            background: white;
+            font-family: Arial, sans-serif;
+        }
+        .pdf-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .pdf-header h2 {
+            margin: 0;
+            color: #1a4b7a;
+        }
+        .pdf-criteria {
+            font-size: 14px;
+            color: #555;
+            margin: 5px 0;
+        }
+        .pdf-total {
+            font-size: 9px;
+            font-weight: bold;
+            color: #dc2626;
+            margin: 5px 0;
+        }
+        .pdf-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 8pt;
+            table-layout: fixed;
+        }
+        .pdf-table th, .pdf-table td {
+            border: 1px solid #000000;
+            padding: 6px 4px;
+            text-align: left;
+            vertical-align: top;
+            word-wrap: break-word;
+        }
+        .pdf-table th {
+            background-color: #dddddd;
+            font-weight: bold;
+        }
+        .col-sl { width: 4%; }
+        .col-treasury { width: 12%; }
+        .col-connection { width: 8%; }
+        .col-circuit { width: 10%; }
+        .col-date { width: 8%; }
+        .col-followup { width: 20%; }
+        .col-remarks { width: 20%; }
+        .col-status { width: 8%; }
+        .pdf-footer {
+            margin-top: 15px;
+            text-align: center;
+            font-size: 8px;
+            color: #666;
+        }
         @media print {
             body { background: white; padding: 0; margin: 0; }
             .no-print { display: none !important; }
             .app-card { box-shadow: none; border-radius: 0; }
             .table { width: 100%; border-collapse: collapse; }
             .table th, .table td { border: 1px solid #000 !important; color: black !important; background: white !important; }
-            .table tr td { background: white !important; }
-            .table th { background: #ddd !important; font-weight: bold; }
             .badge-down, .badge-up, .badge-pending, .badge-resolved, .badge-other { background: none !important; color: black !important; border: none; padding: 0; }
             .stats-badge { background: none !important; color: black !important; border: 1px solid #ccc; }
             .dataTables_filter, .dataTables_length, .dataTables_paginate, .dataTables_info { display: none !important; }
@@ -217,7 +272,7 @@
 <div class="app-card">
     <div class="page-header d-flex align-items-center">
         <i class="bi bi-file-text-fill"></i>
-        <div><h4>ISP Fault Reports | Critical Down Alert</h4></div>
+        <div><h4>ISP Fault Reports </h4></div>
     </div>
     
     <div class="filter-bar no-print">
@@ -368,18 +423,11 @@
         return critical;
     }
     
-    // Filter table to show only a specific treasury
     function filterByTreasury(treasuryName) {
-        // Reset resolve status filter to Pending
         $('#resolveStatusFilter').val("Pending").trigger('change');
-        
-        // Clear connection filter
         $('#connectionFilterSelect').val("ALL").trigger('change');
-        
-        // Clear link status filter
         $('#linkStatusFilterSelect').val("ALL").trigger('change');
         
-        // Apply filter with treasury name
         const fromDateVal = $('#fromDate').val();
         const toDateVal = $('#toDate').val();
         let fromDate = null, toDate = null;
@@ -387,8 +435,6 @@
         if (toDateVal) toDate = parseDateDMY(toDateVal);
         
         let filtered = faultRecords.filter(record => isPendingStatus(record.resolveStatus));
-        
-        // Filter by specific treasury
         filtered = filtered.filter(record => record.treasuryName === treasuryName);
         
         if (fromDate || toDate) {
@@ -408,7 +454,6 @@
         updateStats();
         updateCriteriaInfo();
         
-        // Show success message
         Swal.fire({
             icon: "info",
             title: "Filtered by Treasury",
@@ -464,7 +509,6 @@
             backdrop: true,
             allowOutsideClick: false,
             didOpen: () => {
-                // Add click handlers to View Details buttons
                 document.querySelectorAll('.view-details-btn').forEach(btn => {
                     btn.addEventListener('click', (e) => {
                         e.stopPropagation();
@@ -473,7 +517,6 @@
                         filterByTreasury(treasury);
                     });
                 });
-                // Also make the whole item clickable
                 document.querySelectorAll('.critical-treasury-item').forEach(item => {
                     item.addEventListener('click', (e) => {
                         if (e.target.classList.contains('view-details-btn')) return;
@@ -733,88 +776,113 @@
         filterSelect.val("Pending").trigger('change');
     }
     
+    // PDF Export with proper table formatting
     async function exportToPDF() {
         if (filteredRecords.length === 0) {
             Swal.fire({ icon: "warning", title: "No Data", text: "No records found to export.", confirmButtonColor: "#0f3b5f" });
             return;
         }
-        showLoading("Generating PDF...");
+        showLoading("Generating PDF with table format...");
+        
         try {
-            const originalElement = document.getElementById('reportPreview');
-            const cloneElement = originalElement.cloneNode(true);
-            
-            $(cloneElement).find('.badge-down, .badge-up, .badge-pending, .badge-resolved, .badge-other').each(function() {
-                const plainText = $(this).text().trim();
-                $(this).replaceWith(`<span style="color: black; font-weight: normal;">${plainText}</span>`);
-            });
-            $(cloneElement).find('.stats-badge').each(function() { $(this).css({ background: 'none', border: '1px solid #999', color: 'black' }); });
-            $(cloneElement).find('.dataTables_filter, .dataTables_length, .dataTables_paginate, .dataTables_info').remove();
-            
-            const tableBody = cloneElement.querySelector('#reportTable tbody');
-            if(tableBody) {
-                const newTbody = document.createElement('tbody');
-                filteredRecords.forEach((record, idx) => {
-                    let linkStatusText = record.linkStatus || 'Link Down';
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td style="border:1px solid #000; padding:6px;">${idx+1}</td>
-                        <td style="border:1px solid #000; padding:6px;">${escapeHtml(record.treasuryName || '')}</td>
-                        <td style="border:1px solid #000; padding:6px;">${escapeHtml(record.connection || '')}</td>
-                        <td style="border:1px solid #000; padding:6px;">${escapeHtml(record.circuitId || '-')}</td>
-                        <td style="border:1px solid #000; padding:6px;">${escapeHtml(record.callDate || '-')}</td>
-                        <td style="border:1px solid #000; padding:6px;">${escapeHtml((record.lastFollowup || '-').substring(0, 100))}</td>
-                        <td style="border:1px solid #000; padding:6px;">${escapeHtml((record.remarks || '-').substring(0, 80))}</td>
-                        <td style="border:1px solid #000; padding:6px;">${escapeHtml(linkStatusText)}</td>
-                    `;
-                    newTbody.appendChild(row);
-                });
-                tableBody.innerHTML = newTbody.innerHTML;
-            }
-            
-            const thead = cloneElement.querySelector('#reportTable thead');
-            if(thead) {
-                thead.querySelectorAll('th').forEach(th => th.setAttribute('style', 'border:1px solid #000; background:#ddd; padding:6px;'));
-            }
-            
             const now = new Date();
             const dateStr = now.toLocaleDateString('en-GB', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
-            $(cloneElement).find('#reportDate').text(dateStr);
+            const statusText = $('#resolveStatusFilter option:selected').text();
+            const connectionText = $('#connectionFilterSelect option:selected').text();
+            const linkStatusText = $('#linkStatusFilterSelect option:selected').text();
+            const fromDate = $('#fromDate').val();
+            const toDate = $('#toDate').val();
+            let dateRangeText = (fromDate && toDate) ? `${fromDate} to ${toDate}` : (fromDate || toDate || 'All Dates');
             
-            const criteriaDiv = cloneElement.querySelector('#pdfCriteriaInfo');
-            if(criteriaDiv) {
-                const statusText = $('#resolveStatusFilter option:selected').text();
-                const connectionText = $('#connectionFilterSelect option:selected').text();
-                const linkStatusText = $('#linkStatusFilterSelect option:selected').text();
-                const fromDate = $('#fromDate').val();
-                const toDate = $('#toDate').val();
-                let dateRangeText = (fromDate && toDate) ? ` | Date: ${fromDate} to ${toDate}` : ((fromDate||toDate) ? ` | Date Filter Active` : '');
-                criteriaDiv.innerHTML = `<strong>Criteria:</strong> Status: ${statusText} | Connection: ${connectionText !== "-- All Connections --" ? connectionText : "All"} | Link: ${linkStatusText !== "-- All Link Status --" ? linkStatusText : "All"}${dateRangeText} | Total: ${filteredRecords.length}`;
+            // Create PDF container with proper table structure
+            const pdfContainer = document.createElement('div');
+            pdfContainer.className = 'pdf-report-container';
+            pdfContainer.style.width = '100%';
+            pdfContainer.style.padding = '20px';
+            pdfContainer.style.backgroundColor = 'white';
+            pdfContainer.style.fontFamily = 'Arial, Helvetica, sans-serif';
+            pdfContainer.style.boxSizing = 'border-box';
+            
+            // Build HTML content
+            let htmlContent = `
+                <div class="pdf-header">
+                    <h2 style="margin: 0 0 5px 0; color: #1a4b7a;">ISP Fault Register Report</h2>
+                    <div class="pdf-criteria">Generated on: ${dateStr}</div>
+                    <div class="pdf-criteria">Status: ${statusText} | Connection: ${connectionText !== "-- All Connections --" ? connectionText : "All"} | Link Status: ${linkStatusText !== "-- All Link Status --" ? linkStatusText : "All"} | Date Range: ${dateRangeText}</div>
+                    <div class="pdf-total">Total Records: ${filteredRecords.length}</div>
+                </div>
+                <table class="pdf-table" style="width: 100%; border-collapse: collapse; font-size: 8pt;">
+                    <thead>
+                        <tr>
+                            <th style="border: 1px solid black; padding: 6px; background-color: #ddd; text-align: left; width: 4%;">Sl No</th>
+                            <th style="border: 1px solid black; padding: 6px; background-color: #ddd; text-align: left; width: 12%;">Treasury Name</th>
+                            <th style="border: 1px solid black; padding: 6px; background-color: #ddd; text-align: left; width: 8%;">Connection</th>
+                            <th style="border: 1px solid black; padding: 6px; background-color: #ddd; text-align: left; width: 10%;">Circuit ID</th>
+                            <th style="border: 1px solid black; padding: 6px; background-color: #ddd; text-align: left; width: 8%;">Call Date</th>
+                            <th style="border: 1px solid black; padding: 6px; background-color: #ddd; text-align: left; width: 20%;">Last Followup</th>
+                            <th style="border: 1px solid black; padding: 6px; background-color: #ddd; text-align: left; width: 20%;">Remarks</th>
+                            <th style="border: 1px solid black; padding: 6px; background-color: #ddd; text-align: left; width: 8%;">Link Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            // Add data rows
+            for (let idx = 0; idx < filteredRecords.length; idx++) {
+                const record = filteredRecords[idx];
+                let linkStatusText = record.linkStatus || 'Link Down';
+                htmlContent += `
+                    <tr>
+                        <td style="border: 1px solid black; padding: 5px;">${idx + 1}</td>
+                        <td style="border: 1px solid black; padding: 5px;">${escapeHtml(record.treasuryName || '')}</td>
+                        <td style="border: 1px solid black; padding: 5px;">${escapeHtml(record.connection || '')}</td>
+                        <td style="border: 1px solid black; padding: 5px;">${escapeHtml(record.circuitId || '-')}</td>
+                        <td style="border: 1px solid black; padding: 5px;">${escapeHtml(record.callDate || '-')}</td>
+                        <td style="border: 1px solid black; padding: 5px;">${escapeHtml((record.lastFollowup || '-').substring(0, 100))}</td>
+                        <td style="border: 1px solid black; padding: 5px;">${escapeHtml((record.remarks || '-').substring(0, 80))}</td>
+                        <td style="border: 1px solid black; padding: 5px;">${escapeHtml(linkStatusText)}</td>
+                    </tr>
+                `;
             }
             
+            htmlContent += `
+                    </tbody>
+                </table>
+                <div class="pdf-footer" style="margin-top: 15px; text-align: center; font-size: 8px; color: #666;">
+                   ---End of the Table---
+                </div>
+            `;
+            
+            pdfContainer.innerHTML = htmlContent;
+            
+            // Add additional styles to ensure proper display
             const style = document.createElement('style');
             style.textContent = `
-                body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 20px; background: white; }
-                .table { width: 100%; border-collapse: collapse; font-size: 9pt; }
-                .table th, .table td { border: 1px solid #000 !important; padding: 6px; text-align: left; }
-                .table th { background: #ddd !important; font-weight: bold; }
-                .table tr td { background: white !important; }
-                .dataTables_filter, .dataTables_length, .dataTables_paginate, .dataTables_info { display: none; }
-                .stats-badge { background: none !important; border: 1px solid #999; color: black; }
-                .no-print, .btn, .select2, .filter-bar { display: none; }
-                #reportPreview { margin: 0; padding: 0; }
+                .pdf-report-container {
+                    width: 100%;
+                    padding: 20px;
+                    background: white;
+                }
+                .pdf-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                }
+                .pdf-table th, .pdf-table td {
+                    border: 1px solid #000000;
+                    padding: 5px;
+                    text-align: left;
+                    vertical-align: top;
+                }
+                .pdf-table th {
+                    background-color: #dddddd;
+                }
             `;
-            cloneElement.prepend(style);
+            pdfContainer.appendChild(style);
             
-            const tempContainer = document.createElement('div');
-            tempContainer.style.position = 'absolute';
-            tempContainer.style.left = '-9999px';
-            tempContainer.style.top = '0';
-            tempContainer.style.width = '1200px';
-            tempContainer.appendChild(cloneElement);
-            document.body.appendChild(tempContainer);
+            document.body.appendChild(pdfContainer);
             
             const opt = {
-                margin: [0.5, 0.5, 0.5, 0.5],
+                margin: [0.4, 0.4, 0.4, 0.4],
                 filename: `ISP_Fault_Report_${now.toISOString().slice(0,19).replace(/:/g, '-')}.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: { scale: 2, letterRendering: true, useCORS: true, logging: false, backgroundColor: '#ffffff' },
@@ -822,18 +890,19 @@
             };
             
             if (typeof html2pdf !== 'undefined' && html2pdf) {
-                await html2pdf().set(opt).from(cloneElement).save();
+                await html2pdf().set(opt).from(pdfContainer).save();
             } else {
-                throw new Error("html2pdf library not loaded properly");
+                throw new Error("html2pdf library not loaded");
             }
             
-            document.body.removeChild(tempContainer);
+            document.body.removeChild(pdfContainer);
             hideLoading();
-            Swal.fire({ icon: "success", title: "PDF Exported!", text: `Exported ${filteredRecords.length} rows.`, timer: 2000, showConfirmButton: false });
+            Swal.fire({ icon: "success", title: "PDF Exported!", text: `Exported ${filteredRecords.length} rows in table format.`, timer: 2000, showConfirmButton: false });
+            
         } catch(err) {
             hideLoading();
             console.error("PDF Export Error:", err);
-            Swal.fire({ icon: "error", title: "Export Failed", text: "Failed to generate PDF.", confirmButtonColor: "#dc2626" });
+            Swal.fire({ icon: "error", title: "Export Failed", text: "Failed to generate PDF. " + err.message, confirmButtonColor: "#dc2626" });
         }
     }
     
