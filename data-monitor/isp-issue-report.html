@@ -179,7 +179,6 @@
     </div>
     
     <div class="filter-bar no-print">
-       
         <div class="filter-group">
             <label><i class="bi bi-hdd-stack"></i> Filter by Connection (ISP)</label>
             <select id="connectionFilterSelect" class="form-select">
@@ -193,14 +192,12 @@
                 <input type="text" id="toDate" class="form-control flatpickr-date" placeholder="To Date" style="width:140px">
             </div>
         </div>
-
- <div class="filter-group">
+        <div class="filter-group">
             <label><i class="bi bi-tag"></i> Resolve Status</label>
             <select id="resolveStatusFilter" class="form-select" style="width:100%">
                 <option value="ALL">-- All Records --</option>
             </select>
         </div>
-
         <div class="filter-group">
             <label>&nbsp;</label>
             <div>
@@ -210,8 +207,8 @@
         <div class="filter-group text-end">
             <label>&nbsp;</label>
             <div class="btn-group-export">
-                <button id="exportPdfBtn" class="btn btn-export-pdf"> PDF</button>
-                <button id="exportCsvBtn" class="btn btn-export-csv"> CSV</button>
+                <button id="exportPdfBtn" class="btn btn-export-pdf">PDF</button>
+                <button id="exportCsvBtn" class="btn btn-export-csv">CSV</button>
             </div>
         </div>
     </div>
@@ -226,7 +223,7 @@
                 </div>
                 <div>
                     <span class="stats-badge" id="recordCountBadge">0 Records</span>
-                    <span class="stats-badge ms-2" id="filterStatusBadge">Status: All</span>
+                    <span class="stats-badge ms-2" id="filterStatusBadge">Status: Pending</span>
                 </div>
             </div>
             <div id="pdfCriteriaInfo" style="margin-top: 12px; font-size: 14px; color: #0d6efd; border-top: 1px solid #e0e0e0; padding-top: 8px;"></div>
@@ -404,7 +401,7 @@
         
         let filtered = [...faultRecords];
         
-        // Status filtering
+        // Status filtering - default to Pending (including blank)
         if (statusFilter === "ALL") {
             // all records
         } else if (statusFilter === "Pending") {
@@ -506,19 +503,19 @@
         const filterSelect = $('#resolveStatusFilter');
         filterSelect.empty();
         filterSelect.append('<option value="ALL">-- All Records --</option>');
-        filterSelect.append('<option value="Pending" selected>Pending</option>');
-
+        filterSelect.append('<option value="Pending" selected>Pending </option>');
         resolveStatusOptions.forEach(opt => {
             if (opt !== "Pending") filterSelect.append(`<option value="${escapeHtml(opt)}">${escapeHtml(opt)}</option>`);
         });
         // Initialize Select2 with proper styling
         filterSelect.select2({
             theme: "bootstrap-5",
-            placeholder: "Filter by status",
+            placeholder: "Select Status",
             width: '100%',
             dropdownParent: $('.app-card')
         });
-        filterSelect.val("Pending (Including Blank)").trigger('change');
+        // Ensure Pending is selected by default
+        filterSelect.val("Pending").trigger('change');
     }
     
     // PDF Export function
@@ -671,16 +668,18 @@
     $('#exportPdfBtn').on('click', exportToPDF);
     $('#exportCsvBtn').on('click', exportToCSV);
     
-    // Initialize
+    // Initialize - Load Pending Details by Default
     $(async function() {
-        showLoading("Initializing & loading data...");
+        showLoading("Loading pending fault records...");
         await loadResolveStatusOptions();
         await loadFaultRecords();
         populateConnectionFilter();
         populateFilterDropdown();
         initFlatpickr();
         setReportDate();
+        // Auto-set smart date range based on pending faults
         setSmartPendingDateRange();
+        // Apply filters - this will show Pending status by default because dropdown is set to "Pending"
         applyFilters();
         hideLoading();
     });
