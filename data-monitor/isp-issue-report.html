@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>ISP Fault Reports | Smart Filter + PDF Export</title>
+    <title>ISP Fault Reports | Multi‑Connection Filter</title>
     <!-- Local CSS Resources -->
     <link rel="stylesheet" href="../css/bootstrap.min.css">
     <link rel="stylesheet" href="../css/bootstrap-icons.min.css">
@@ -53,7 +53,7 @@
         }
         .filter-group {
             flex: 1;
-            /*min-width: 160px;*/
+            min-width: 150px;
         }
         .filter-group label {
             font-weight: 600;
@@ -121,6 +121,19 @@
         .select2-dropdown {
             border-radius: 12px !important;
             border-color: #ced4da !important;
+        }
+        /* multi-select badge */
+        .select2-container--bootstrap-5 .select2-selection__choice {
+            background-color: #0f5b9c !important;
+            color: white !important;
+            border: none !important;
+            border-radius: 30px !important;
+            padding: 2px 10px !important;
+            font-size: 0.8rem;
+        }
+        .select2-container--bootstrap-5 .select2-selection__choice__remove {
+            color: white !important;
+            margin-right: 5px;
         }
         .badge-pending { background-color: #f59e0b; color: white; padding: 4px 12px; border-radius: 30px; font-size: 0.7rem; font-weight: 500; }
         .badge-resolved { background-color: #10b981; color: white; padding: 4px 12px; border-radius: 30px; font-size: 0.7rem; font-weight: 500; }
@@ -199,7 +212,7 @@
             color: #856404;
             margin-top: 4px;
         }
-        /* PDF specific styles for proper table formatting */
+        /* PDF specific */
         .pdf-report-container {
             width: 100%;
             padding: 20px;
@@ -272,14 +285,14 @@
 <div class="app-card">
     <div class="page-header d-flex align-items-center">
         <i class="bi bi-file-text-fill"></i>
-        <div><h4>ISP Fault Reports </h4></div>
+        <div><h4>ISP Fault Reports · Multi‑Connection</h4></div>
     </div>
     
     <div class="filter-bar no-print">
         <div class="filter-group">
-            <label><i class="bi bi-hdd-stack"></i> ISP Connection</label>
-            <select id="connectionFilterSelect" class="form-select">
-                <option value="ALL">-- All Connections --</option>
+            <label><i class="bi bi-hdd-stack"></i> ISP Connection (multi)</label>
+            <select id="connectionFilterSelect" class="form-select" multiple="multiple">
+                <!-- options populated by JS -->
             </select>
         </div>
         <div class="filter-group">
@@ -397,26 +410,16 @@
     function analyzeCriticalDownTreasuries() {
         const pendingRecords = faultRecords.filter(record => isPendingStatus(record.resolveStatus));
         const treasuryMap = new Map();
-        
         pendingRecords.forEach(record => {
             const treasury = record.treasuryName;
             if (!treasury || treasury.trim() === "") return;
-            if (!treasuryMap.has(treasury)) {
-                treasuryMap.set(treasury, new Set());
-            }
-            if (record.connection && record.connection.trim()) {
-                treasuryMap.get(treasury).add(record.connection.trim());
-            }
+            if (!treasuryMap.has(treasury)) treasuryMap.set(treasury, new Set());
+            if (record.connection && record.connection.trim()) treasuryMap.get(treasury).add(record.connection.trim());
         });
-        
         const critical = [];
         for (const [treasury, connections] of treasuryMap.entries()) {
             if (connections.size > 1) {
-                critical.push({
-                    treasury: treasury,
-                    connections: Array.from(connections),
-                    connectionCount: connections.size
-                });
+                critical.push({ treasury, connections: Array.from(connections), connectionCount: connections.size });
             }
         }
         criticalTreasuries = critical;
@@ -425,18 +428,15 @@
     
     function filterByTreasury(treasuryName) {
         $('#resolveStatusFilter').val("Pending").trigger('change');
-        $('#connectionFilterSelect').val("ALL").trigger('change');
+        $('#connectionFilterSelect').val([]).trigger('change'); // clear multi
         $('#linkStatusFilterSelect').val("ALL").trigger('change');
-        
         const fromDateVal = $('#fromDate').val();
         const toDateVal = $('#toDate').val();
         let fromDate = null, toDate = null;
         if (fromDateVal) fromDate = parseDateDMY(fromDateVal);
         if (toDateVal) toDate = parseDateDMY(toDateVal);
-        
         let filtered = faultRecords.filter(record => isPendingStatus(record.resolveStatus));
         filtered = filtered.filter(record => record.treasuryName === treasuryName);
-        
         if (fromDate || toDate) {
             filtered = filtered.filter(record => {
                 if (!record.callDate) return (!fromDate && !toDate);
@@ -447,26 +447,17 @@
                 return true;
             });
         }
-        
         filtered.sort((a,b) => (parseFloat(a.refNo) || 0) - (parseFloat(b.refNo) || 0));
         filteredRecords = filtered;
         updateReportTable();
         updateStats();
         updateCriteriaInfo();
-        
-        Swal.fire({
-            icon: "info",
-            title: "Filtered by Treasury",
-            text: `Showing ${filtered.length} pending record(s) for ${treasuryName}`,
-            timer: 2000,
-            showConfirmButton: false
-        });
+        Swal.fire({ icon: "info", title: "Filtered by Treasury", text: `Showing ${filtered.length} pending record(s) for ${treasuryName}`, timer: 2000, showConfirmButton: false });
     }
     
     function showCriticalDownAlert() {
         const critical = analyzeCriticalDownTreasuries();
         if (critical.length === 0) return;
-        
         let connectionsListHtml = '';
         critical.forEach(item => {
             connectionsListHtml += `
@@ -483,23 +474,14 @@
                 </div>
             `;
         });
-        
         Swal.fire({
             title: '<span style="color: #b91c1c;"><i class="bi bi-bell-fill"></i> CRITICAL DOWN ALERT</span>',
             html: `
                 <div style="text-align: left;">
-                    <p style="font-weight: 600; margin-bottom: 12px;">
-                        The following treasuries have <span style="color: #dc2626;">${critical.length} critical issue(s)</span>:
-                    </p>
-                    <p style="font-size: 13px; color: #666; margin-bottom: 12px;">
-                        <i class="bi bi-info-circle"></i> A treasury is marked as CRITICAL when it has pending issues across multiple connections.
-                    </p>
-                    <div class="critical-modal-list">
-                        ${connectionsListHtml}
-                    </div>
-                    <p style="margin-top: 15px; font-size: 12px; color: #856404; background: #fff3cd; padding: 8px; border-radius: 6px;">
-                        <i class="bi bi-exclamation-diamond-fill"></i> Click "View Details" to see pending records for that treasury.
-                    </p>
+                    <p style="font-weight: 600; margin-bottom: 12px;">The following treasuries have <span style="color: #dc2626;">${critical.length} critical issue(s)</span>:</p>
+                    <p style="font-size: 13px; color: #666; margin-bottom: 12px;"><i class="bi bi-info-circle"></i> A treasury is marked as CRITICAL when it has pending issues across multiple connections.</p>
+                    <div class="critical-modal-list">${connectionsListHtml}</div>
+                    <p style="margin-top: 15px; font-size: 12px; color: #856404; background: #fff3cd; padding: 8px; border-radius: 6px;"><i class="bi bi-exclamation-diamond-fill"></i> Click "View Details" to see pending records for that treasury.</p>
                 </div>
             `,
             icon: 'error',
@@ -559,18 +541,14 @@
         const records = [];
         const connectionSet = new Set();
         const linkStatusSet = new Set();
-        
         for(let i = 1; i < rows.length; i++) {
             const row = rows[i];
             if(row.length > 0 && row[0] && row[0].toString().trim() !== "") {
                 const connectionVal = row[2] || "";
                 const linkStatusVal = row[7] || "";
                 if(connectionVal.trim()) connectionSet.add(connectionVal.trim());
-                if(linkStatusVal && linkStatusVal.trim()) {
-                    linkStatusSet.add(linkStatusVal.trim());
-                } else {
-                    linkStatusSet.add("Link Down");
-                }
+                if(linkStatusVal && linkStatusVal.trim()) linkStatusSet.add(linkStatusVal.trim());
+                else linkStatusSet.add("Link Down");
                 records.push({
                     slNo: i,
                     refNo: row[0] || "",
@@ -592,13 +570,23 @@
         return records;
     }
     
+    // multi-select with select2
     function populateConnectionFilter() {
         const connectionSelect = $('#connectionFilterSelect');
         connectionSelect.empty();
-        connectionSelect.append('<option value="ALL">-- All Connections --</option>');
         connectionOptions.forEach(conn => {
             connectionSelect.append(`<option value="${escapeHtml(conn)}">${escapeHtml(conn)}</option>`);
         });
+        connectionSelect.select2({
+            theme: "bootstrap-5",
+            placeholder: "-- All Connections (multi) --",
+            width: '100%',
+            allowClear: false,
+            closeOnSelect: false,
+            dropdownParent: $('.app-card')
+        });
+        // set default: no selection = all
+        connectionSelect.val([]).trigger('change');
     }
     
     function populateLinkStatusFilter() {
@@ -638,7 +626,8 @@
     
     function applyFilters() {
         const statusFilter = $('#resolveStatusFilter').val();
-        const connectionFilter = $('#connectionFilterSelect').val();
+        // multi connection: get selected values
+        const selectedConnections = $('#connectionFilterSelect').val() || [];
         const linkStatusFilter = $('#linkStatusFilterSelect').val();
         const fromDateVal = $('#fromDate').val();
         const toDateVal = $('#toDate').val();
@@ -649,15 +638,18 @@
         
         let filtered = [...faultRecords];
         
+        // Resolve status
         if (statusFilter === "ALL") {
+            // keep all
         } else if (statusFilter === "Pending") {
             filtered = filtered.filter(record => isPendingStatus(record.resolveStatus));
         } else {
             filtered = filtered.filter(record => record.resolveStatus === statusFilter);
         }
         
-        if (connectionFilter !== "ALL") {
-            filtered = filtered.filter(record => record.connection === connectionFilter);
+        // Multi-connection filter: if selectedConnections length > 0, filter IN
+        if (selectedConnections && selectedConnections.length > 0) {
+            filtered = filtered.filter(record => selectedConnections.includes(record.connection));
         }
         
         if (linkStatusFilter !== "ALL") {
@@ -686,7 +678,12 @@
     
     function updateCriteriaInfo() {
         const statusText = $('#resolveStatusFilter option:selected').text();
-        const connectionText = $('#connectionFilterSelect option:selected').text();
+        const selectedConnections = $('#connectionFilterSelect').val() || [];
+        let connectionText = "All";
+        if (selectedConnections.length > 0) {
+            connectionText = selectedConnections.join(', ');
+            if (connectionText.length > 30) connectionText = connectionText.substring(0, 30) + '…';
+        }
         const linkStatusText = $('#linkStatusFilterSelect option:selected').text();
         const fromDate = $('#fromDate').val();
         const toDate = $('#toDate').val();
@@ -699,7 +696,7 @@
         if (criticalTreasuries.length > 0) {
             criticalAlertText = ` | <span style="color: #dc2626; font-weight: bold;">⚠️ CRITICAL: ${criticalTreasuries.length} Treasury(s)</span>`;
         }
-        $('#pdfCriteriaInfo').html(`<strong>Criteria:</strong> Status: ${statusText} | Connection: ${connectionText !== "-- All Connections --" ? connectionText : "All"} | Link: ${linkStatusText !== "-- All Link Status --" ? linkStatusText : "All"}${dateRangeText}${criticalAlertText} | Total: ${filteredRecords.length}`);
+        $('#pdfCriteriaInfo').html(`<strong>Criteria:</strong> Resolve status: ${statusText} | Connection: ${connectionText} | Link status: ${linkStatusText !== "-- All Link Status --" ? linkStatusText : "All"}${dateRangeText}${criticalAlertText} | Total: ${filteredRecords.length}`);
     }
     
     function updateReportTable() {
@@ -751,7 +748,6 @@
         const statusText = $('#resolveStatusFilter option:selected').text();
         $('#recordCountBadge').text(`${filteredRecords.length} Record${filteredRecords.length !== 1 ? 's' : ''}`);
         $('#filterStatusBadge').text(`Status: ${statusText}`);
-        
         if (criticalTreasuries.length > 0) {
             $('#filterStatusBadge').css('background', '#fee2e2').css('color', '#b91c1c');
         } else {
@@ -776,25 +772,25 @@
         filterSelect.val("Pending").trigger('change');
     }
     
-    // PDF Export with proper table formatting
+    // ---------- PDF export (multi-connection aware) ----------
     async function exportToPDF() {
         if (filteredRecords.length === 0) {
             Swal.fire({ icon: "warning", title: "No Data", text: "No records found to export.", confirmButtonColor: "#0f3b5f" });
             return;
         }
         showLoading("Generating PDF with table format...");
-        
         try {
             const now = new Date();
             const dateStr = now.toLocaleDateString('en-GB', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
             const statusText = $('#resolveStatusFilter option:selected').text();
-            const connectionText = $('#connectionFilterSelect option:selected').text();
+            const selectedConnections = $('#connectionFilterSelect').val() || [];
+            let connectionText = "All";
+            if (selectedConnections.length > 0) connectionText = selectedConnections.join(', ');
             const linkStatusText = $('#linkStatusFilterSelect option:selected').text();
             const fromDate = $('#fromDate').val();
             const toDate = $('#toDate').val();
             let dateRangeText = (fromDate && toDate) ? `${fromDate} to ${toDate}` : (fromDate || toDate || 'All Dates');
             
-            // Create PDF container with proper table structure
             const pdfContainer = document.createElement('div');
             pdfContainer.className = 'pdf-report-container';
             pdfContainer.style.width = '100%';
@@ -803,82 +799,50 @@
             pdfContainer.style.fontFamily = 'Arial, Helvetica, sans-serif';
             pdfContainer.style.boxSizing = 'border-box';
             
-            // Build HTML content
             let htmlContent = `
                 <div class="pdf-header">
                     <h2 style="margin: 0 0 5px 0; color: #1a4b7a;">ISP Fault Register Report</h2>
                     <div class="pdf-criteria">Generated on: ${dateStr}</div>
-                    <div class="pdf-criteria">Status: ${statusText} | Connection: ${connectionText !== "-- All Connections --" ? connectionText : "All"} | Link Status: ${linkStatusText !== "-- All Link Status --" ? linkStatusText : "All"} | Date Range: ${dateRangeText}</div>
+                    <div class="pdf-criteria">Resolve status: ${statusText} | Connection: ${connectionText} | Link Status: ${linkStatusText !== "-- All Link Status --" ? linkStatusText : "All"} | Date Range: ${dateRangeText}</div>
                     <div class="pdf-total">Total Records: ${filteredRecords.length}</div>
                 </div>
                 <table class="pdf-table" style="width: 100%; border-collapse: collapse; font-size: 8pt;">
                     <thead>
                         <tr>
-                            <th style="border: 1px solid black; padding: 6px; background-color: #ddd; text-align: left; width: 4%;">Sl No</th>
-                            <th style="border: 1px solid black; padding: 6px; background-color: #ddd; text-align: left; width: 12%;">Treasury Name</th>
-                            <th style="border: 1px solid black; padding: 6px; background-color: #ddd; text-align: left; width: 8%;">Connection</th>
-                            <th style="border: 1px solid black; padding: 6px; background-color: #ddd; text-align: left; width: 10%;">Circuit ID</th>
-                            <th style="border: 1px solid black; padding: 6px; background-color: #ddd; text-align: left; width: 8%;">Call Date</th>
-                            <th style="border: 1px solid black; padding: 6px; background-color: #ddd; text-align: left; width: 20%;">Last Followup</th>
-                            <th style="border: 1px solid black; padding: 6px; background-color: #ddd; text-align: left; width: 20%;">Remarks</th>
-                            <th style="border: 1px solid black; padding: 6px; background-color: #ddd; text-align: left; width: 8%;">Link Status</th>
+                            <th style="border:1px solid black;padding:6px;background:#ddd;text-align:left;width:4%;">Sl No</th>
+                            <th style="border:1px solid black;padding:6px;background:#ddd;text-align:left;width:12%;">Treasury Name</th>
+                            <th style="border:1px solid black;padding:6px;background:#ddd;text-align:left;width:8%;">Connection</th>
+                            <th style="border:1px solid black;padding:6px;background:#ddd;text-align:left;width:10%;">Circuit ID</th>
+                            <th style="border:1px solid black;padding:6px;background:#ddd;text-align:left;width:8%;">Call Date</th>
+                            <th style="border:1px solid black;padding:6px;background:#ddd;text-align:left;width:20%;">Last Followup</th>
+                            <th style="border:1px solid black;padding:6px;background:#ddd;text-align:left;width:20%;">Remarks</th>
+                            <th style="border:1px solid black;padding:6px;background:#ddd;text-align:left;width:8%;">Link Status</th>
                         </tr>
                     </thead>
                     <tbody>
             `;
-            
-            // Add data rows
             for (let idx = 0; idx < filteredRecords.length; idx++) {
                 const record = filteredRecords[idx];
                 let linkStatusText = record.linkStatus || 'Link Down';
                 htmlContent += `
                     <tr>
-                        <td style="border: 1px solid black; padding: 5px;">${idx + 1}</td>
-                        <td style="border: 1px solid black; padding: 5px;">${escapeHtml(record.treasuryName || '')}</td>
-                        <td style="border: 1px solid black; padding: 5px;">${escapeHtml(record.connection || '')}</td>
-                        <td style="border: 1px solid black; padding: 5px;">${escapeHtml(record.circuitId || '-')}</td>
-                        <td style="border: 1px solid black; padding: 5px;">${escapeHtml(record.callDate || '-')}</td>
-                        <td style="border: 1px solid black; padding: 5px;">${escapeHtml((record.lastFollowup || '-').substring(0, 100))}</td>
-                        <td style="border: 1px solid black; padding: 5px;">${escapeHtml((record.remarks || '-').substring(0, 80))}</td>
-                        <td style="border: 1px solid black; padding: 5px;">${escapeHtml(linkStatusText)}</td>
+                        <td style="border:1px solid black;padding:5px;">${idx + 1}</td>
+                        <td style="border:1px solid black;padding:5px;">${escapeHtml(record.treasuryName || '')}</td>
+                        <td style="border:1px solid black;padding:5px;">${escapeHtml(record.connection || '')}</td>
+                        <td style="border:1px solid black;padding:5px;">${escapeHtml(record.circuitId || '-')}</td>
+                        <td style="border:1px solid black;padding:5px;">${escapeHtml(record.callDate || '-')}</td>
+                        <td style="border:1px solid black;padding:5px;">${escapeHtml((record.lastFollowup || '-').substring(0, 100))}</td>
+                        <td style="border:1px solid black;padding:5px;">${escapeHtml((record.remarks || '-').substring(0, 80))}</td>
+                        <td style="border:1px solid black;padding:5px;">${escapeHtml(linkStatusText)}</td>
                     </tr>
                 `;
             }
-            
-            htmlContent += `
-                    </tbody>
-                </table>
-                <div class="pdf-footer" style="margin-top: 15px; text-align: center; font-size: 8px; color: #666;">
-                   ---End of the Table---
-                </div>
-            `;
-            
+            htmlContent += `</tbody></table><div class="pdf-footer" style="margin-top:15px;text-align:center;font-size:8px;color:#666;">---End of the Table---</div>`;
             pdfContainer.innerHTML = htmlContent;
             
-            // Add additional styles to ensure proper display
             const style = document.createElement('style');
-            style.textContent = `
-                .pdf-report-container {
-                    width: 100%;
-                    padding: 20px;
-                    background: white;
-                }
-                .pdf-table {
-                    width: 100%;
-                    border-collapse: collapse;
-                }
-                .pdf-table th, .pdf-table td {
-                    border: 1px solid #000000;
-                    padding: 5px;
-                    text-align: left;
-                    vertical-align: top;
-                }
-                .pdf-table th {
-                    background-color: #dddddd;
-                }
-            `;
+            style.textContent = `.pdf-table th, .pdf-table td { border: 1px solid #000000; padding: 5px; text-align: left; vertical-align: top; } .pdf-table th { background-color: #dddddd; }`;
             pdfContainer.appendChild(style);
-            
             document.body.appendChild(pdfContainer);
             
             const opt = {
@@ -888,17 +852,14 @@
                 html2canvas: { scale: 2, letterRendering: true, useCORS: true, logging: false, backgroundColor: '#ffffff' },
                 jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
             };
-            
             if (typeof html2pdf !== 'undefined' && html2pdf) {
                 await html2pdf().set(opt).from(pdfContainer).save();
             } else {
                 throw new Error("html2pdf library not loaded");
             }
-            
             document.body.removeChild(pdfContainer);
             hideLoading();
             Swal.fire({ icon: "success", title: "PDF Exported!", text: `Exported ${filteredRecords.length} rows in table format.`, timer: 2000, showConfirmButton: false });
-            
         } catch(err) {
             hideLoading();
             console.error("PDF Export Error:", err);
@@ -946,6 +907,7 @@
         $('#reportDate').text(now.toLocaleDateString('en-GB', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }));
     }
     
+    // Event listeners
     $('#applyFilterBtn').on('click', () => { applyFilters(); Swal.fire({ icon:"success", title:"Filter Applied", text:`Showing ${filteredRecords.length} records`, timer:1500, showConfirmButton:false }); });
     $('#connectionFilterSelect').on('change', () => applyFilters());
     $('#linkStatusFilterSelect').on('change', () => applyFilters());
@@ -956,18 +918,14 @@
         showLoading("Loading pending fault records & analyzing critical issues...");
         await loadResolveStatusOptions();
         await loadFaultRecords();
-        populateConnectionFilter();
+        populateConnectionFilter();   // multi-select
         populateLinkStatusFilter();
         populateFilterDropdown();
         initFlatpickr();
         setReportDate();
         setSmartPendingDateRange();
         applyFilters();
-        
-        setTimeout(() => {
-            showCriticalDownAlert();
-        }, 500);
-        
+        setTimeout(() => { showCriticalDownAlert(); }, 500);
         hideLoading();
     });
 </script>
