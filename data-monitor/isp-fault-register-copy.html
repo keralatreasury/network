@@ -190,10 +190,6 @@
         .filter-bar .btn-view i {
             margin-right: 6px;
         }
-        .filter-bar .btn-view:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
         @media (max-width: 700px) {
             .tab-pane { padding: 20px; }
             .tab-btn { padding: 12px 16px; font-size: 0.9rem; }
@@ -421,9 +417,9 @@
     let resolveStatusOptions = [];
     let connectionMapping = {};
     let flatpickrInstance, editFlatpickr;
+    let currentFilterStatus = "Pending";
     let isTableLoaded = false;
     let isMetadataLoaded = false;
-    let currentFilterStatus = "Pending (Including Blank)";
     
     function showLoading(msg) { 
         if($('#global-loading-overlay').length) return; 
@@ -440,19 +436,7 @@
         return lowerStatus === "pending";
     }
     
-    // Get the filter criteria for the query
-    function getFilterCriteria() {
-        const selectedFilter = $('#resolveStatusFilter').val();
-        if (selectedFilter === "ALL") {
-            return { type: "ALL", value: null };
-        } else if (selectedFilter === "Pending (Including Blank)") {
-            return { type: "PENDING", value: null };
-        } else {
-            return { type: "EXACT", value: selectedFilter };
-        }
-    }
-    
-    // Filter records based on selected resolve status (client-side fallback)
+    // Filter records based on selected resolve status
     function filterRecordsByStatus(records, statusFilter) {
         if (statusFilter === "ALL") {
             return [...records];
@@ -463,57 +447,83 @@
         }
     }
     
-    // Load fault records with server-side filtering
-    async function loadFilteredFaultRecords() {
-        const filter = getFilterCriteria();
-        showLoading("Loading records...");
+    // Update the DataTable with filtered records
+    function updateTableWithFilter() {
+        const selectedFilter = $('#resolveStatusFilter').val();
+        let recordsToShow;
         
-        try {
-            // Construct URL with filter parameters
-            let url = `${APPS_SCRIPT_URL}?action=GET_FAULTS&sheetName=${SHEET_FAULTS}`;
-            
-            // Add filter parameters for server-side filtering
-            if (filter.type === "PENDING") {
-                url += `&filter=PENDING`;
-            } else if (filter.type === "EXACT") {
-                url += `&filter=EXACT&status=${encodeURIComponent(filter.value)}`;
-            }
-            // For ALL, no filter parameter needed
-            
-            const response = await fetch(url, {
-                method: "GET",
-                cache: "no-cache"
-            });
-            
-            const data = await response.json();
-            hideLoading();
-            
-            if (data && data.records) {
-                faultRecords = data.records;
-                filteredRecords = [...faultRecords];
-                return faultRecords;
-            } else {
-                // Fallback to client-side filtering if server-side filter fails
-                const rows = await fetchSheetDataDirect(SHEET_FAULTS, "A:I");
-                const records = parseFaultRecords(rows);
-                faultRecords = records;
-                filteredRecords = filterRecordsByStatus(records, $('#resolveStatusFilter').val());
-                return filteredRecords;
-            }
-        } catch (error) {
-            console.error("Error loading filtered records:", error);
-            // Fallback: load all records and filter client-side
-            const rows = await fetchSheetDataDirect(SHEET_FAULTS, "A:I");
-            const records = parseFaultRecords(rows);
-            faultRecords = records;
-            filteredRecords = filterRecordsByStatus(records, $('#resolveStatusFilter').val());
-            hideLoading();
-            return filteredRecords;
+        if (selectedFilter === "ALL") {
+            recordsToShow = [...faultRecords];
+            currentFilterStatus = "ALL";
+        } else if (selectedFilter === "Pending (Including Blank)") {
+            recordsToShow = faultRecords.filter(record => isPendingStatus(record.resolveStatus));
+            currentFilterStatus = "Pending (Including Blank)";
+        } else {
+            recordsToShow = faultRecords.filter(record => record.resolveStatus === selectedFilter);
+            currentFilterStatus = selectedFilter;
         }
+        
+        filteredRecords = recordsToShow;
+        
+        if (dataTable) {
+            dataTable.clear();
+            dataTable.rows.add(filteredRecords);
+            dataTable.draw();
+        }
+        
+        // Update record count display
+        const countText = filteredRecords.length === 1 ? "1 record" : `${filteredRecords.length} records`;
+        const filterText = selectedFilter === "ALL" ? "Showing all" : `Showing ${countText} with status: ${selectedFilter}`;
+        $('#filterRecordCount').text(filterText);
     }
     
-    // Parse fault records from sheet data
-    function parseFaultRecords(rows) {
+    // Populate filter dropdown with resolve status options
+    function populateFilterDropdown() {
+        const filterSelect = $('#resolveStatusFilter');
+        filterSelect.empty();
+        
+        // Add ALL option
+        filterSelect.append('<option value="ALL">-- All Records --</option>');
+        
+        // Add special "Pending (Including Blank)" option first (default)
+        filterSelect.append('<option value="Pending (Including Blank)" selected>⏳ Pending </option>');
+        
+        // Add all resolve status options from sheet
+        resolveStatusOptions.forEach(opt => {
+            if (opt !== "Pending") {
+                filterSelect.append(`<option value="${escapeHtml(opt)}">${escapeHtml(opt)}</option>`);
+            }
+        });
+        
+        // Initialize Select2 for filter dropdown
+        if ($('#resolveStatusFilter').hasClass('select2-hidden-accessible')) {
+            $('#resolveStatusFilter').select2('destroy');
+        }
+        $('#resolveStatusFilter').select2({
+            theme: "bootstrap-5",
+            placeholder: "Filter by status",
+            width: '250px'
+        });
+        
+        // Set default value to "Pending (Including Blank)"
+        $('#resolveStatusFilter').val("Pending (Including Blank)").trigger('change');
+    }
+    
+    // Google Sheets API direct read
+    async function fetchSheetDataDirect(sheetName, range = "A:Z") {
+        try {
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(sheetName)}!${range}?key=${API_KEY}`;
+            const response = await fetch(url);
+            const data = await response.json();
+            return data.values || [];
+        } catch(e) { console.error(`Error fetching ${sheetName}:`, e); return []; }
+    }
+    
+    // Load all fault records sorted ascending by Ref #
+    async function loadFaultRecords() {
+        showLoading("Loading fault records...");
+        const rows = await fetchSheetDataDirect(SHEET_FAULTS, "A:I");
+        hideLoading();
         if(!rows || rows.length < 2) return [];
         const records = [];
         for(let i = 1; i < rows.length; i++) {
@@ -539,20 +549,11 @@
             let numB = parseFloat(b.refNo) || 0;
             return numA - numB;
         });
+        faultRecords = records;
         return records;
     }
     
-    // Google Sheets API direct read (fallback)
-    async function fetchSheetDataDirect(sheetName, range = "A:Z") {
-        try {
-            const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(sheetName)}!${range}?key=${API_KEY}`;
-            const response = await fetch(url);
-            const data = await response.json();
-            return data.values || [];
-        } catch(e) { console.error(`Error fetching ${sheetName}:`, e); return []; }
-    }
-    
-    // Load metadata for dropdowns
+    // Load metadata for dropdowns (only for Add tab initially)
     async function loadMetadata() {
         if (isMetadataLoaded) return;
         
@@ -822,7 +823,7 @@
             resetForm();
             // Reload records if table is already loaded
             if (isTableLoaded) {
-                await loadFilteredFaultRecords();
+                await loadFaultRecords();
                 updateTableWithFilter();
             }
         }
@@ -889,7 +890,7 @@
         if(success) {
             $('#editModal').modal('hide');
             if (isTableLoaded) {
-                await loadFilteredFaultRecords();
+                await loadFaultRecords();
                 updateTableWithFilter();
             }
         }
@@ -916,97 +917,41 @@
         }
     });
     
-    // Update the DataTable with filtered records
-    function updateTableWithFilter() {
-        if (dataTable) {
-            dataTable.clear();
-            dataTable.rows.add(filteredRecords);
-            dataTable.draw();
-        }
-        
-        // Update record count display
-        const selectedFilter = $('#resolveStatusFilter').val();
-        const countText = filteredRecords.length === 1 ? "1 record" : `${filteredRecords.length} records`;
-        const filterText = selectedFilter === "ALL" ? "Showing all" : `Showing ${countText} with status: ${selectedFilter}`;
-        $('#filterRecordCount').text(filterText);
-    }
-    
-    // Populate filter dropdown with resolve status options
-    function populateFilterDropdown() {
-        const filterSelect = $('#resolveStatusFilter');
-        filterSelect.empty();
-        
-        // Add ALL option
-        filterSelect.append('<option value="ALL">-- All Records --</option>');
-        
-        // Add special "Pending (Including Blank)" option first (default)
-        filterSelect.append('<option value="Pending (Including Blank)" selected>⏳ Pending </option>');
-        
-        // Add all resolve status options from sheet
-        resolveStatusOptions.forEach(opt => {
-            if (opt !== "Pending") {
-                filterSelect.append(`<option value="${escapeHtml(opt)}">${escapeHtml(opt)}</option>`);
-            }
-        });
-        
-        // Initialize Select2 for filter dropdown
-        if ($('#resolveStatusFilter').hasClass('select2-hidden-accessible')) {
-            $('#resolveStatusFilter').select2('destroy');
-        }
-        $('#resolveStatusFilter').select2({
-            theme: "bootstrap-5",
-            placeholder: "Filter by status",
-            width: '250px'
-        });
-        
-        // Set default value to "Pending (Including Blank)"
-        $('#resolveStatusFilter').val("Pending (Including Blank)").trigger('change');
-    }
-    
-    // Filter change handler
+    // Filter change handler - just update the filter value, don't auto-load
     $('#resolveStatusFilter').on('change', function() {
-        // Update count display to show what would be loaded
+        // Update record count display to show what will be loaded
+        const selectedFilter = $(this).val();
         if (faultRecords.length > 0 && isTableLoaded) {
-            const filtered = filterRecordsByStatus(faultRecords, $(this).val());
-            const countText = filtered.length === 1 ? "1 record" : `${filtered.length} records`;
-            $('#filterRecordCount').text(`Showing ${countText} with status: ${$(this).val()}`);
+            updateTableWithFilter();
         } else {
             // Just show count of what would be loaded
-            const selectedFilter = $(this).val();
-            $('#filterRecordCount').text(`Click "View" to load records with status: ${selectedFilter}`);
+            const filtered = filterRecordsByStatus(faultRecords, selectedFilter);
+            const countText = filtered.length === 1 ? "1 record" : `${filtered.length} records`;
+            $('#filterRecordCount').text(`Click "View" to load ${countText} with status: ${selectedFilter}`);
         }
     });
     
     // View button - load records based on selected filter
     $('#viewFilterBtn').on('click', async function() {
-        const btn = $(this);
-        btn.prop('disabled', true).html('<i class="bi bi-hourglass-split"></i> Loading...');
-        
-        try {
-            await loadFilteredFaultRecords();
-            
-            if (!isTableLoaded) {
-                // First time loading - initialize DataTable
-                initDataTable();
-                isTableLoaded = true;
-            }
-            
-            updateTableWithFilter();
-        } catch (error) {
-            console.error("Error loading records:", error);
-            Swal.fire("Error", "Failed to load records. Please try again.", "error");
-        } finally {
-            btn.prop('disabled', false).html('<i class="bi bi-eye"></i> View');
+        showLoading("Loading records...");
+        if (!isTableLoaded) {
+            // First time loading - initialize DataTable
+            await loadFaultRecords();
+            initDataTable();
+            isTableLoaded = true;
+        } else {
+            // Refresh existing data
+            await loadFaultRecords();
         }
+        populateFilterDropdown();
+        updateTableWithFilter();
+        hideLoading();
     });
     
     $('#clearFilterBtn').on('click', function() {
         $('#resolveStatusFilter').val("Pending (Including Blank)").trigger('change');
         if (isTableLoaded) {
-            // Reload with pending filter
-            loadFilteredFaultRecords().then(() => {
-                updateTableWithFilter();
-            });
+            updateTableWithFilter();
         }
     });
     
@@ -1025,7 +970,7 @@
     
     async function refreshTableAndRecords() {
         if (isTableLoaded) {
-            await loadFilteredFaultRecords();
+            await loadFaultRecords();
             updateTableWithFilter();
         }
     }
@@ -1064,7 +1009,7 @@
                     const success = await deleteRecordNoCors(rowIdx, ref);
                     if(success) {
                         if (isTableLoaded) {
-                            await loadFilteredFaultRecords();
+                            await loadFaultRecords();
                             updateTableWithFilter();
                         }
                     }
@@ -1084,6 +1029,7 @@
             $("#listPane").removeClass("active-pane");
             $("#tabAddBtn").addClass("active");
             $("#tabListBtn").removeClass("active");
+            // Ensure form is ready when switching to add tab
             if (isMetadataLoaded) {
                 setTimeout(function() { initAddFormSelect2(); }, 100);
             }
@@ -1093,11 +1039,13 @@
             $("#tabListBtn").addClass("active");
             $("#tabAddBtn").removeClass("active");
             // Update filter count display
-            if (isTableLoaded) {
+            if (faultRecords.length > 0 && isTableLoaded) {
                 updateTableWithFilter();
             } else {
                 const selectedFilter = $('#resolveStatusFilter').val();
-                $('#filterRecordCount').text(`Click "View" to load records with status: ${selectedFilter}`);
+                const filtered = filterRecordsByStatus(faultRecords, selectedFilter);
+                const countText = filtered.length === 1 ? "1 record" : `${filtered.length} records`;
+                $('#filterRecordCount').text(`Click "View" to load ${countText} with status: ${selectedFilter}`);
             }
         }
     }
@@ -1112,7 +1060,7 @@
     $('#tabListBtn').on('click', () => { switchTab('list'); });
     
     $(async function() {
-        // Only load metadata (dropdown options) initially
+        // Only load metadata (dropdown options) initially - this is needed for the Add form
         showLoading("Loading form data...");
         await loadMetadata();
         hideLoading();
@@ -1122,14 +1070,14 @@
         initFlatpickr();
         resetForm();
         
-        // Populate filter dropdown with available status options
+        // Populate filter dropdown with available status options (from loaded metadata)
         populateFilterDropdown();
         
         // Set initial filter count message
         $('#filterRecordCount').text('Click "View" to load records');
         
-        // DO NOT load fault records or initialize DataTable on page load
-        // This will happen only when user clicks "View" button
+        // We DO NOT load fault records or initialize DataTable on page load
+        // This will happen only when user clicks "View" button in the Manage Records tab
     });
 </script>
 </body>
