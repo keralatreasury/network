@@ -362,7 +362,7 @@
                     
                     <!-- Working Status Section -->
                     <div class="section-title">
-                        SDWAN Working Status
+                        Working Status
                     </div>
                     <div id="treasuryWorkingTableContainer" class="table-container mb-4">
                         <div class="empty-state">
@@ -416,6 +416,65 @@
         let isWorkingLoaded = false;
         let isAdminLoaded = false;
         let isTreasuriesLoaded = false;
+        
+        // =============================================
+        // UTILITY: Extract 4-digit code from treasury name
+        // =============================================
+        function extractTreasuryCode(treasuryName) {
+            if (!treasuryName) return '';
+            // Try to find 4 digits at the start
+            const match = treasuryName.toString().trim().match(/^(\d{4})/);
+            return match ? match[1] : '';
+        }
+        
+        // =============================================
+        // UTILITY: Normalize treasury name for comparison
+        // =============================================
+        function normalizeTreasuryName(name) {
+            if (!name) return '';
+            return name.toString().trim()
+                .replace(/\s+/g, ' ')  // Normalize spaces
+                .replace(/-\s*/g, '-')  // Normalize hyphens
+                .replace(/\s*-\s*/g, '-')  // Normalize spaces around hyphens
+                .toLowerCase();
+        }
+        
+        // =============================================
+        // CORE: Match treasury using 4-digit code as priority
+        // =============================================
+        function matchesTreasury(sheetValue, searchTreasury) {
+            if (!sheetValue || !searchTreasury) return false;
+            
+            const searchCode = extractTreasuryCode(searchTreasury);
+            const sheetCode = extractTreasuryCode(sheetValue);
+            
+            // PRIORITY 1: Match by 4-digit code (case insensitive, format insensitive)
+            if (searchCode && sheetCode) {
+                if (searchCode === sheetCode) {
+                    return true;
+                }
+            }
+            
+            // FALLBACK: Try exact match after normalization
+            const normalizedSheet = normalizeTreasuryName(sheetValue);
+            const normalizedSearch = normalizeTreasuryName(searchTreasury);
+            
+            // Check if normalized names match or one contains the other
+            if (normalizedSheet === normalizedSearch) return true;
+            if (normalizedSheet.includes(normalizedSearch) && normalizedSearch.length > 5) return true;
+            if (normalizedSearch.includes(normalizedSheet) && normalizedSheet.length > 5) return true;
+            
+            // Check if the name part (after code) matches
+            const searchNamePart = searchTreasury.toString().replace(/^\d{4}\s*[-–]\s*/, '').trim().toLowerCase();
+            const sheetNamePart = sheetValue.toString().replace(/^\d{4}\s*[-–]\s*/, '').trim().toLowerCase();
+            
+            if (searchNamePart && sheetNamePart) {
+                if (searchNamePart === sheetNamePart) return true;
+                if (searchNamePart.includes(sheetNamePart) || sheetNamePart.includes(searchNamePart)) return true;
+            }
+            
+            return false;
+        }
         
         // =============================================
         // INITIALIZATION - Load ONLY treasury list
@@ -571,21 +630,17 @@
         // =============================================
         
         function getTreasuryNetworkDetails(treasuryName) {
-            // This now loads treasuries data lazily
             if (!treasuriesData || treasuriesData.length === 0) {
                 return { lanPool: '', gatewayIP: '' };
             }
-            let searchName = treasuryName;
-            if (searchName.includes('-')) searchName = searchName.substring(searchName.indexOf('-') + 1).trim();
-            searchName = searchName.replace(/treasury/i, '').trim();
+            
+            const searchCode = extractTreasuryCode(treasuryName);
+            
             for (let i = 0; i < treasuriesData.length; i++) {
                 const row = treasuriesData[i];
                 const sheetTreasury = row[0] ? row[0].toString().trim() : '';
-                let cleanSheetTreasury = sheetTreasury;
-                if (cleanSheetTreasury.includes('-')) cleanSheetTreasury = cleanSheetTreasury.substring(cleanSheetTreasury.indexOf('-') + 1).trim();
-                cleanSheetTreasury = cleanSheetTreasury.replace(/treasury/i, '').trim();
-                if (sheetTreasury === treasuryName || cleanSheetTreasury === searchName ||
-                    sheetTreasury.includes(searchName) || searchName.includes(cleanSheetTreasury)) {
+                
+                if (matchesTreasury(sheetTreasury, treasuryName)) {
                     return {
                         lanPool: row[5] ? row[5].toString().trim() : '',
                         gatewayIP: row[6] ? row[6].toString().trim().replace(/\s+/g, '') : ''
@@ -675,7 +730,7 @@
         }
         
         // =============================================
-        // DISPLAY FUNCTIONS
+        // DISPLAY FUNCTIONS - Using matchesTreasury() for lookup
         // =============================================
         
         function displayInstallationTable(treasury) {
@@ -685,7 +740,11 @@
                 return;
             }
             
-            const rows = installationData.slice(1).filter(row => row[0] && row[0].toString().trim() === treasury.trim());
+            const rows = installationData.slice(1).filter(row => {
+                const sheetTreasury = row[0] ? row[0].toString().trim() : '';
+                return matchesTreasury(sheetTreasury, treasury);
+            });
+            
             const networkDetails = getTreasuryNetworkDetails(treasury);
             
             const columnDefs = [
@@ -754,16 +813,10 @@
                 return;
             }
             
-            let searchTreasury = treasury;
-            if (treasury.includes('-')) searchTreasury = treasury.substring(treasury.indexOf('-') + 1).trim();
-            let searchTreasuryClean = searchTreasury.replace(/treasury/i, '').trim();
-            
             const rows = mplsData.slice(1).filter(row => {
                 if (!row || !row[0]) return false;
-                const mplsTreasury = row[0].toString().trim();
-                return mplsTreasury === treasury || mplsTreasury.includes(searchTreasury) || 
-                       searchTreasury.includes(mplsTreasury) ||
-                       mplsTreasury.toLowerCase().includes(searchTreasuryClean.toLowerCase());
+                const sheetTreasury = row[0].toString().trim();
+                return matchesTreasury(sheetTreasury, treasury);
             });
             
             const colNames = ['Name of Treasury', 'BSNL TXN / TIP', 'LCO CODE', 'OLT IP', 'OUTER VLAN', 'WAN IP', 'VLAN', 'GATEWAY (WAN 1)', 'Fat-Pipe Interface IP (WAN 1)', 'Clarity order status', 'Status of work', 'LC ID'];
@@ -805,16 +858,10 @@
                 return;
             }
             
-            let searchTreasury = treasury;
-            if (treasury.includes('-')) searchTreasury = treasury.substring(treasury.indexOf('-') + 1).trim();
-            let searchTreasuryClean = searchTreasury.replace(/treasury/i, '').trim();
-            
             const rows = wan2Data.slice(1).filter(row => {
                 if (!row || !row[0]) return false;
-                const wan2Treasury = row[0].toString().trim();
-                return wan2Treasury === treasury || wan2Treasury.includes(searchTreasury) || 
-                       searchTreasury.includes(wan2Treasury) ||
-                       wan2Treasury.toLowerCase().includes(searchTreasuryClean.toLowerCase());
+                const sheetTreasury = row[0].toString().trim();
+                return matchesTreasury(sheetTreasury, treasury);
             });
             
             const wan2Cols = ['Treasury', 'Type of Service', 'WAN Subnet', 'Gateway (WAN 2)', 'Fat-Pipe Interface IP (WAN 2)', 'Subnet'];
@@ -849,9 +896,12 @@
                 return;
             }
             
-            const rows = workingData.slice(1).filter(row => row[0] && row[0].toString().trim() === treasury);
+            const rows = workingData.slice(1).filter(row => {
+                const sheetTreasury = row[0] ? row[0].toString().trim() : '';
+                return matchesTreasury(sheetTreasury, treasury);
+            });
             
-            let html = `<div class="table-responsive"><table class="table table-hover table-striped"><thead><tr>
+            let html = `<div class="table-responsive"><table class="table table-hover table-bordered"><thead><tr>
                         <th>Name of Treasury</th><th>CONTACT DETAILS OF BSNL OFFICERS</th>
                         <th>Treasury Remarks</th><th>BBM REMARKS</th><th>Issue Remarks</th>
                         </tr></thead><tbody>`;
@@ -886,7 +936,10 @@
             }
             
             const cols = ['Treasury/Location', 'Network Admin Name', 'Network Admin Contact', 'Treasury Admin Name', 'Treasury Admin Contact', 'Office Mail ID', 'Office Contact', 'Office Mobile'];
-            const rows = adminData.filter(row => row[0] && row[0].toString().trim() === treasury);
+            const rows = adminData.filter(row => {
+                const sheetTreasury = row[0] ? row[0].toString().trim() : '';
+                return matchesTreasury(sheetTreasury, treasury);
+            });
             
             let html = `<div class="table-responsive"><table class="table table-hover table-bordered"><thead><tr>`;
             cols.forEach(h => html += `<th>${escapeHtml(h)}</th>`);
@@ -974,6 +1027,7 @@
         
         console.log('SDWAN Dashboard initialized with lazy loading');
         console.log('Data will load only when a treasury is selected and "View" is clicked');
+        console.log('Treasury matching uses 4-digit code as primary key for case-insensitive lookup');
     </script>
 </body>
 </html>
