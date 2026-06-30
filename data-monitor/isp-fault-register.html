@@ -29,19 +29,42 @@
             box-shadow: 0 20px 35px -12px rgba(0,0,0,0.1);
             overflow: hidden;
         }
-        .page-header {
-            background: linear-gradient(135deg, #0f5b9c 0%, #1a4b7a 100%);
-            color: white;
-            padding: 15px 25px;
-        }
-        .page-header h4 {
-            margin: 0;
-            font-weight: 600;
-        }
-        .page-header i {
-            font-size: 1.5rem;
-            margin-right: 10px;
-        }
+.page-header {
+    padding: 15px 2px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    flex-wrap: wrap !important;
+    justify-content: space-between !important;
+   
+}
+.page-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.page-header-left i {
+    font-size: 1.8rem !important;
+    background: rgb(56 143 251 / 15%) !important;
+    padding: 10px !important;
+    border-radius: 12px !important;
+    color: #184f83 !important;
+}
+
+
+.page-header-left h1 {
+    margin: 0 !important;
+    font-size: 1.8rem !important;
+    font-weight: 700 !important;
+    color: #184f83!important;
+}
+ .page-header-left p {
+            margin: 2px 0 0;
+            opacity: 0.7;
+            font-size: 0.75rem;
+ }
+
         .tab-header {
             display: flex;
             background: #f8fafc;
@@ -217,15 +240,17 @@
     </style>
 </head>
 <body>
+<div class="page-header">
+                <div class="page-header-left">
+                          <i class="bi bi-hdd-stack-fill"></i>
+                    <div>
+                        <h1>ISP Daily Fault Management</h1>
+                        <p>Railtel | BSNL VPNoFTTH | BSNL MPLS — Link Down Tracker</p>
+                    </div>
+                </div>
+            </div>
 <div class="app-card">
-    <div class="page-header d-flex align-items-center">
-        <i class="bi bi-hdd-stack-fill"></i>
-        <div>
-            <h4>ISP Daily Fault Management</h4>
-            <small class="opacity-75">Railtel | BSNL VPNoFTTH | BSNL MPLS — Link Down Tracker</small>
-        </div>
-    </div>
-    <div class="tab-header">
+       <div class="tab-header">
         <button class="tab-btn active" id="tabAddBtn"><i class="bi bi-plus-circle"></i> Add Complaint</button>
         <button class="tab-btn" id="tabListBtn"><i class="bi bi-table"></i> Manage Records</button>
     </div>
