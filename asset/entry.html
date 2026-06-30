@@ -23,7 +23,7 @@
         margin: 0;
     }
     .app-card {
-        max-width: 1600px;
+        max-width: 100%;
         margin: 0 auto;
         background: white;
         border-radius: 28px;
@@ -295,9 +295,53 @@
         -webkit-appearance: none;
         margin: 0;
     }
+.page-header {
+    padding: 15px 2px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    flex-wrap: wrap !important;
+    justify-content: space-between !important;
+   
+}
+.page-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.page-header-left i {
+    font-size: 1.8rem !important;
+    background: rgb(56 143 251 / 15%) !important;
+    padding: 10px !important;
+    border-radius: 12px !important;
+    color: #184f83 !important;
+}
+
+
+.page-header-left h1 {
+    margin: 0 !important;
+    font-size: 1.8rem !important;
+    font-weight: 700 !important;
+    color: #184f83!important;
+}
+ .page-header-left p {
+            margin: 2px 0 0;
+            opacity: 0.7;
+            font-size: 0.75rem;
+ }
     </style>
 </head>
 <body>
+<div class="page-header">
+                <div class="page-header-left">
+                    <i class="bi bi-box-seam"></i>
+                    <div>
+                        <h1>I.T Asset Management</h1>
+                        <p>Manage treasury I.T Assets</p>
+                    </div>
+                </div>
+            </div>
 <div class="app-card">
     <div class="tab-header">
         <button class="tab-btn active" id="tabAddBtn"><i class="bi bi-plus-circle"></i> Add </button>
@@ -910,7 +954,7 @@
         updateBranchInfo();
         if(!branchFromCache) {
             Swal.fire({ icon: 'warning', title: 'Branch Not Detected', text: 'Please login again.' });
-            $("#pcRowsContainer").html('<div class="alert alert-warning">Please <a href="https://keralatreasury.github.io/network/">login</a> to add PC assets.</div>');
+            $("#pcRowsContainer").html('<div class="alert alert-warning">Please login to add PC assets.</div>');
         } else {
             await loadAssetsAndRenderTable();
             refreshPcRows();

@@ -23,7 +23,7 @@
     <style>
         body {
             background-color: #f0f5fa;
-            padding: 24px;
+            padding: 20px 16px;
             font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
             color: #1e293b;
         }
@@ -33,24 +33,11 @@
             margin: 0 auto;
         }
         
-        .page-header {
-            background: linear-gradient(135deg, #0f5b9c 0%, #1a4b7a 100%);
-            color: white;
-            padding: 12px 18px;
-            border-radius: 20px 20px 0 0;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            margin-bottom: 2px;
-        }
-        
-        .page-header i {
-            font-size: 1.8rem;
-            background: rgba(255,255,255,0.15);
-            border-radius: 16px;
-        }
+       
         
         .card-db {
             background: white;
-            border-radius: 0 0 20px 20px;
+            border-radius: 20px;
             padding: 0;
             box-shadow: 0 10px 30px rgba(0,20,40,0.12);
             border: 1px solid #e9ecef;
@@ -404,18 +391,55 @@
                 width: 100%;
             }
         }
+.page-header {
+    padding: 15px 2px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    flex-wrap: wrap !important;
+    justify-content: space-between !important;
+   
+}
+.page-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.page-header-left i {
+    font-size: 1.8rem !important;
+    background: rgb(56 143 251 / 15%) !important;
+    padding: 10px !important;
+    border-radius: 12px !important;
+    color: #184f83 !important;
+}
+
+
+.page-header-left h1 {
+    margin: 0 !important;
+    font-size: 1.8rem !important;
+    font-weight: 700 !important;
+    color: #184f83!important;
+}
+ .page-header-left p {
+            margin: 2px 0 0;
+            opacity: 0.7;
+            font-size: 0.75rem;
+ }
     </style>
 </head>
 <body>
-<div class="main-wrapper">
     <!-- header -->
-    <div class="page-header d-flex align-items-center">
-        <i class="bi bi-hdd-stack-fill me-3"></i>
-        <div>
-            <h2 class="mb-0">PC Asset & IP Inventory Report</h2>
-            <small class="opacity-75">Treasury SD‑WAN- Onboarded Asset Details</small>
-        </div>
-    </div>
+<div class="page-header">
+                <div class="page-header-left">
+                    <i class="bi bi-box-seam"></i>
+                    <div>
+                        <h1>PC Asset & IP Inventory Report</h1>
+                        <p>Treasury SD‑WAN- Onboarded Asset Details</p>
+                    </div>
+                </div>
+            </div>
+<div class="main-wrapper">
 
     <!-- main card with tabs -->
     <div class="card-db">
