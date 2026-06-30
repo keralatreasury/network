@@ -280,7 +280,7 @@
                 </div>
                 
                 <div class="col-md-6">
-                    <label class="form-label required">Complaint Date</label>
+                    <label class="form-label required">Complaint/Movement Date</label>
                     <input type="text" id="complaintDate" class="form-control flatpickr-date" placeholder="DD/MM/YYYY" >
                 </div>
                 
@@ -610,7 +610,13 @@
         flatpickrComplaintDate = flatpickr("#complaintDate", { 
             dateFormat: "d/m/Y",
             maxDate: today,
-            defaultDate: today
+            defaultDate: today,
+             allowInput: true,
+           onReady: function(selectedDates, dateStr, instance) {
+            // Remove any input restrictions
+            instance.input.removeAttribute("readonly");
+            instance.input.type = "text";
+        }
         });
         flatpickrSentDate = flatpickr("#sentDate", { dateFormat: "d/m/Y" });
     }
