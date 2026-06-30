@@ -1032,7 +1032,8 @@ function renderMenuCards(menuData, containerId) {
         main.subMenus.forEach(sub => {
             let linksHtml = '';
             sub.items.forEach(link => {
-                linksHtml += `<li class="link-item" data-url="${link.url}">${link.icon} ${escapeHtml(link.title)}</li>`;
+                // Add data-url and data-title attributes for tracking
+                linksHtml += `<li class="link-item" data-url="${link.url}" data-title="${link.title}">${link.icon} ${escapeHtml(link.title)}</li>`;
             });
             subHtml += `<div class="submenu-block">
                 <div class="submenu-title">${sub.icon} ${escapeHtml(sub.title)}</div>
@@ -1045,10 +1046,21 @@ function renderMenuCards(menuData, containerId) {
         </div>`;
     });
     container.innerHTML = html;
+    
+    // Add click handlers with active state management
     container.querySelectorAll('.link-item').forEach(el => {
         el.addEventListener('click', (e) => {
             e.preventDefault();
             const url = el.dataset.url;
+            
+            // Remove active class from all link items in this container
+            container.querySelectorAll('.link-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Add active class to clicked item
+            el.classList.add('active');
+            
             loadUrlInIframe(url);
             if (window.innerWidth < 992) {
                 const offcanvasEl = document.getElementById('mobileMenuOffcanvas');
@@ -1060,7 +1072,6 @@ function renderMenuCards(menuData, containerId) {
         });
     });
 }
-
 function loadUrlInIframe(url) {
     const iframe = document.getElementById('content-frame');
     const loading = document.getElementById('loading');
@@ -1083,265 +1094,16 @@ function loadUrlInIframe(url) {
         fullUrl = `${url}${separator}branch=${encodeURIComponent(currentUser.branch)}`;
     }
     
-    // Set a timeout for iframe loading
-    let loadTimeout = setTimeout(() => {
-        if (loading) loading.style.display = 'none';
-        showIframeError('Connection timeout. Please check your internet connection and try again.');
-    }, 15000); // 15 second timeout
-    
     iframe.onload = function() { 
-        clearTimeout(loadTimeout);
-        if (loading) loading.style.display = 'none';
-        // Remove any error overlay if present
-        removeIframeError();
+        if (loading) loading.style.display = 'none'; 
     };
     
     iframe.onerror = function() { 
-        clearTimeout(loadTimeout);
-        if (loading) loading.style.display = 'none';
-        showIframeError('Failed to load the page. Please check your internet connection and try again.');
+        if (loading) loading.style.display = 'none'; 
+        alert('Error loading page: ' + fullUrl); 
     };
     
-    // Also handle cases where the iframe content fails to load (empty or about:blank remains)
-    // Check after 5 seconds if the iframe actually loaded content
-    setTimeout(() => {
-        try {
-            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-            if (iframeDoc) {
-                const bodyContent = iframeDoc.body;
-                // Check if iframe is still showing about:blank or has no content
-                if (!bodyContent || bodyContent.innerHTML.trim() === '' || 
-                    bodyContent.innerHTML.includes('about:blank') ||
-                    iframeDoc.URL === 'about:blank') {
-                    // Only show error if not already showing an error
-                    const existingError = iframeDoc.getElementById('iframe-error-overlay');
-                    if (!existingError && loading.style.display === 'none') {
-                        showIframeError('Unable to load content. Please check your internet connection.');
-                    }
-                }
-            }
-        } catch(e) {
-            // Cross-origin errors - can't access iframe content
-            // This is normal for external URLs
-        }
-    }, 5000);
-    
     iframe.src = fullUrl;
-}
-
-// Function to show custom error message in iframe
-function showIframeError(message) {
-    const iframe = document.getElementById('content-frame');
-    if (!iframe) return;
-    
-    try {
-        // Try to access iframe content
-        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-        if (!iframeDoc) return;
-        
-        // Remove any existing error overlay
-        removeIframeError();
-        
-        // Create error overlay
-        const errorOverlay = document.createElement('div');
-        errorOverlay.id = 'iframe-error-overlay';
-        errorOverlay.style.cssText = `
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background: var(--bg-primary, #ffffff);
-            color: var(--text-primary, #333333);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            padding: 20px;
-            text-align: center;
-            z-index: 1000;
-        `;
-        
-        errorOverlay.innerHTML = `
-            <div style="font-size: 60px; margin-bottom: 20px; color: #f59e0b;">
-                <i class="bi bi-wifi-off"></i>
-            </div>
-            <h3 style="margin-bottom: 10px; font-weight: 600;">Connection Issue</h3>
-            <p style="margin-bottom: 20px; color: var(--text-muted, #6b7280); max-width: 400px;">
-                ${escapeHtml(message)}
-            </p>
-            <button onclick="retryIframeLoad()" style="
-                background: #3b82f6;
-                color: white;
-                border: none;
-                padding: 10px 30px;
-                border-radius: 8px;
-                font-size: 14px;
-                cursor: pointer;
-                transition: background 0.2s;
-            " onmouseover="this.style.background='#2563eb'" onmouseout="this.style.background='#3b82f6'">
-                <i class="bi bi-arrow-clockwise"></i> Retry
-            </button>
-        `;
-        
-        // Make iframe position relative for absolute positioning of error overlay
-        iframe.style.position = 'relative';
-        
-        // Append error overlay to iframe body
-        iframeDoc.body.innerHTML = '';
-        iframeDoc.body.appendChild(errorOverlay);
-        
-        // Store the failed URL for retry
-        iframe.dataset.failedUrl = iframe.src;
-        
-    } catch(e) {
-        // If we can't access iframe (cross-origin), show a fallback error message
-        console.warn('Cannot inject error into iframe due to cross-origin:', e);
-        showFallbackErrorMessage(message);
-    }
-}
-
-// Function to remove iframe error overlay
-function removeIframeError() {
-    try {
-        const iframe = document.getElementById('content-frame');
-        if (!iframe) return;
-        
-        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-        if (!iframeDoc) return;
-        
-        const existingError = iframeDoc.getElementById('iframe-error-overlay');
-        if (existingError) {
-            existingError.remove();
-        }
-    } catch(e) {
-        // Cross-origin - ignore
-    }
-}
-
-// Function to show fallback error message (when iframe is cross-origin)
-function showFallbackErrorMessage(message) {
-    // Create a temporary div to show error
-    let errorDiv = document.getElementById('iframe-fallback-error');
-    if (!errorDiv) {
-        errorDiv = document.createElement('div');
-        errorDiv.id = 'iframe-fallback-error';
-        errorDiv.style.cssText = `
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: var(--bg-primary, #ffffff);
-            color: var(--text-primary, #333333);
-            padding: 30px 40px;
-            border-radius: 12px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            z-index: 9999;
-            text-align: center;
-            max-width: 90%;
-            border: 1px solid var(--border-color, #e5e7eb);
-        `;
-        document.body.appendChild(errorDiv);
-    }
-    
-    errorDiv.innerHTML = `
-        <div style="font-size: 50px; margin-bottom: 15px; color: #f59e0b;">
-            <i class="bi bi-wifi-off"></i>
-        </div>
-        <h4 style="margin-bottom: 8px;">Connection Issue</h4>
-        <p style="color: var(--text-muted, #6b7280); margin-bottom: 15px; font-size: 14px;">
-            ${escapeHtml(message)}
-        </p>
-        <button onclick="retryIframeLoad(); document.getElementById('iframe-fallback-error').style.display='none';" style="
-            background: #3b82f6;
-            color: white;
-            border: none;
-            padding: 8px 25px;
-            border-radius: 6px;
-            font-size: 13px;
-            cursor: pointer;
-        ">
-            <i class="bi bi-arrow-clockwise"></i> Retry
-        </button>
-        <button onclick="document.getElementById('iframe-fallback-error').style.display='none'" style="
-            background: transparent;
-            color: var(--text-muted, #6b7280);
-            border: none;
-            padding: 8px 15px;
-            font-size: 13px;
-            cursor: pointer;
-            margin-left: 8px;
-        ">
-            Close
-        </button>
-    `;
-    
-    errorDiv.style.display = 'block';
-    
-    // Auto-hide after 10 seconds
-    setTimeout(() => {
-        if (errorDiv) errorDiv.style.display = 'none';
-    }, 10000);
-}
-
-// Function to retry loading the iframe
-function retryIframeLoad() {
-    const iframe = document.getElementById('content-frame');
-    if (!iframe) return;
-    
-    // Remove any error overlays
-    removeIframeError();
-    const fallbackError = document.getElementById('iframe-fallback-error');
-    if (fallbackError) fallbackError.style.display = 'none';
-    
-    // Get the URL to retry
-    let url = iframe.dataset.failedUrl || iframe.src;
-    if (!url || url === 'about:blank') {
-        // If no URL stored, reload the current page
-        url = iframe.src;
-    }
-    
-    // Reload the iframe
-    const loading = document.getElementById('loading');
-    if (loading) loading.style.display = 'flex';
-    
-    // Add cache-busting
-    if (url.includes('?')) {
-        url = url.replace(/[&?]_=\d+/, '');
-        url += `&_=${Date.now()}`;
-    } else {
-        url += `?_=${Date.now()}`;
-    }
-    
-    iframe.src = url;
-}
-
-// Function to check if iframe content loaded successfully
-function checkIframeLoaded() {
-    const iframe = document.getElementById('content-frame');
-    if (!iframe) return;
-    
-    try {
-        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-        if (!iframeDoc) return;
-        
-        // Check if iframe is empty or shows error
-        const body = iframeDoc.body;
-        if (body) {
-            const content = body.innerHTML.trim();
-            // If content is empty or very minimal, might be a loading issue
-            if (content === '' || content === '<br>' || content === '&nbsp;' || content.includes('about:blank')) {
-                // Only show error if not already showing one
-                const existingError = iframeDoc.getElementById('iframe-error-overlay');
-                if (!existingError) {
-                    showIframeError('The page failed to load. Please check your connection.');
-                }
-            }
-        }
-    } catch(e) {
-        // Cross-origin - can't check
-    }
 }
 
 function initDesktopSidebarToggle() {
