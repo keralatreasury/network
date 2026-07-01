@@ -10,7 +10,8 @@
     <link rel="stylesheet" href="../css/bootstrap-icons.min.css">
     <link rel="stylesheet" href="../css/dataTables.bootstrap5.min.css">
     <link rel="stylesheet" href="../css/flatpickr.min.css">
-    <link rel="stylesheet" href="../css/sweetalert2.min.css">
+    <link rel="stylesheet" href="../css/select2.min.css">
+    <link rel="stylesheet" href="../css/select2-bootstrap-5-theme.min.css">
     
     <style>
         :root {
@@ -28,7 +29,7 @@
         body {
             background: #eef2f7;
             font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-            padding: 20px;
+            padding: 20px 16px;
         }
         .report-container {
             max-width: 100%;
@@ -40,43 +41,47 @@
             box-shadow: 0 10px 25px -8px rgba(0,0,0,0.1);
             overflow: hidden;
         }
-        .page-header {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: white;
-            padding: 12px 20px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            flex-wrap: wrap;
-            justify-content: space-between;
-        }
-        .page-header-left {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .page-header-left i {
-            font-size: 1.5rem;
-            background: rgba(255,255,255,0.15);
-            padding: 8px;
-            border-radius: 12px;
-        }
-        .page-header-left h1 {
-            margin: 0;
-            font-size: 1.2rem;
-            font-weight: 600;
-        }
-        .page-header-left p {
+ .page-header {
+    padding: 15px 2px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    flex-wrap: wrap !important;
+    justify-content: space-between !important;
+ 
+}
+.page-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.page-header-left i {
+    font-size: 1.8rem !important;
+    background: rgb(56 143 251 / 15%) !important;
+    padding: 10px !important;
+    border-radius: 12px !important;
+    color: #184f83 !important;
+}
+
+
+.page-header-left h1 {
+    margin: 0 !important;
+    font-size: 1.8rem !important;
+    font-weight: 700 !important;
+    color: #184f83!important;
+}
+ .page-header-left p {
             margin: 2px 0 0;
             opacity: 0.7;
-            font-size: 0.7rem;
-        }
+            font-size: 0.75rem;
+ }
         .export-buttons {
             display: flex;
             gap: 8px;
         }
         .btn-export {
-            background: rgba(255,255,255,0.15);
+            background: rgb(13 110 253);
             border: 1px solid rgba(255,255,255,0.3);
             color: white;
             border-radius: 30px;
@@ -89,7 +94,7 @@
             gap: 5px;
         }
         .btn-export:hover {
-            background: rgba(255,255,255,0.3);
+            background: rgb(8 70 163);
             color: white;
         }
         .filter-section {
@@ -291,21 +296,23 @@
     </style>
 </head>
 <body>
-    <div class="report-container">
-        <div class="report-card">
-            <div class="page-header">
+<div class="page-header">
                 <div class="page-header-left">
-                    <i class="bi bi-graph-up"></i>
+                     <i class="bi bi-graph-up"></i>
                     <div>
                         <h1>Power Down Hours Report Advanced</h1>
+                        <p>Power Down Hours Report Advanced</p>
                     </div>
                 </div>
-                <div class="export-buttons">
+<div class="export-buttons">
                     <button id="exportExcelBtn" class="btn-export"><i class="bi bi-file-earmark-spreadsheet"></i> Excel</button>
                     <button id="exportCsvBtn" class="btn-export"><i class="bi bi-filetype-csv"></i> CSV</button>
                     <button id="exportPdfBtn" class="btn-export"><i class="bi bi-file-earmark-pdf"></i> PDF</button>
                 </div>
             </div>
+    <div class="report-container">
+        <div class="report-card">
+        
             
             <div class="filter-section">
                 <div class="filter-group">

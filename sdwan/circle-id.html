@@ -479,24 +479,52 @@
             70% { opacity: 1; }
             100% { opacity: 0; transform: translateY(-10px); }
         }
+.page-header {
+    padding: 15px 2px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    flex-wrap: wrap !important;
+    justify-content: space-between !important;
+ 
+}
+.page-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.page-header-left i {
+    font-size: 1.8rem !important;
+    background: rgb(56 143 251 / 15%) !important;
+    padding: 10px !important;
+    border-radius: 12px !important;
+    color: #184f83 !important;
+}
+
+
+.page-header-left h1 {
+    margin: 0 !important;
+    font-size: 1.8rem !important;
+    font-weight: 700 !important;
+    color: #184f83!important;
+}
+ .page-header-left p {
+            margin: 2px 0 0;
+            opacity: 0.7;
+            font-size: 0.75rem;
+ }
     </style>
 </head>
 <body>
-    <div class="dashboard-container">
-        <!-- Header with Auto-refresh Indicator -->
-        <div class="branch-header">
-            <div class="branch-info">
-                <div class="branch-icon">
-                    <i class="bi bi-diagram-3"></i>
+<div class="page-header">
+                <div class="page-header-left">
+             <i class="bi bi-hdd-network"></i>
+                    <div>
+                        <h1>BSNL MPLS, VPN FTTH and RailTel MPLS Circuit ID Master List</h1>
+                        <p>BSNL MPLS IDs, VPN FTTH IDs and Railtel MPLS Circuit IDs for all branches  </p>
+                    </div>
                 </div>
-                <div class="branch-details">
-                    <h1>BSNL MPLS, VPN FTTH and RailTel MPLS Circuit ID Master List</h1>
-                    <p>
-                        <i class="bi bi-hdd-network"></i>
-                        <span>BSNL MPLS IDs, VPN FTTH IDs and Railtel MPLS Circuit IDs for all branches</span>
-                    </p>
-                </div>
-            </div>
             <div style="display: flex; align-items: center; gap: 15px;">
                 <div class="refresh-indicator">
                     <div class="refresh-spinner" id="refreshSpinner" style="display: none;"></div>
@@ -511,7 +539,10 @@
                     <i class="bi bi-download"></i> Export CSV
                 </button>
             </div>
-        </div>
+            </div>
+    <div class="dashboard-container">
+        <!-- Header with Auto-refresh Indicator -->
+   
 
         <!-- Stats Cards -->
         <div class="stats-row" id="statsContainer">

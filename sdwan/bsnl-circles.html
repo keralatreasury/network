@@ -38,18 +38,18 @@
         
         /* Header */
         .branch-header {
-            background: white;
-            border-radius: 20px;
-            padding: 20px 30px;
-            margin-bottom: 25px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-            border: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
+    /* background: white; */
+    border-radius: 20px;
+    /* padding: 20px 30px; */
+    /* margin-bottom: 25px; */
+    /* box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); */
+    /* border: 1px solid var(--border); */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 15px;
+}
         
         .branch-info {
             display: flex;
@@ -422,24 +422,54 @@
             70% { opacity: 1; }
             100% { opacity: 0; transform: translateY(-10px); }
         }
+.page-header {
+    padding: 15px 2px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    flex-wrap: wrap !important;
+    justify-content: space-between !important;
+ 
+}
+.page-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.page-header-left i {
+    font-size: 1.8rem !important;
+    background: rgb(56 143 251 / 15%) !important;
+    padding: 10px !important;
+    border-radius: 12px !important;
+    color: #184f83 !important;
+}
+
+
+.page-header-left h1 {
+    margin: 0 !important;
+    font-size: 1.8rem !important;
+    font-weight: 700 !important;
+    color: #184f83!important;
+}
+ .page-header-left p {
+            margin: 2px 0 0;
+            opacity: 0.7;
+            font-size: 0.75rem;
+ }
     </style>
 </head>
 <body>
-    <div class="dashboard-container">
-        <!-- Header with Auto-refresh Indicator -->
-        <div class="branch-header">
-            <div class="branch-info">
-                <div class="branch-icon">
+<div class="page-header">
+                <div class="page-header-left">
                     <i class="bi bi-diagram-3"></i>
+                    <div>
+                        <h1>BSNL Circuit ID / LCO Codes</h1>
+                        <p>Circuit IDs, LCO Codes, and Circle Codes for all branches</p>
+                    </div>
                 </div>
-                <div class="branch-details">
-                    <h1>BSNL Circuit ID / LCO Codes</h1>
-                    <p>
-                        <i class="bi bi-hdd-network"></i>
-                        <span>Circuit IDs, LCO Codes, and Circle Codes for all branches</span>
-                    </p>
-                </div>
-            </div>
+<div class="branch-header">
+         
             <div style="display: flex; align-items: center; gap: 15px;">
                 <div class="refresh-indicator">
                     <div class="refresh-spinner" id="refreshSpinner" style="display: none;"></div>
@@ -455,6 +485,10 @@
                 </button>
             </div>
         </div>
+            </div>
+    <div class="dashboard-container">
+        <!-- Header with Auto-refresh Indicator -->
+        
 
         <!-- Stats Cards -->
         <div class="stats-row" id="statsContainer">

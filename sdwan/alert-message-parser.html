@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Network Monitoring - Smart Alert Parser</title>
+    <link rel="stylesheet" href="../css/bootstrap.min.css">
+    <link rel="stylesheet" href="../css/bootstrap-icons.min.css">
     <style>
         * {
             box-sizing: border-box;
@@ -12,11 +14,9 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #f0f2f5;
             margin: 0;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
+            padding: 20px 16px;
+
+            min-height: 100%;
         }
         .container {
             max-width: 100%;
@@ -137,13 +137,61 @@
             border-radius: 8px;
             color: #856404;
         }
+.page-header {
+    padding: 15px 2px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    flex-wrap: wrap !important;
+    justify-content: space-between !important;
+ 
+}
+.page-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.page-header-left i {
+    font-size: 1.8rem !important;
+    background: rgb(56 143 251 / 15%) !important;
+    padding: 10px !important;
+    border-radius: 12px !important;
+    color: #184f83 !important;
+}
+
+
+.page-header-left h1 {
+    margin: 0 !important;
+    font-size: 1.8rem !important;
+    font-weight: 700 !important;
+    color: #184f83!important;
+}
+ .page-header-left p {
+            margin: 2px 0 0;
+            opacity: 0.7;
+            font-size: 0.75rem;
+ }
     </style>
 </head>
 <body>
+<div style="width: 100%;">
+<div class="page-header">
+                <div class="page-header-left">
+                   <i class="bi bi-wifi"></i>
+                    <div>
+                        <h1> Network Alert Parser</h1>
+                        <p> Paste the email/alert content. The system will auto-detect fields: <strong>Message, Hostname, Resource name, Circuit ID, Event Time  </p>
+                    </div>
+                </div>
+            </div>
+</div>
 <div class="container">
-    <h2>📡 Network Alert Parser</h2>
-    <p>Paste the email/alert content. The system will auto-detect fields: <strong>Message, Hostname, Resource name, Circuit ID, Event Time</strong>.<br>
-    <span class="status-badge">🔧 Auto-fill: Missing Resource → eth2/eth1 | Missing Time → current timestamp</span></p>
+
+
+    <h2> </h2>
+    <br>
+    <span class="status-badge"> Auto-fill: Missing Resource → eth2/eth1 | Missing Time → current timestamp</span></p>
 
     <div class="radio-group">
         <label>
