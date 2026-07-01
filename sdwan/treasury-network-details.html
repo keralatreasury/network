@@ -14,7 +14,7 @@
     <style>
         body {
             background-color: #f0f5fa;
-            padding: 24px;
+            padding: 20px 16px;
             font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
             color: #1e293b;
         }
@@ -24,31 +24,41 @@
             margin: 0 auto;
         }
         
-        .page-header {
-            background: linear-gradient(135deg, #0f5b9c 0%, #1a4b7a 100%);
-            color: white;
-            padding: 12px 25px;
-            border-radius: 20px 20px 0 0;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-        
-        .page-header i {
-            font-size: 1.6rem;
-           /* background: rgba(255,255,255,0.15);*/
-          /*  padding: 10px;*/
-            border-radius: 14px;
-        }
-        
-        .page-header h2 {
-            margin: 0;
-            font-weight: 600;
-            font-size: 1.3rem;
-        }
+     .page-header {
+    padding: 15px 2px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    flex-wrap: wrap !important;
+    justify-content: space-between !important;
+ 
+}
+.page-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.page-header-left i {
+    font-size: 1.8rem !important;
+    background: rgb(56 143 251 / 15%) !important;
+    padding: 10px !important;
+    border-radius: 12px !important;
+    color: #184f83 !important;
+}
+
+
+.page-header-left h1 {
+    margin: 0 !important;
+    font-size: 1.8rem !important;
+    font-weight: 700 !important;
+    color: #184f83!important;
+}
+ .page-header-left p {
+            margin: 2px 0 0;
+            opacity: 0.7;
+            font-size: 0.75rem;
+ }
         
         /* Export buttons in header */
         .export-buttons {
@@ -58,7 +68,7 @@
         }
         
         .export-btn {
-            background: rgba(255,255,255,0.15);
+            background: rgb(19 85 143);
             border: 1px solid rgba(255,255,255,0.3);
             border-radius: 40px;
             padding: 6px 18px;
@@ -73,7 +83,7 @@
         }
         
         .export-btn:hover {
-            background: white;
+            background: rgb(9 45 76);
             border-color: white;
         }
         
@@ -83,7 +93,7 @@
         
         .card-db {
             background: white;
-            border-radius: 0 0 20px 20px;
+            border-radius: 20px;
             padding: 0;
             box-shadow: 0 10px 30px rgba(0,20,40,0.12);
             border: 1px solid #e9ecef;
@@ -253,16 +263,15 @@
     </style>
 </head>
 <body>
-<div class="main-wrapper">
-    <!-- Header with Export Buttons at Right End -->
-    <div class="page-header">
-        <div class="d-flex align-items-center gap-3">
-            <i class="bi bi-hdd-network-fill"></i>
-            <h2 class="mb-0">Treasury WAN Pool IP & Gateway Details</h2>
-        </div>
-        
-        <!-- Export Buttons moved to header right end -->
-        <div class="export-buttons">
+<div class="page-header">
+                <div class="page-header-left">
+                   <i class="bi bi-hdd-network-fill"></i>
+                    <div>
+                        <h1>Treasury WAN Pool IP & Gateway Details</h1>
+                        <p> Description  </p>
+                    </div>
+                </div>
+      <div class="export-buttons">
             <button class="export-btn excel" id="exportExcelBtn">
                 <i class="bi bi-file-earmark-excel"></i> Excel
             </button>
@@ -273,7 +282,11 @@
                 <i class="bi bi-file-earmark-spreadsheet"></i> CSV
             </button>
         </div>
-    </div>
+            </div>
+
+<div class="main-wrapper">
+    <!-- Header with Export Buttons at Right End -->
+
 
     <!-- Main Card -->
     <div class="card-db">

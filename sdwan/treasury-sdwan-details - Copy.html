@@ -20,7 +20,7 @@
     <style>
         body {
             background-color: #f0f5fa;
-            padding: 20px 16px;
+            padding: 20px;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         
@@ -28,41 +28,7 @@
             max-width: 100%;
             margin: 0 auto;
         }
-        .page-header {
-    padding: 15px 2px !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 12px !important;
-    flex-wrap: wrap !important;
-    justify-content: space-between !important;
- 
-}
-.page-header-left {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.page-header-left i {
-    font-size: 1.8rem !important;
-    background: rgb(56 143 251 / 15%) !important;
-    padding: 10px !important;
-    border-radius: 12px !important;
-    color: #184f83 !important;
-}
-
-
-.page-header-left h1 {
-    margin: 0 !important;
-    font-size: 1.8rem !important;
-    font-weight: 700 !important;
-    color: #184f83!important;
-}
- .page-header-left p {
-            margin: 2px 0 0;
-            opacity: 0.7;
-            font-size: 0.75rem;
- }
+        
         .card {
             border-radius: 12px;
             border: none;
@@ -101,12 +67,6 @@
         .btn-primary:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(15, 91, 156, 0.3);
-        }
-        
-        .btn-primary:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
         }
         
         .btn-copy-apikey {
@@ -204,6 +164,7 @@
         }
         
         .loading {
+            display: none;
             text-align: center;
             padding: 40px;
         }
@@ -218,20 +179,10 @@
             margin: 0 auto 15px;
         }
         
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        
         .empty-state {
             text-align: center;
             padding: 60px 20px;
             color: #6c757d;
-        }
-        
-        .empty-state i {
-            font-size: 48px;
-            color: #cbd5e1;
-            margin-bottom: 15px;
         }
         
         .section-title {
@@ -298,58 +249,46 @@
             display: inline-block;
         }
         
+        /* simple text style without icons */
         .plain-value {
             font-family: monospace;
             font-size: 0.85rem;
         }
-        
         .api-key-wrapper {
             display: inline-flex;
             align-items: center;
             gap: 6px;
             flex-wrap: wrap;
         }
-        
         .instance-id-text {
             font-family: monospace;
             background: #f8f9fa;
             padding: 2px 6px;
             border-radius: 4px;
         }
-        
         .encap-ip-text {
             font-family: monospace;
             background: #f1f5f9;
             padding: 2px 6px;
             border-radius: 4px;
         }
-        
-        /* Section loading state */
-        .section-loading {
-            opacity: 0.5;
-            pointer-events: none;
-        }
     </style>
 </head>
 <body>
-<div class="page-header">
-                <div class="page-header-left">
-                    <i class="bi bi-box-seam"></i>
-                    <div>
-                        <h1>SDWAN Device & MPLS Details</h1>
-                        <p> Description  </p>
-                    </div>
-                </div>
-            </div>
-
     <div class="main-container">
         <!-- Header -->
-        
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 style="color: #1a4b7a; font-weight: 700;">
+                SDWAN Device & MPLS Details
+            </h2>
+        </div>
         
         <!-- Treasury Device & MPLS Configuration Section -->
         <div id="treasuryDetails" class="tab-panel-custom" style="display: block;">
             <div class="card">
-         
+                <div class="card-header">
+                    Treasury SDWAN Details
+                </div>
                 <div class="card-body">
                     <div class="filter-card">
                         <div style="display: flex; align-items: center; gap: 16px; flex: 1;">
@@ -359,8 +298,8 @@
                             <select id="treasurySelect" class="form-select" style="width: 100%;">
                                 <option value="">Loading treasuries...</option>
                             </select>
-                            <button class="btn btn-primary" id="viewDetailsBtn" onclick="viewTreasuryDetails()">
-                             View
+                            <button class="btn btn-primary" onclick="viewTreasuryDetails()">
+                                View
                             </button>
                         </div>
                     </div>
@@ -371,8 +310,7 @@
                     </div>
                     <div id="mplsConfigTableContainer" class="table-container mb-4">
                         <div class="empty-state">
-                            <i class="bi bi-cloud"></i>
-                            <h6>Select a treasury and click "View" to load MPLS configuration</h6>
+                            <h6>Select a treasury to view MPLS configuration</h6>
                         </div>
                     </div>
                     
@@ -382,30 +320,27 @@
                     </div>
                     <div id="wan2ConfigTableContainer" class="table-container mb-4">
                         <div class="empty-state">
-                            <i class="bi bi-hdd-network"></i>
-                            <h6>Select a treasury and click "View" to load WAN 2 configuration</h6>
+                            <h6>Select a treasury to view WAN 2 configuration</h6>
                         </div>
                     </div>
                     
-                    <!-- Device Configuration Details Section -->
+                    <!-- Device Configuration Details Section (Modified: removed Status, UPS, CCTV UPS; added Instance ID, API Key, Encapsulation IP from N,O,P) -->
                     <div class="section-title">
                         Device Configuration Details
                     </div>
                     <div id="installationTableContainer" class="table-container mb-4">
                         <div class="empty-state">
-                            <i class="bi bi-server"></i>
-                            <h6>Select a treasury and click "View" to load device configuration</h6>
+                            <h6>Select a treasury and click "View"</h6>
                         </div>
                     </div>
                     
                     <!-- Working Status Section -->
                     <div class="section-title">
-                        Working Status
+                        SDWAN Working Status
                     </div>
                     <div id="treasuryWorkingTableContainer" class="table-container mb-4">
                         <div class="empty-state">
-                            <i class="bi bi-check-circle"></i>
-                            <h6>Select a treasury and click "View" to load working status</h6>
+                            <h6>Select a treasury to view working status</h6>
                         </div>
                     </div>
                     
@@ -415,8 +350,7 @@
                     </div>
                     <div id="adminTableContainer" class="table-container">
                         <div class="empty-state">
-                            <i class="bi bi-people"></i>
-                            <h6>Select a treasury and click "View" to load admin contacts</h6>
+                            <h6>Select a treasury to view admin contacts</h6>
                         </div>
                     </div>
                 </div>
@@ -440,7 +374,7 @@
         const SHEET_MPLS = "MPLS Devices";
         const SHEET_TREASURIES = "Treasuries";
         
-        // Global data storage - only loaded on demand
+        // Global data storage
         let installationData = [];
         let workingData = [];
         let adminData = [];
@@ -448,83 +382,19 @@
         let treasuriesData = [];
         let wan2Data = [];
         let treasuryList = [];
-        let isDataLoaded = false;
-        let isMplsLoaded = false;
-        let isWan2Loaded = false;
-        let isWorkingLoaded = false;
-        let isAdminLoaded = false;
-        let isTreasuriesLoaded = false;
         
         // =============================================
-        // UTILITY: Extract 4-digit code from treasury name
-        // =============================================
-        function extractTreasuryCode(treasuryName) {
-            if (!treasuryName) return '';
-            // Try to find 4 digits at the start
-            const match = treasuryName.toString().trim().match(/^(\d{4})/);
-            return match ? match[1] : '';
-        }
-        
-        // =============================================
-        // UTILITY: Normalize treasury name for comparison
-        // =============================================
-        function normalizeTreasuryName(name) {
-            if (!name) return '';
-            return name.toString().trim()
-                .replace(/\s+/g, ' ')  // Normalize spaces
-                .replace(/-\s*/g, '-')  // Normalize hyphens
-                .replace(/\s*-\s*/g, '-')  // Normalize spaces around hyphens
-                .toLowerCase();
-        }
-        
-        // =============================================
-        // CORE: Match treasury using 4-digit code as priority
-        // =============================================
-        function matchesTreasury(sheetValue, searchTreasury) {
-            if (!sheetValue || !searchTreasury) return false;
-            
-            const searchCode = extractTreasuryCode(searchTreasury);
-            const sheetCode = extractTreasuryCode(sheetValue);
-            
-            // PRIORITY 1: Match by 4-digit code (case insensitive, format insensitive)
-            if (searchCode && sheetCode) {
-                if (searchCode === sheetCode) {
-                    return true;
-                }
-            }
-            
-            // FALLBACK: Try exact match after normalization
-            const normalizedSheet = normalizeTreasuryName(sheetValue);
-            const normalizedSearch = normalizeTreasuryName(searchTreasury);
-            
-            // Check if normalized names match or one contains the other
-            if (normalizedSheet === normalizedSearch) return true;
-            if (normalizedSheet.includes(normalizedSearch) && normalizedSearch.length > 5) return true;
-            if (normalizedSearch.includes(normalizedSheet) && normalizedSheet.length > 5) return true;
-            
-            // Check if the name part (after code) matches
-            const searchNamePart = searchTreasury.toString().replace(/^\d{4}\s*[-–]\s*/, '').trim().toLowerCase();
-            const sheetNamePart = sheetValue.toString().replace(/^\d{4}\s*[-–]\s*/, '').trim().toLowerCase();
-            
-            if (searchNamePart && sheetNamePart) {
-                if (searchNamePart === sheetNamePart) return true;
-                if (searchNamePart.includes(sheetNamePart) || sheetNamePart.includes(searchNamePart)) return true;
-            }
-            
-            return false;
-        }
-        
-        // =============================================
-        // INITIALIZATION - Load ONLY treasury list
+        // INITIALIZATION
         // =============================================
         $(document).ready(function() {
-            console.log("Dashboard initialized - loading treasury list only");
+            console.log("Dashboard initialized - loading treasury list");
             loadTreasuryListOnly();
         });
         
         async function loadTreasuryListOnly() {
             try {
                 await loadInstallationSheetOnly();
+                loadRemainingSheetsInBackground();
             } catch (error) {
                 console.error("Error loading treasury list:", error);
                 $('#treasurySelect').html('<option value="">Error loading treasuries</option>');
@@ -552,133 +422,75 @@
                     } else {
                         $('#treasurySelect').html('<option value="">No treasuries found</option>');
                     }
-                })
-                .catch(error => {
-                    console.error("Error loading installation sheet:", error);
-                    $('#treasurySelect').html('<option value="">Error loading treasuries</option>');
                 });
         }
         
-        // =============================================
-        // LAZY LOAD FUNCTIONS - Load data only when needed
-        // =============================================
-        
-        async function loadMplsData() {
-            if (isMplsLoaded) return mplsData;
+        async function loadRemainingSheetsInBackground() {
             try {
-                const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(SHEET_MPLS)}?key=${API_KEY_GSHEET}`;
-                const response = await fetch(url);
-                const data = await response.json();
-                if (data.values && data.values.length > 0) {
-                    mplsData = data.values;
-                } else {
-                    mplsData = [];
-                }
-                isMplsLoaded = true;
-                return mplsData;
+                await Promise.all([
+                    loadWorkingSheet(),
+                    loadAdminSheet(),
+                    loadMplsSheet(),
+                    loadTreasuriesSheet(),
+                    loadWan2Sheet()
+                ]);
+                console.log("Background data load complete");
             } catch (error) {
-                console.error("Error loading MPLS sheet:", error);
-                mplsData = [];
-                return mplsData;
+                console.error("Error loading background sheets:", error);
             }
         }
         
-        async function loadWan2Data() {
-            if (isWan2Loaded) return wan2Data;
-            try {
-                const url = `https://sheets.googleapis.com/v4/spreadsheets/${WAN2_SPREADSHEET_ID}/values/${encodeURIComponent(WAN2_SHEET_NAME)}?key=${API_KEY_GSHEET}`;
-                const response = await fetch(url);
-                const data = await response.json();
-                if (data.values && data.values.length > 0) {
-                    wan2Data = data.values;
-                } else {
-                    wan2Data = [];
-                }
-                isWan2Loaded = true;
-                return wan2Data;
-            } catch (error) {
-                console.error("Error loading WAN2 sheet:", error);
-                wan2Data = [];
-                return wan2Data;
-            }
+        function loadWorkingSheet() {
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(SHEET_WORKING)}?key=${API_KEY_GSHEET}`;
+            return fetch(url).then(response => response.json()).then(data => {
+                if (data.values && data.values.length > 0) workingData = data.values;
+            }).catch(error => console.error("Error loading working sheet:", error));
         }
         
-        async function loadWorkingData() {
-            if (isWorkingLoaded) return workingData;
-            try {
-                const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(SHEET_WORKING)}?key=${API_KEY_GSHEET}`;
-                const response = await fetch(url);
-                const data = await response.json();
-                if (data.values && data.values.length > 0) {
-                    workingData = data.values;
-                } else {
-                    workingData = [];
-                }
-                isWorkingLoaded = true;
-                return workingData;
-            } catch (error) {
-                console.error("Error loading working sheet:", error);
-                workingData = [];
-                return workingData;
-            }
+        function loadAdminSheet() {
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(SHEET_ADMIN)}!A2:H?key=${API_KEY_GSHEET}`;
+            return fetch(url).then(response => response.json()).then(data => {
+                if (data.values && data.values.length > 0) adminData = data.values;
+                else adminData = [];
+            }).catch(error => { console.error("Error loading admin sheet:", error); adminData = []; });
         }
         
-        async function loadAdminData() {
-            if (isAdminLoaded) return adminData;
-            try {
-                const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(SHEET_ADMIN)}!A2:H?key=${API_KEY_GSHEET}`;
-                const response = await fetch(url);
-                const data = await response.json();
-                if (data.values && data.values.length > 0) {
-                    adminData = data.values;
-                } else {
-                    adminData = [];
-                }
-                isAdminLoaded = true;
-                return adminData;
-            } catch (error) {
-                console.error("Error loading admin sheet:", error);
-                adminData = [];
-                return adminData;
-            }
+        function loadMplsSheet() {
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(SHEET_MPLS)}?key=${API_KEY_GSHEET}`;
+            return fetch(url).then(response => response.json()).then(data => {
+                if (data.values && data.values.length > 0) mplsData = data.values;
+                else mplsData = [];
+            }).catch(error => { console.error("Error loading MPLS sheet:", error); mplsData = []; });
         }
         
-        async function loadTreasuriesData() {
-            if (isTreasuriesLoaded) return treasuriesData;
-            try {
-                const url = `https://sheets.googleapis.com/v4/spreadsheets/${TREASURIES_SPREADSHEET_ID}/values/${encodeURIComponent(SHEET_TREASURIES)}!A2:G?key=${API_KEY_GSHEET}`;
-                const response = await fetch(url);
-                const data = await response.json();
-                if (data.values && data.values.length > 0) {
-                    treasuriesData = data.values;
-                } else {
-                    treasuriesData = [];
-                }
-                isTreasuriesLoaded = true;
-                return treasuriesData;
-            } catch (error) {
-                console.error("Error loading treasuries sheet:", error);
-                treasuriesData = [];
-                return treasuriesData;
-            }
+        function loadTreasuriesSheet() {
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${TREASURIES_SPREADSHEET_ID}/values/${encodeURIComponent(SHEET_TREASURIES)}!A2:G?key=${API_KEY_GSHEET}`;
+            return fetch(url).then(response => response.json()).then(data => {
+                if (data.values && data.values.length > 0) treasuriesData = data.values;
+                else treasuriesData = [];
+            }).catch(error => { console.error("Error loading treasuries sheet:", error); treasuriesData = []; });
         }
         
-        // =============================================
-        // HELPER FUNCTIONS
-        // =============================================
+        function loadWan2Sheet() {
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${WAN2_SPREADSHEET_ID}/values/${encodeURIComponent(WAN2_SHEET_NAME)}?key=${API_KEY_GSHEET}`;
+            return fetch(url).then(response => response.json()).then(data => {
+                if (data.values && data.values.length > 0) wan2Data = data.values;
+                else wan2Data = [];
+            }).catch(error => { console.error("Error loading WAN2 sheet:", error); wan2Data = []; });
+        }
         
         function getTreasuryNetworkDetails(treasuryName) {
-            if (!treasuriesData || treasuriesData.length === 0) {
-                return { lanPool: '', gatewayIP: '' };
-            }
-            
-            const searchCode = extractTreasuryCode(treasuryName);
-            
+            let searchName = treasuryName;
+            if (searchName.includes('-')) searchName = searchName.substring(searchName.indexOf('-') + 1).trim();
+            searchName = searchName.replace(/treasury/i, '').trim();
             for (let i = 0; i < treasuriesData.length; i++) {
                 const row = treasuriesData[i];
                 const sheetTreasury = row[0] ? row[0].toString().trim() : '';
-                
-                if (matchesTreasury(sheetTreasury, treasuryName)) {
+                let cleanSheetTreasury = sheetTreasury;
+                if (cleanSheetTreasury.includes('-')) cleanSheetTreasury = cleanSheetTreasury.substring(cleanSheetTreasury.indexOf('-') + 1).trim();
+                cleanSheetTreasury = cleanSheetTreasury.replace(/treasury/i, '').trim();
+                if (sheetTreasury === treasuryName || cleanSheetTreasury === searchName ||
+                    sheetTreasury.includes(searchName) || searchName.includes(cleanSheetTreasury)) {
                     return {
                         lanPool: row[5] ? row[5].toString().trim() : '',
                         gatewayIP: row[6] ? row[6].toString().trim().replace(/\s+/g, '') : ''
@@ -703,88 +515,44 @@
             });
         }
         
-        function showLoadingState(containerId) {
-            $(`#${containerId}`).html(`<div class="loading"><div class="loading-spinner"></div><p>Loading data...</p></div>`);
-        }
-        
-        function showEmptyState(containerId, message = 'No data found for this treasury') {
-            $(`#${containerId}`).html(`<div class="empty-state"><i class="bi bi-inbox"></i><h6>${message}</h6></div>`);
-        }
-        
-        // =============================================
-        // MAIN VIEW FUNCTION - Loads all data on demand
-        // =============================================
-        
-        async function viewTreasuryDetails() {
+        function viewTreasuryDetails() {
             const selectedTreasury = $('#treasurySelect').val();
             if (!selectedTreasury) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'No Treasury Selected',
-                    text: 'Please select a treasury from the dropdown',
-                    confirmButtonColor: '#0f5b9c'
-                });
+                alert('Please select a treasury');
                 return;
             }
+            $('#installationTableContainer').html('<div class="loading" style="display: block;"><div class="loading-spinner"></div><p>Loading device configuration...</p></div>');
+            $('#mplsConfigTableContainer').html('<div class="loading" style="display: block;"><div class="loading-spinner"></div><p>Loading MPLS configuration...</p></div>');
+            $('#wan2ConfigTableContainer').html('<div class="loading" style="display: block;"><div class="loading-spinner"></div><p>Loading WAN2 configuration...</p></div>');
+            $('#treasuryWorkingTableContainer').html('<div class="loading" style="display: block;"><div class="loading-spinner"></div><p>Loading working status...</p></div>');
+            $('#adminTableContainer').html('<div class="loading" style="display: block;"><div class="loading-spinner"></div><p>Loading admin contacts...</p></div>');
             
-            const viewBtn = $('#viewDetailsBtn');
-            viewBtn.prop('disabled', true).html('<i class="bi bi-hourglass-split"></i> Loading...');
-            
-            try {
-                // Show loading states for all sections
-                showLoadingState('installationTableContainer');
-                showLoadingState('mplsConfigTableContainer');
-                showLoadingState('wan2ConfigTableContainer');
-                showLoadingState('treasuryWorkingTableContainer');
-                showLoadingState('adminTableContainer');
-                
-                // Load all data in parallel
-                await Promise.all([
-                    loadMplsData(),
-                    loadWan2Data(),
-                    loadWorkingData(),
-                    loadAdminData(),
-                    loadTreasuriesData()
-                ]);
-                
-                // Display all sections
-                displayInstallationTable(selectedTreasury);
-                displayMplsConfigTable(selectedTreasury);
-                displayWan2ConfigTable(selectedTreasury);
-                displayWorkingTableForTreasury(selectedTreasury);
-                displayAdminTable(selectedTreasury);
-                
-            } catch (error) {
-                console.error("Error loading treasury details:", error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error Loading Data',
-                    text: 'Failed to load treasury details. Please try again.',
-                    confirmButtonColor: '#dc2626'
-                });
-            } finally {
-                viewBtn.prop('disabled', false).html('View');
-            }
+            displayInstallationTable(selectedTreasury);
+            displayMplsConfigTable(selectedTreasury);
+            displayWan2ConfigTable(selectedTreasury);
+            displayWorkingTableForTreasury(selectedTreasury);
+            displayAdminTable(selectedTreasury);
         }
         
-        // =============================================
-        // DISPLAY FUNCTIONS - Using matchesTreasury() for lookup
-        // =============================================
+        // Helper: Mask API key - show first 5 and last 5 chars, rest asterisks
+        function maskApiKey(fullKey) {
+            if (!fullKey || fullKey === '—' || fullKey.length <= 10) return fullKey;
+            const firstFive = fullKey.substring(0, 5);
+            const lastFive = fullKey.substring(fullKey.length - 5);
+            const masked = firstFive + '•••••••••••••••' + lastFive;
+            return masked;
+        }
         
+        // Main Device Configuration Table: Replaces columns G(Status), H(UPS), I(CCTV) with N(InstanceID), O(API Key), P(Encapsulation IP)
         function displayInstallationTable(treasury) {
-            const containerId = 'installationTableContainer';
             if (!installationData || installationData.length < 2) {
-                showEmptyState(containerId, 'No installation data available');
+                $('#installationTableContainer').html('<div class="empty-state">No installation data</div>');
                 return;
             }
-            
-            const rows = installationData.slice(1).filter(row => {
-                const sheetTreasury = row[0] ? row[0].toString().trim() : '';
-                return matchesTreasury(sheetTreasury, treasury);
-            });
-            
+            const rows = installationData.slice(1).filter(row => row[0] && row[0].toString().trim() === treasury.trim());
             const networkDetails = getTreasuryNetworkDetails(treasury);
             
+            // Column definitions: A,B,C,D,E,F then N(13), O(14), P(15) then J(9), K(10), L(11), plus LAN Pool & Gateway custom
             const columnDefs = [
                 { label: 'Treasury', idx: 0 },
                 { label: 'Location', idx: 1 },
@@ -826,6 +594,7 @@
                             if (col.isApiKey && rawValue !== '—') {
                                 const fullKey = rawValue;
                                 const maskedDisplay = maskApiKey(fullKey);
+                                // Create copy button without icon, only text
                                 const copyBtn = `<button class="btn-copy-apikey" data-fullkey="${escapeHtmlAttr(fullKey)}" onclick="copyApiKey(this)">Copy</button>`;
                                 html += `<td><div class="api-key-wrapper"><span class="plain-value">${escapeHtml(maskedDisplay)}</span>${copyBtn}</div></td>`;
                             } else if (col.label === 'Instance ID' && rawValue !== '—') {
@@ -841,30 +610,54 @@
                 });
             }
             html += '</tbody></table></div>';
-            $(`#${containerId}`).html(html);
+            html += `<div class="small text-muted mt-2"></div>`;
+            $('#installationTableContainer').html(html);
         }
         
+        // Helper to escape HTML attributes
+        function escapeHtmlAttr(str) {
+            if (!str) return '';
+            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+        
+        // Global copy function for API key
+        window.copyApiKey = function(btnElement) {
+            const fullKey = btnElement.getAttribute('data-fullkey');
+            if (!fullKey) return;
+            navigator.clipboard.writeText(fullKey).then(() => {
+                const originalText = btnElement.innerText;
+                btnElement.innerText = 'Copied!';
+                setTimeout(() => {
+                    btnElement.innerText = originalText;
+                }, 1500);
+            }).catch(err => {
+                console.error('Copy failed:', err);
+                alert('Unable to copy API key');
+            });
+        };
+        
+        // MPLS Table (unchanged, cleaned from icons)
         function displayMplsConfigTable(treasury) {
-            const containerId = 'mplsConfigTableContainer';
             if (!mplsData || mplsData.length < 2) {
-                showEmptyState(containerId, 'No MPLS configuration data available');
+                $('#mplsConfigTableContainer').html('<div class="empty-state">No MPLS configuration data</div>');
                 return;
             }
-            
+            let searchTreasury = treasury;
+            if (treasury.includes('-')) searchTreasury = treasury.substring(treasury.indexOf('-') + 1).trim();
+            let searchTreasuryClean = searchTreasury.replace(/treasury/i, '').trim();
             const rows = mplsData.slice(1).filter(row => {
                 if (!row || !row[0]) return false;
-                const sheetTreasury = row[0].toString().trim();
-                return matchesTreasury(sheetTreasury, treasury);
+                const mplsTreasury = row[0].toString().trim();
+                return mplsTreasury === treasury || mplsTreasury.includes(searchTreasury) || 
+                       searchTreasury.includes(mplsTreasury) ||
+                       mplsTreasury.toLowerCase().includes(searchTreasuryClean.toLowerCase());
             });
-            
             const colNames = ['Name of Treasury', 'BSNL TXN / TIP', 'LCO CODE', 'OLT IP', 'OUTER VLAN', 'WAN IP', 'VLAN', 'GATEWAY (WAN 1)', 'Fat-Pipe Interface IP (WAN 1)', 'Clarity order status', 'Status of work', 'LC ID'];
-            
             let html = `<div class="table-responsive"><table class="table table-hover table-bordered"><thead><tr>`;
             colNames.forEach(h => html += `<th>${escapeHtml(h)}</th>`);
             html += `</tr></thead><tbody>`;
-            
             if (rows.length === 0) {
-                html += `<tr><td colspan="${colNames.length}" class="text-center py-4">No MPLS configuration found for this treasury</td></tr>`;
+                html += `<tr><td colspan="${colNames.length}" class="text-center py-4">No MPLS configuration found</td></tr>`;
             } else {
                 rows.forEach(row => {
                     html += '<tr>';
@@ -886,30 +679,30 @@
                 });
             }
             html += '</tbody></table></div>';
-            $(`#${containerId}`).html(html);
+            $('#mplsConfigTableContainer').html(html);
         }
         
         function displayWan2ConfigTable(treasury) {
-            const containerId = 'wan2ConfigTableContainer';
             if (!wan2Data || wan2Data.length < 2) {
-                showEmptyState(containerId, 'No WAN 2 configuration data available');
+                $('#wan2ConfigTableContainer').html('<div class="empty-state">No WAN 2 configuration data available.</div>');
                 return;
             }
-            
+            let searchTreasury = treasury;
+            if (treasury.includes('-')) searchTreasury = treasury.substring(treasury.indexOf('-') + 1).trim();
+            let searchTreasuryClean = searchTreasury.replace(/treasury/i, '').trim();
             const rows = wan2Data.slice(1).filter(row => {
                 if (!row || !row[0]) return false;
-                const sheetTreasury = row[0].toString().trim();
-                return matchesTreasury(sheetTreasury, treasury);
+                const wan2Treasury = row[0].toString().trim();
+                return wan2Treasury === treasury || wan2Treasury.includes(searchTreasury) || 
+                       searchTreasury.includes(wan2Treasury) ||
+                       wan2Treasury.toLowerCase().includes(searchTreasuryClean.toLowerCase());
             });
-            
             const wan2Cols = ['Treasury', 'Type of Service', 'WAN Subnet', 'Gateway (WAN 2)', 'Fat-Pipe Interface IP (WAN 2)', 'Subnet'];
-            
             let html = `<div class="table-responsive"><table class="table table-hover table-bordered"><thead><tr>`;
             wan2Cols.forEach(c => html += `<th>${escapeHtml(c)}</th>`);
             html += `</tr></thead><tbody>`;
-            
             if (rows.length === 0) {
-                html += `<tr><td colspan="6" class="text-center py-4">No WAN 2 configuration found for this treasury</td></tr>`;
+                html += `<tr><td colspan="6" class="text-center py-4">No WAN 2 configuration found</td></tr>`;
             } else {
                 rows.forEach(row => {
                     html += '<tr>';
@@ -924,28 +717,23 @@
                 });
             }
             html += '</tbody></table></div>';
-            $(`#${containerId}`).html(html);
+            $('#wan2ConfigTableContainer').html(html);
         }
         
         function displayWorkingTableForTreasury(treasury) {
-            const containerId = 'treasuryWorkingTableContainer';
             if (!workingData || workingData.length < 2) {
-                showEmptyState(containerId, 'No working status data available');
+                $('#treasuryWorkingTableContainer').html('<div class="empty-state">No working data available</div>');
                 return;
             }
-            
-            const rows = workingData.slice(1).filter(row => {
-                const sheetTreasury = row[0] ? row[0].toString().trim() : '';
-                return matchesTreasury(sheetTreasury, treasury);
-            });
-            
-            let html = `<div class="table-responsive"><table class="table table-hover table-bordered"><thead><tr>
+            let searchTreasury = treasury;
+            if (treasury.includes('-')) searchTreasury = treasury.substring(treasury.indexOf('-') + 1).trim();
+            const rows = workingData.slice(1).filter(row => row[0] && row[0].toString().trim() === treasury);
+            let html = `<div class="table-responsive"><table class="table table-hover table-striped"><thead><tr>
                         <th>Name of Treasury</th><th>CONTACT DETAILS OF BSNL OFFICERS</th>
                         <th>Treasury Remarks</th><th>BBM REMARKS</th><th>Issue Remarks</th>
                         </tr></thead><tbody>`;
-            
             if (rows.length === 0) {
-                html += `<tr><td colspan="5" class="text-center py-4">No working status found for this treasury</td></tr>`;
+                html += `<tr><td colspan="5" class="text-center py-4">No working status found</td></tr>`;
             } else {
                 rows.forEach(row => {
                     let remarks = row[13] || '—';
@@ -963,28 +751,23 @@
                 });
             }
             html += '</tbody></table></div>';
-            $(`#${containerId}`).html(html);
+            $('#treasuryWorkingTableContainer').html(html);
         }
         
         function displayAdminTable(treasury) {
-            const containerId = 'adminTableContainer';
             if (!adminData || adminData.length === 0) {
-                showEmptyState(containerId, 'No admin contact data available');
+                $('#adminTableContainer').html('<div class="empty-state">No admin contact data</div>');
                 return;
             }
-            
             const cols = ['Treasury/Location', 'Network Admin Name', 'Network Admin Contact', 'Treasury Admin Name', 'Treasury Admin Contact', 'Office Mail ID', 'Office Contact', 'Office Mobile'];
-            const rows = adminData.filter(row => {
-                const sheetTreasury = row[0] ? row[0].toString().trim() : '';
-                return matchesTreasury(sheetTreasury, treasury);
-            });
-            
+            let searchTreasury = treasury;
+            if (treasury.includes('-')) searchTreasury = treasury.substring(treasury.indexOf('-') + 1).trim();
+            const rows = adminData.filter(row => row[0] && row[0].toString().trim() === treasury);
             let html = `<div class="table-responsive"><table class="table table-hover table-bordered"><thead><tr>`;
             cols.forEach(h => html += `<th>${escapeHtml(h)}</th>`);
             html += `</thead><tbody>`;
-            
             if (rows.length === 0) {
-                html += `<tr><td colspan="8" class="text-center py-4">No admin contacts found for this treasury</td></tr>`;
+                html += `<tr><td colspan="8" class="text-center py-4">No admin contacts found</td></tr>`;
             } else {
                 rows.forEach(row => {
                     html += '<tr>';
@@ -1000,35 +783,9 @@
                     html += '</tr>';
                 });
             }
-            html += '</tbody></table></div>';
-            $(`#${containerId}`).html(html);
+            html += '</tbody><table></div>';
+            $('#adminTableContainer').html(html);
         }
-        
-        // =============================================
-        // UTILITY FUNCTIONS
-        // =============================================
-        
-        function maskApiKey(fullKey) {
-            if (!fullKey || fullKey === '—' || fullKey.length <= 10) return fullKey;
-            const firstFive = fullKey.substring(0, 5);
-            const lastFive = fullKey.substring(fullKey.length - 5);
-            return firstFive + '•••••••••••••••' + lastFive;
-        }
-        
-        window.copyApiKey = function(btnElement) {
-            const fullKey = btnElement.getAttribute('data-fullkey');
-            if (!fullKey) return;
-            navigator.clipboard.writeText(fullKey).then(() => {
-                const originalText = btnElement.innerText;
-                btnElement.innerText = 'Copied!';
-                setTimeout(() => {
-                    btnElement.innerText = originalText;
-                }, 1500);
-            }).catch(err => {
-                console.error('Copy failed:', err);
-                alert('Unable to copy API key');
-            });
-        };
         
         function escapeHtml(text) {
             if (!text) return '—';
@@ -1038,12 +795,9 @@
                 if (m === '<') return '&lt;';
                 if (m === '>') return '&gt;';
                 return m;
+            }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
+                return c;
             });
-        }
-        
-        function escapeHtmlAttr(str) {
-            if (!str) return '';
-            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
         }
         
         function showError(message) {
@@ -1051,21 +805,6 @@
             $('#treasuryDetails .card-body').prepend(errorHtml);
             setTimeout(() => $('.alert-danger').fadeOut(300, function() { $(this).remove(); }), 5000);
         }
-        
-        // =============================================
-        // KEYBOARD SHORTCUT - Enter key triggers View
-        // =============================================
-        
-        $('#treasurySelect').on('keypress', function(e) {
-            if (e.which === 13) {
-                e.preventDefault();
-                viewTreasuryDetails();
-            }
-        });
-        
-        console.log('SDWAN Dashboard initialized with lazy loading');
-        console.log('Data will load only when a treasury is selected and "View" is clicked');
-        console.log('Treasury matching uses 4-digit code as primary key for case-insensitive lookup');
     </script>
 </body>
 </html>
