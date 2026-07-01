@@ -20,16 +20,51 @@
         body {
             background: #eef2f7;
             font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-            padding: 30px 20px;
+            padding: 20px 16px;
         }
         .app-card {
             max-width: 100%;
             margin: 0 auto;
             background: white;
-            border-radius: 28px;
+            border-radius: 20px;
             box-shadow: 0 20px 35px -12px rgba(0,0,0,0.1);
             overflow: hidden;
         }
+.page-header {
+    padding: 15px 2px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    flex-wrap: wrap !important;
+    justify-content: space-between !important;
+ 
+}
+.page-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.page-header-left i {
+    font-size: 1.8rem !important;
+    background: rgb(56 143 251 / 15%) !important;
+    padding: 10px !important;
+    border-radius: 12px !important;
+    color: #184f83 !important;
+}
+
+
+.page-header-left h1 {
+    margin: 0 !important;
+    font-size: 1.8rem !important;
+    font-weight: 700 !important;
+    color: #184f83!important;
+}
+ .page-header-left p {
+            margin: 2px 0 0;
+            opacity: 0.7;
+            font-size: 0.75rem;
+ }
         .tab-header {
             display: flex;
             background: #f8fafc;
@@ -189,6 +224,15 @@
     </style>
 </head>
 <body>
+<div class="page-header">
+                <div class="page-header-left">
+                    <i class="bi bi-battery-charging"></i>
+                    <div>
+                        <h1> Register Power Event</h1>
+                        <p>All treasury Power Down & Up time reporting </p>
+                    </div>
+                </div>
+            </div>
 <div class="app-card">
     <div class="tab-header">
         <button class="tab-btn active" id="tabAddBtn"><i class="bi bi-lightning-charge"></i> Add Power Event</button>
