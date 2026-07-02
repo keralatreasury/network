@@ -31,23 +31,20 @@ let soundEnabled = true;
 let audioContext = null;
 let userInteracted = false;
 
-// Make variables globally accessible for notification system
+// Make variables globally accessible
 window.isAuthenticated = false;
 window.currentUser = null;
 
 // ======================== NOTIFICATION SOUND FUNCTIONS ========================
 function initNotificationSound() {
     try {
-        // Try to load Audio element first
         notificationSound = new Audio('./sweet.mp3');
         notificationSound.volume = 0.5;
         notificationSound.load();
         console.log("Notification sound loaded from ./sweet.mp3");
         
-        // Also initialize Web Audio API context for fallback (suspended initially)
         if (!audioContext) {
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            // Keep it suspended until user interaction
             console.log("Web Audio API context created (suspended)");
         }
     } catch(e) {
@@ -56,14 +53,12 @@ function initNotificationSound() {
     }
 }
 
-// Call this function on user interaction (click, touch, etc.)
 function enableAudioOnUserInteraction() {
     if (userInteracted) return;
     userInteracted = true;
     
     console.log("User interaction detected - enabling audio");
     
-    // Resume Web Audio context if it exists
     if (audioContext && audioContext.state === 'suspended') {
         audioContext.resume().then(() => {
             console.log("AudioContext resumed successfully");
@@ -72,7 +67,6 @@ function enableAudioOnUserInteraction() {
         });
     }
     
-    // Try to play and immediately pause a silent sound to unlock audio
     if (notificationSound) {
         try {
             notificationSound.volume = 0;
@@ -90,12 +84,10 @@ function enableAudioOnUserInteraction() {
     }
 }
 
-// Set up global event listeners to capture first user interaction
 function setupUserInteractionListener() {
     const events = ['click', 'touchstart', 'keydown', 'mousedown'];
     const handler = function() {
         enableAudioOnUserInteraction();
-        // Remove listeners after first interaction
         events.forEach(event => {
             document.removeEventListener(event, handler);
         });
@@ -112,7 +104,6 @@ function playNotificationSound() {
         return;
     }
     
-    // Try to play with Audio element
     if (notificationSound) {
         try {
             notificationSound.currentTime = 0;
@@ -123,7 +114,6 @@ function playNotificationSound() {
                     console.log("Notification sound played successfully");
                 }).catch(error => {
                     console.log("Audio play failed:", error.message);
-                    // Fallback to Web Audio beep if available
                     playFallbackBeep();
                 });
             }
@@ -137,21 +127,18 @@ function playNotificationSound() {
 }
 
 function playFallbackBeep() {
-    // Only play if user has interacted OR audio context is already running
     if (!userInteracted && (!audioContext || audioContext.state !== 'running')) {
         console.log("Waiting for user interaction before playing beep");
         return;
     }
     
     try {
-        // Use existing audio context or create a new one
         let ctx = audioContext;
         if (!ctx) {
             ctx = new (window.AudioContext || window.webkitAudioContext)();
             audioContext = ctx;
         }
         
-        // Resume if suspended
         if (ctx.state === 'suspended') {
             ctx.resume().then(() => {
                 playBeepWithContext(ctx);
@@ -159,11 +146,9 @@ function playFallbackBeep() {
         } else if (ctx.state === 'running') {
             playBeepWithContext(ctx);
         } else {
-            // Create a one-time context for this beep only
             const tempCtx = new (window.AudioContext || window.webkitAudioContext)();
             tempCtx.resume().then(() => {
                 playBeepWithContext(tempCtx);
-                // Close after beep to clean up
                 setTimeout(() => tempCtx.close(), 500);
             }).catch(e => console.log("Cannot create temp context:", e));
         }
@@ -194,7 +179,6 @@ function toggleNotificationSound() {
     localStorage.setItem('notificationSoundEnabled', soundEnabled);
     console.log("Notification sound:", soundEnabled ? "Enabled" : "Disabled");
     
-    // Update sound icon if exists
     const soundIcon = document.getElementById('notificationSoundIcon');
     if (soundIcon) {
         soundIcon.innerHTML = soundEnabled ? '<i class="bi bi-volume-up-fill"></i>' : '<i class="bi bi-volume-mute-fill"></i>';
@@ -203,110 +187,60 @@ function toggleNotificationSound() {
     return soundEnabled;
 }
 
-// Load sound preference
 const savedSoundPref = localStorage.getItem('notificationSoundEnabled');
 if (savedSoundPref !== null) {
     soundEnabled = savedSoundPref === 'true';
 }
 
-
-// ========================  Function to update login timestamp ========================
-
-
-
-// JSONP method - Most reliable for cross-origin requests
-function updateLoginTimestampJSONP(username) {
-  return new Promise((resolve, reject) => {
-    try {
-      const timestamp = new Date().toISOString();
-      const callbackName = 'callback_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-      
-      // Create script element
-      const script = document.createElement('script');
-      const url = `${WEB_APP_URL}?action=updateLoginTime&username=${encodeURIComponent(username)}&timestamp=${encodeURIComponent(timestamp)}&callback=${callbackName}`;
-      
-      // Define the callback function
-      window[callbackName] = function(response) {
-        delete window[callbackName];
-        document.body.removeChild(script);
-        
-        if (response && response.success) {
-          console.log('✓ Login timestamp recorded for', username);
-          resolve(true);
-        } else {
-          console.error('✗ Failed to update timestamp:', response ? response.error : 'Unknown error');
-          resolve(false);
-        }
-      };
-      
-      // Handle errors
-      script.onerror = function() {
-        delete window[callbackName];
-        document.body.removeChild(script);
-        console.error('✗ JSONP request failed for', username);
-        resolve(false);
-      };
-      
-      script.src = url;
-      document.body.appendChild(script);
-      
-    } catch (error) {
-      console.error('✗ Error in JSONP request:', error);
-      resolve(false);
-    }
-  });
-}
-
-// Use this in your handleLogin function
-// Replace updateLoginTimestamp(username) with:
-// updateLoginTimestampJSONP(username).catch(err => console.warn('Timestamp update failed:', err));
-
+// ======================== UPDATE LOGIN TIMESTAMP ========================
 function updateLoginTimestamp(username) {
-  return new Promise((resolve) => {
-    try {
-      const timestamp = new Date().toISOString();
-      const callbackName = 'cb_' + Date.now() + '_' + Math.random().toString(36).substr(2, 8);
-      
-      const script = document.createElement('script');
-      const url = `${WEB_APP_URL}?action=updateLoginTime&username=${encodeURIComponent(username)}&timestamp=${encodeURIComponent(timestamp)}&callback=${callbackName}`;
-      
-      window[callbackName] = function(response) {
-        delete window[callbackName];
-        document.body.removeChild(script);
-        
-        if (response && response.success) {
-          console.log('✓ Login timestamp recorded for', username);
-        } else {
-          console.warn('⚠ Timestamp update failed:', response?.error);
+    return new Promise((resolve) => {
+        try {
+            const timestamp = new Date().toISOString();
+            const callbackName = 'cb_' + Date.now() + '_' + Math.random().toString(36).substr(2, 8);
+            
+            const script = document.createElement('script');
+            const url = `${WEB_APP_URL}?action=updateLoginTime&username=${encodeURIComponent(username)}&timestamp=${encodeURIComponent(timestamp)}&callback=${callbackName}`;
+            
+            window[callbackName] = function(response) {
+                delete window[callbackName];
+                document.body.removeChild(script);
+                
+                if (response && response.success) {
+                    console.log('✓ Login timestamp recorded for', username);
+                } else {
+                    console.warn('⚠ Timestamp update failed:', response?.error || 'Unknown error');
+                }
+                resolve(true);
+            };
+            
+            script.onerror = function() {
+                delete window[callbackName];
+                document.body.removeChild(script);
+                console.warn('⚠ Timestamp update request failed for', username);
+                resolve(false);
+            };
+            
+            // Set timeout to prevent hanging
+            setTimeout(() => {
+                if (window[callbackName]) {
+                    delete window[callbackName];
+                    try { document.body.removeChild(script); } catch(e) {}
+                    console.warn('⚠ Timestamp update timeout for', username);
+                    resolve(false);
+                }
+            }, 10000);
+            
+            script.src = url;
+            document.body.appendChild(script);
+            
+        } catch (error) {
+            console.error('Error updating timestamp:', error);
+            resolve(false);
         }
-        resolve(true);
-      };
-      
-      script.onerror = () => {
-        delete window[callbackName];
-        document.body.removeChild(script);
-        console.warn('⚠ Timestamp update request failed');
-        resolve(false);
-      };
-      
-      script.src = url;
-      document.body.appendChild(script);
-      
-    } catch (error) {
-      console.error('Error:', error);
-      resolve(false);
-    }
-  });
+    });
 }
-// Add this test function to debug
-async function testTimestampUpdateManually() {
-  const username = prompt('Enter username to test (e.g., BR0001):');
-  if (username) {
-    console.log('Testing timestamp update for:', username);
-    const result = await updateLoginTimestamp(username);
-    console.log('Update result:', result ? 'Success' : 'Failed');
-  }
-}
+
 // ======================== THEME FUNCTIONS ========================
 function initTheme() {
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -352,7 +286,6 @@ function hideLoginError() {
 
 // ======================== NOTIFICATION SYSTEM FUNCTIONS ========================
 function getCurrentBranchForChat() {
-    // First check if currentUser exists from login
     if (currentUser && currentUser.username) {
         let username = currentUser.username.toUpperCase();
         if (/^BR\d{4}$/i.test(username) || username === "ADMIN") {
@@ -360,7 +293,6 @@ function getCurrentBranchForChat() {
         }
     }
     
-    // Check localStorage for branch
     let branch = localStorage.getItem('branchCode');
     if (branch && (/^BR\d{4}$/i.test(branch) || branch === "ADMIN")) {
         return branch.toUpperCase();
@@ -371,7 +303,6 @@ function getCurrentBranchForChat() {
         return branch.toUpperCase();
     }
     
-    // Check sessionStorage for currentUser
     const sessionUser = sessionStorage.getItem('currentUser');
     if (sessionUser) {
         try {
@@ -429,9 +360,7 @@ async function fetchUnreadChatCount() {
             }
         }
         
-        // Play sound if unread count increased (only after user interaction)
         if (unreadCount > lastUnreadCount && unreadCount > 0) {
-            // Schedule sound play - will only work if user has interacted
             setTimeout(() => playNotificationSound(), 100);
         }
         
@@ -457,8 +386,6 @@ function updateNotificationBadge(count) {
         setTimeout(() => {
             if (badge) badge.style.animation = 'pulse-red 1.5s infinite';
         }, 500);
-        
-        // Update document title with notification count
         document.title = `(${count}) NOC Admin`;
     } else {
         badge.textContent = '0';
@@ -478,7 +405,6 @@ function openChatInIframe() {
     
     iframe.onload = function() { 
         if (loading) loading.style.display = 'none'; 
-        // Reset badge after opening chat
         setTimeout(() => {
             fetchUnreadChatCount();
         }, 3000);
@@ -513,7 +439,7 @@ function stopUnreadCheckInterval() {
 
 function initNotificationSystem() {
     initNotificationSound();
-    setupUserInteractionListener(); // Set up listeners for first user interaction
+    setupUserInteractionListener();
     
     const notificationBtn = document.getElementById('notificationIconBtn');
     if (notificationBtn) {
@@ -607,6 +533,43 @@ function adjustWrapperHeightForTicker() {
     wrapper.style.height = `${viewportHeight - navbarHeight - tickerHeight}px`;
 }
 
+// ======================== FETCH USER DETAILS FROM LOGIN SHEET ========================
+async function fetchUserDetailsFromLoginSheet(username) {
+    try {
+        const loginUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${LOGIN_SHEET}!A:J?key=${API_KEY}&_=${Date.now()}`;
+        const response = await fetch(loginUrl);
+        const data = await response.json();
+        
+        if (data.error || !data.values) {
+            console.error('Error fetching user details:', data.error);
+            return null;
+        }
+        
+        const rows = data.values;
+        for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            if (row.length >= 1 && row[0] === username) {
+                return {
+                    username: row[0] || '',
+                    userId: row[1] || '',
+                    password: row[2] || '',
+                    menuSheet: row[3] || '',
+                    email: row[4] || '',
+                    otp: row[5] || '',
+                    loginTimestamp: row[6] || '',
+                    treasury: row[7] || '',
+                    otpExpiry: row[8] || '',
+                    imageUrl: row[9] || null
+                };
+            }
+        }
+        return null;
+    } catch (error) {
+        console.error('Error fetching user details:', error);
+        return null;
+    }
+}
+
 // ======================== LOGIN FUNCTIONS ========================
 async function validateLogin(username, password) {
     try {
@@ -650,85 +613,98 @@ async function validateLogin(username, password) {
     }
 }
 
-async function handleLogin() {
-  const username = document.getElementById('username').value.trim();
-  const password = document.getElementById('password').value.trim();
-  const loginBtn = document.getElementById('loginBtn');
-  const loginSpinner = document.getElementById('loginSpinner');
-  const loginText = document.getElementById('loginText');
-  const loginOverlay = document.getElementById('loginOverlay');
-  
-  hideLoginError();
-  
-  if (!username || !password) {
-    showLoginError('Please enter both username and password');
-    return;
-  }
-  
-  loginBtn.disabled = true;
-  loginSpinner.classList.remove('d-none');
-  loginText.textContent = 'Verifying...';
-  document.activeElement.blur();
-  
-  try {
-    const userData = await validateLogin(username, password);
+// ======================== MAIN LOGIN HANDLER ========================
+window.handleLogin = async function() {
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value.trim();
+    const loginBtn = document.getElementById('loginBtn');
+    const loginSpinner = document.getElementById('loginSpinner');
+    const loginText = document.getElementById('loginText');
+    const loginOverlay = document.getElementById('loginOverlay');
     
-    if (userData) {
-      isAuthenticated = true;
-      currentUser = userData;
-      
-      // Update global variables
-      window.isAuthenticated = true;
-      window.currentUser = userData;
-      
-      // ========== ADD THIS LINE ==========
-      // Record login timestamp in Google Sheet (runs in background)
-      updateLoginTimestamp(username).catch(err => {
-        console.warn('Could not update login timestamp:', err);
-      });
-      // ====================================
-      
-      localStorage.setItem('currentUser', JSON.stringify({
-        username: userData.username,
-        loginTime: new Date().toISOString(),
-        menuSheet: userData.menuSheet
-      }));
-      
-      sessionStorage.setItem('currentUser', JSON.stringify({
-        username: userData.username,
-        loginTime: new Date().toISOString(),
-        menuSheet: userData.menuSheet
-      }));
-      
-      loginOverlay.style.opacity = '0';
-      
-      setTimeout(() => {
-        loginOverlay.style.display = 'none';
-        document.getElementById('dashboardContainer').style.display = 'block';
-        loadMenuData(userData.menuSheet);
-        setTimeout(() => {
-          fetchAndDisplayFlashNews();
-          initNotificationSystem();
-        }, 100);
-      }, 500);
-    } else {
-      loginBtn.disabled = false;
-      loginSpinner.classList.add('d-none');
-      loginText.textContent = 'Login';
-      document.getElementById('password').value = '';
-      showLoginError('Invalid username or password');
-      document.getElementById('username').focus();
+    hideLoginError();
+    
+    if (!username || !password) {
+        showLoginError('Please enter both username and password');
+        return;
     }
-  } catch (error) {
-    console.error('Login error:', error);
-    loginBtn.disabled = false;
-    loginSpinner.classList.add('d-none');
-    loginText.textContent = 'Login';
-    showLoginError('Unable to verify credentials. Please try again.');
-    document.getElementById('username').focus();
-  }
-}
-function logout() {
+    
+    loginBtn.disabled = true;
+    loginSpinner.classList.remove('d-none');
+    loginText.textContent = 'Verifying...';
+    document.activeElement.blur();
+    
+    try {
+        const userData = await validateLogin(username, password);
+        
+        if (userData) {
+            isAuthenticated = true;
+            currentUser = userData;
+            window.isAuthenticated = true;
+            window.currentUser = userData;
+            
+            // Fetch full user details from Login sheet
+            const fullDetails = await fetchUserDetailsFromLoginSheet(username);
+            console.log('Full user details fetched:', fullDetails);
+            
+            const completeUserData = {
+                username: userData.username,
+                userId: fullDetails?.userId || userData.username,
+                loginTime: new Date().toISOString(),
+                menuSheet: userData.menuSheet,
+                email: fullDetails?.email || '',
+                treasury: fullDetails?.treasury || '',
+                imageUrl: fullDetails?.imageUrl || null
+            };
+            
+            // Store in localStorage and sessionStorage
+            localStorage.setItem('currentUser', JSON.stringify(completeUserData));
+            sessionStorage.setItem('currentUser', JSON.stringify(completeUserData));
+            
+            currentUser = completeUserData;
+            window.currentUser = completeUserData;
+            
+            // Update login timestamp (non-blocking)
+            updateLoginTimestamp(username);
+            
+            loginOverlay.style.opacity = '0';
+            
+            setTimeout(() => {
+                loginOverlay.style.display = 'none';
+                document.getElementById('dashboardContainer').style.display = 'block';
+                
+                // Update navbar user
+                if (typeof window.updateNavbarUser === 'function') {
+                    window.updateNavbarUser(completeUserData);
+                }
+                
+                loadMenuData(userData.menuSheet);
+                
+                setTimeout(() => {
+                    fetchAndDisplayFlashNews();
+                    initNotificationSystem();
+                }, 100);
+            }, 500);
+        } else {
+            loginBtn.disabled = false;
+            loginSpinner.classList.add('d-none');
+            loginText.textContent = 'Login';
+            document.getElementById('password').value = '';
+            showLoginError('Invalid username or password');
+            document.getElementById('username').focus();
+        }
+    } catch (error) {
+        console.error('Login error:', error);
+        loginBtn.disabled = false;
+        loginSpinner.classList.add('d-none');
+        loginText.textContent = 'Login';
+        showLoginError('Unable to verify credentials. Please try again.');
+        document.getElementById('username').focus();
+    }
+};
+
+// ======================== LOGOUT FUNCTION ========================
+window.logout = function() {
     stopUnreadCheckInterval();
     
     localStorage.removeItem('currentUser');
@@ -754,23 +730,23 @@ function logout() {
     document.getElementById('username').value = '';
     document.getElementById('password').value = '';
     
-    // Reset notification badge
     updateNotificationBadge(0);
     lastUnreadCount = 0;
-    
-    // Reset document title
     document.title = 'NOC Admin';
-    
-    // Reset user interaction flag
     userInteracted = false;
+    
+    if (typeof window.hideUserPopup === 'function') {
+        window.hideUserPopup();
+    }
     
     setTimeout(() => {
         document.getElementById('username').focus();
+        resetLoginButtonState();
     }, 100);
-}
+};
 
 // ======================== USER DISPLAY FUNCTIONS ========================
-function displayLoggedInUser() {
+window.displayLoggedInUser = function() {
     const storedUser = localStorage.getItem('currentUser');
     if (storedUser) {
         try {
@@ -778,64 +754,17 @@ function displayLoggedInUser() {
             currentUser = userData;
             window.currentUser = userData;
             
-            const existingDesktopUser = document.getElementById('desktopUserInfo');
-            if (existingDesktopUser) existingDesktopUser.remove();
-            
-            const existingMobileUser = document.getElementById('mobileUserInfo');
-            if (existingMobileUser) existingMobileUser.remove();
-            
-            const desktopSidebar = document.getElementById('desktopSidebar');
-            if (desktopSidebar) {
-                const userInfoDiv = document.createElement('div');
-                userInfoDiv.className = 'user-info-sidebar';
-                userInfoDiv.id = 'desktopUserInfo';
-                userInfoDiv.innerHTML = `
-                    <div class="user-info-content">
-                        <div class="user-avatar">
-                            <i class="bi bi-person-circle"></i>
-                        </div>
-                        <div class="user-details">
-                            <span class="user-label">Logged in as</span>
-                            <span class="user-name">${escapeHtml(userData.username)}</span>
-                            <span class="user-login-time">${new Date(userData.loginTime).toLocaleString()}</span>
-                        </div>
-                        <button class="logout-icon-btn" onclick="logout()" title="Logout">
-                            <i class="bi bi-box-arrow-right"></i>
-                        </button>
-                    </div>
-                `;
-                desktopSidebar.insertBefore(userInfoDiv, desktopSidebar.firstChild);
-            }
-            
-            const mobileSidebar = document.getElementById('mobileSidebar');
-            if (mobileSidebar) {
-                const userInfoDiv = document.createElement('div');
-                userInfoDiv.className = 'user-info-sidebar';
-                userInfoDiv.id = 'mobileUserInfo';
-                userInfoDiv.innerHTML = `
-                    <div class="user-info-content">
-                        <div class="user-avatar">
-                            <i class="bi bi-person-circle"></i>
-                        </div>
-                        <div class="user-details">
-                            <span class="user-label">Logged in as</span>
-                            <span class="user-name">${escapeHtml(userData.username)}</span>
-                            <span class="user-login-time">${new Date(userData.loginTime).toLocaleString()}</span>
-                        </div>
-                        <button class="logout-icon-btn" onclick="logout()" title="Logout">
-                            <i class="bi bi-box-arrow-right"></i>
-                        </button>
-                    </div>
-                `;
-                mobileSidebar.insertBefore(userInfoDiv, mobileSidebar.firstChild);
+            if (typeof window.updateNavbarUser === 'function') {
+                window.updateNavbarUser(userData);
             }
         } catch (e) {
             console.error('Error parsing user data:', e);
         }
     }
-}
+};
 
-function checkExistingSession() {
+// ======================== CHECK EXISTING SESSION ========================
+window.checkExistingSession = function() {
     const storedUser = localStorage.getItem('currentUser');
     if (storedUser) {
         try {
@@ -845,7 +774,7 @@ function checkExistingSession() {
             const hoursSinceLogin = (now - loginTime) / (1000 * 60 * 60);
             
             if (hoursSinceLogin > 24) {
-                logout();
+                window.logout();
                 return;
             }
             
@@ -860,6 +789,10 @@ function checkExistingSession() {
             loginOverlay.style.display = 'none';
             dashboardContainer.style.display = 'block';
             
+            if (typeof window.updateNavbarUser === 'function') {
+                window.updateNavbarUser(userData);
+            }
+            
             loadMenuData(userData.menuSheet);
             setTimeout(() => {
                 fetchAndDisplayFlashNews();
@@ -867,10 +800,10 @@ function checkExistingSession() {
             }, 100);
         } catch (e) {
             console.error('Error restoring session:', e);
-            logout();
+            window.logout();
         }
     }
-}
+};
 
 // ======================== MENU DATA FUNCTIONS ========================
 function processIconData(rows) {
@@ -978,36 +911,40 @@ async function fetchSheetData(menuSheetName) {
     }
 }
 
-async function loadMenuData(menuSheetName) {
+function loadMenuData(menuSheetName) {
     try {
         if (!menuSheetName) {
             showError('No menu sheet configured for this user');
             return;
         }
         
-        menuData = await fetchSheetData(menuSheetName);
-        renderMenuCards(menuData, 'desktopSidebar');
-        renderMenuCards(menuData, 'mobileSidebar');
-        
-        displayLoggedInUser();
-        
-        const welcomeMsg = document.getElementById('welcome-message');
-        if (welcomeMsg) {
-            welcomeMsg.style.display = 'block';
-            // Auto-hide welcome message after 5 seconds
-            setTimeout(() => {
-                welcomeMsg.style.display = 'none';
-            }, 5000);
-        }
-        
-        const loading = document.getElementById('loading');
-        if (loading) loading.style.display = 'none';
-        
-        if (currentUser) {
-            console.log(`Logged in as: ${currentUser.username}, using menu sheet: ${menuSheetName}`);
-        }
+        fetchSheetData(menuSheetName).then(data => {
+            menuData = data;
+            renderMenuCards(menuData, 'desktopSidebar');
+            renderMenuCards(menuData, 'mobileSidebar');
+            
+            window.displayLoggedInUser();
+            
+            const welcomeMsg = document.getElementById('welcome-message');
+            if (welcomeMsg) {
+                welcomeMsg.style.display = 'block';
+                setTimeout(() => {
+                    welcomeMsg.style.display = 'none';
+                }, 5000);
+            }
+            
+            const loading = document.getElementById('loading');
+            if (loading) loading.style.display = 'none';
+            
+            if (currentUser) {
+                console.log(`Logged in as: ${currentUser.username}, using menu sheet: ${menuSheetName}`);
+            }
+        }).catch(error => {
+            console.error('Error loading menu data:', error);
+            showError('Error loading menu data');
+        });
     } catch (error) {
-        console.error('Error loading menu data:', error);
+        console.error('Error in loadMenuData:', error);
         showError('Error loading menu data');
     }
 }
@@ -1032,7 +969,6 @@ function renderMenuCards(menuData, containerId) {
         main.subMenus.forEach(sub => {
             let linksHtml = '';
             sub.items.forEach(link => {
-                // Add data-url and data-title attributes for tracking
                 linksHtml += `<li class="link-item" data-url="${link.url}" data-title="${link.title}">${link.icon} ${escapeHtml(link.title)}</li>`;
             });
             subHtml += `<div class="submenu-block">
@@ -1047,18 +983,15 @@ function renderMenuCards(menuData, containerId) {
     });
     container.innerHTML = html;
     
-    // Add click handlers with active state management
     container.querySelectorAll('.link-item').forEach(el => {
         el.addEventListener('click', (e) => {
             e.preventDefault();
             const url = el.dataset.url;
             
-            // Remove active class from all link items in this container
             container.querySelectorAll('.link-item').forEach(item => {
                 item.classList.remove('active');
             });
             
-            // Add active class to clicked item
             el.classList.add('active');
             
             loadUrlInIframe(url);
@@ -1072,6 +1005,7 @@ function renderMenuCards(menuData, containerId) {
         });
     });
 }
+
 function loadUrlInIframe(url) {
     const iframe = document.getElementById('content-frame');
     const loading = document.getElementById('loading');
@@ -1082,7 +1016,6 @@ function loadUrlInIframe(url) {
     
     let fullUrl = url;
     
-    // Add cache-busting to URLs
     if (fullUrl.includes('?')) {
         fullUrl += `&_=${Date.now()}`;
     } else {
@@ -1115,6 +1048,17 @@ function initDesktopSidebarToggle() {
     });
 }
 
+// ======================== RESET LOGIN BUTTON STATE ========================
+function resetLoginButtonState() {
+    const loginBtn = document.getElementById('loginBtn');
+    const loginSpinner = document.getElementById('loginSpinner');
+    const loginText = document.getElementById('loginText');
+    
+    if (loginBtn) loginBtn.disabled = false;
+    if (loginSpinner) loginSpinner.classList.add('d-none');
+    if (loginText) loginText.textContent = 'Login';
+}
+
 // ======================== INITIALIZATION ========================
 document.addEventListener('DOMContentLoaded', function() {
     initTheme();
@@ -1126,7 +1070,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     const loginBtn = document.getElementById('loginBtn');
     if (loginBtn) {
-        loginBtn.addEventListener('click', handleLogin);
+        loginBtn.addEventListener('click', window.handleLogin);
     }
     
     const username = document.getElementById('username');
@@ -1139,21 +1083,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (password) password.focus();
             }
         });
+        username.addEventListener('input', hideLoginError);
     }
     
     if (password) {
         password.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
-                handleLogin();
+                window.handleLogin();
             }
         });
-    }
-    
-    if (username) {
-        username.addEventListener('input', hideLoginError);
-    }
-    if (password) {
         password.addEventListener('input', hideLoginError);
     }
     
@@ -1162,7 +1101,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const welcomeMsg = document.getElementById('welcome-message');
     if (welcomeMsg) welcomeMsg.style.display = 'none';
     
-    checkExistingSession();
+    window.checkExistingSession();
     
     window.addEventListener('resize', () => {
         if (isAuthenticated) {
@@ -1186,12 +1125,12 @@ if (contentFrame) {
     });
 }
 
-// Register service worker
+// Service worker
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('/network/sw.js')
             .then(registration => {
-                console.log('ServiceWorker registered successfully with scope:', registration.scope);
+                console.log('ServiceWorker registered successfully');
             })
             .catch(error => {
                 console.log('ServiceWorker registration failed:', error);
@@ -1199,11 +1138,21 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-// Export functions for global access
+// Export functions
 window.fetchAndDisplayFlashNews = fetchAndDisplayFlashNews;
 window.adjustWrapperHeightForTicker = adjustWrapperHeightForTicker;
-window.logout = logout;
 window.fetchUnreadChatCount = fetchUnreadChatCount;
 window.openChatInIframe = openChatInIframe;
 window.getCurrentBranchForChat = getCurrentBranchForChat;
 window.toggleNotificationSound = toggleNotificationSound;
+window.initTheme = initTheme;
+window.toggleTheme = toggleTheme;
+window.showLoginError = showLoginError;
+window.hideLoginError = hideLoginError;
+window.initNotificationSystem = initNotificationSystem;
+window.resetLoginButtonState = resetLoginButtonState;
+window.fetchUserDetailsFromLoginSheet = fetchUserDetailsFromLoginSheet;
+window.loadMenuData = loadMenuData;
+
+console.log('[System] All systems initialized');
+console.log('[System] User details will be fetched from Login sheet columns: A-Username, B-UserID, E-Email, H-Treasury, J-ImageURL');
