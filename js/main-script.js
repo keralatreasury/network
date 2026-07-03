@@ -534,7 +534,7 @@ function adjustWrapperHeightForTicker() {
 }
 
 // ======================== FETCH USER DETAILS FROM LOGIN SHEET ========================
-async function fetchUserDetailsFromLoginSheet(username) {
+async function fetchUserDetailsFromLoginSheet(userId) {
     try {
         const loginUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${LOGIN_SHEET}!A:J?key=${API_KEY}&_=${Date.now()}`;
         const response = await fetch(loginUrl);
@@ -548,21 +548,27 @@ async function fetchUserDetailsFromLoginSheet(username) {
         const rows = data.values;
         for (let i = 1; i < rows.length; i++) {
             const row = rows[i];
-            if (row.length >= 1 && row[0] === username) {
-                return {
-                    username: row[0] || '',
-                    userId: row[1] || '',
-                    password: row[2] || '',
-                    menuSheet: row[3] || '',
-                    email: row[4] || '',
-                    otp: row[5] || '',
-                    loginTimestamp: row[6] || '',
-                    treasury: row[7] || '',
-                    otpExpiry: row[8] || '',
-                    imageUrl: row[9] || null
-                };
+            if (row.length >= 2) {
+                const storedUserId = row[1] || ''; // Column B: User ID
+                
+                // Match against User ID (Column B)
+                if (storedUserId === userId) {
+                    return {
+                        userName: row[0] || '',           // Column A: User Name (Display Name)
+                        userId: row[1] || '',             // Column B: User ID
+                        password: row[2] || '',           // Column C: Password
+                        menuSheet: row[3] || '',          // Column D: Menu Sheet
+                        email: row[4] || '',              // Column E: Email ID
+                        otp: row[5] || '',                // Column F: OTP
+                        loginTimestamp: row[6] || '',     // Column G: Login Time
+                        treasury: row[7] || '',           // Column H: Treasury Name
+                        otpExpiry: row[8] || '',          // Column I: OTP Expiry
+                        imageUrl: row[9] || null          // Column J: Image URL
+                    };
+                }
             }
         }
+        console.warn('User not found with ID:', userId);
         return null;
     } catch (error) {
         console.error('Error fetching user details:', error);
@@ -571,9 +577,9 @@ async function fetchUserDetailsFromLoginSheet(username) {
 }
 
 // ======================== LOGIN FUNCTIONS ========================
-async function validateLogin(username, password) {
+async function validateLogin(userId, password) {
     try {
-        const loginUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${LOGIN_SHEET}!${LOGIN_RANGE}?key=${API_KEY}&_=${Date.now()}`;
+        const loginUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${LOGIN_SHEET}!A:J?key=${API_KEY}&_=${Date.now()}`;
         const response = await fetch(loginUrl);
         const data = await response.json();
         
@@ -583,22 +589,22 @@ async function validateLogin(username, password) {
         }
         
         if (data.values) {
-            for (let i = 0; i < data.values.length; i++) {
+            for (let i = 1; i < data.values.length; i++) {
                 const row = data.values[i];
-                if (row.length >= 2) {
-                    const storedUsername = row[0];
-                    const storedPassword = row[1];
+                if (row.length >= 3) {
+                    // Column B: User ID, Column C: Password, Column D: Menu Sheet
+                    const storedUserId = row[1] || '';
+                    const storedPassword = row[2] || '';
+                    const menuSheet = row[3] ? row[3].trim() : null;
                     
-                    if (username === storedUsername && password === storedPassword) {
-                        const menuSheet = row.length >= 3 && row[2] ? row[2].trim() : null;
-                        
+                    if (userId === storedUserId && password === storedPassword) {
                         if (!menuSheet) {
-                            console.error('No menu sheet specified for user:', username);
+                            console.error('No menu sheet specified for user:', userId);
                             return null;
                         }
                         
                         return {
-                            username: storedUsername,
+                            userId: storedUserId,
                             menuSheet: menuSheet
                         };
                     }
@@ -615,7 +621,7 @@ async function validateLogin(username, password) {
 
 // ======================== MAIN LOGIN HANDLER ========================
 window.handleLogin = async function() {
-    const username = document.getElementById('username').value.trim();
+    const userId = document.getElementById('username').value.trim(); // This is User ID (Column B)
     const password = document.getElementById('password').value.trim();
     const loginBtn = document.getElementById('loginBtn');
     const loginSpinner = document.getElementById('loginSpinner');
@@ -624,8 +630,8 @@ window.handleLogin = async function() {
     
     hideLoginError();
     
-    if (!username || !password) {
-        showLoginError('Please enter both username and password');
+    if (!userId || !password) {
+        showLoginError('Please enter both User ID and password');
         return;
     }
     
@@ -635,27 +641,32 @@ window.handleLogin = async function() {
     document.activeElement.blur();
     
     try {
-        const userData = await validateLogin(username, password);
+        // Validate using User ID (Column B)
+        const userData = await validateLogin(userId, password);
         
         if (userData) {
             isAuthenticated = true;
-            currentUser = userData;
             window.isAuthenticated = true;
-            window.currentUser = userData;
             
-            // Fetch full user details from Login sheet
-            const fullDetails = await fetchUserDetailsFromLoginSheet(username);
+            // Fetch full user details using User ID (Column B)
+            const fullDetails = await fetchUserDetailsFromLoginSheet(userId);
             console.log('Full user details fetched:', fullDetails);
             
+            // Build complete user data
             const completeUserData = {
-                username: userData.username,
-                userId: fullDetails?.userId || userData.username,
+                // Use the actual User Name from Column A for display
+                username: fullDetails?.userName || userId,  // ← Column A: Display Name
+                userId: userId,                              // ← Column B: User ID (login ID)
+                userDisplayName: fullDetails?.userName || userId,
                 loginTime: new Date().toISOString(),
                 menuSheet: userData.menuSheet,
-                email: fullDetails?.email || '',
-                treasury: fullDetails?.treasury || '',
-                imageUrl: fullDetails?.imageUrl || null
+                email: fullDetails?.email || '',            // ← Column E: Email
+                treasury: fullDetails?.treasury || '',      // ← Column H: Treasury
+                imageUrl: fullDetails?.imageUrl || null,    // ← Column J: Image URL
+                _fullDetails: fullDetails // Store for reference
             };
+            
+            console.log('Complete user data:', completeUserData);
             
             // Store in localStorage and sessionStorage
             localStorage.setItem('currentUser', JSON.stringify(completeUserData));
@@ -665,7 +676,7 @@ window.handleLogin = async function() {
             window.currentUser = completeUserData;
             
             // Update login timestamp (non-blocking)
-            updateLoginTimestamp(username);
+            updateLoginTimestamp(userId);
             
             loginOverlay.style.opacity = '0';
             
@@ -690,7 +701,7 @@ window.handleLogin = async function() {
             loginSpinner.classList.add('d-none');
             loginText.textContent = 'Login';
             document.getElementById('password').value = '';
-            showLoginError('Invalid username or password');
+            showLoginError('Invalid User ID or password');
             document.getElementById('username').focus();
         }
     } catch (error) {
@@ -702,7 +713,6 @@ window.handleLogin = async function() {
         document.getElementById('username').focus();
     }
 };
-
 // ======================== LOGOUT FUNCTION ========================
 window.logout = function() {
     stopUnreadCheckInterval();
