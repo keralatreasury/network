@@ -128,6 +128,7 @@
             cursor: pointer;
             transition: 0.1s;
         }
+.modal-backdrop {background-color: #fff0;}
         .action-icons i.bi-pencil-square { color: #3b82f6; }
         .action-icons i.bi-trash3 { color: #dc2626; }
         .action-icons i:hover { opacity: 0.7; transform: scale(1.05);}
@@ -165,12 +166,12 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.6);
+            background: #fff0;
             display: flex;
             align-items: center;
             justify-content: center;
             z-index: 10000;
-            backdrop-filter: blur(3px);
+            /*backdrop-filter: blur(3px);*/
         }
         .answer-preview {
             max-width: 200px;
