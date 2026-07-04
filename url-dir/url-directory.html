@@ -26,7 +26,7 @@
         }
         
         body {
-            background: #f0f5fa;
+            background: #fff0;
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             padding: 24px;
             min-height: 100vh;
@@ -38,47 +38,41 @@
             margin: 0 auto;
         }
         
-        /* Header Card */
-        .header-card {
-            background: white;
-            border-radius: 20px;
-            padding: 20px 30px;
-            margin-bottom: 25px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-            border: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-        
-        .header-title {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        
-        .header-title i {
-            font-size: 2rem;
-            color: var(--primary);
-            background: var(--primary-light);
-            padding: 12px;
-            border-radius: 16px;
-        }
-        
-        .header-title h1 {
-            margin: 0;
-            font-size: 1.8rem;
-            font-weight: 600;
-            color: var(--primary-dark);
-        }
-        
-        .header-title p {
-            margin: 5px 0 0;
-            color: #64748b;
-        }
-        
+        .page-header {
+    padding: 15px 2px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    flex-wrap: wrap !important;
+    justify-content: space-between !important;
+ 
+}
+.page-header-left {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+}
+
+.page-header-left i {
+    font-size: 1.8rem !important;
+    background: rgb(56 143 251 / 15%) !important;
+    padding: 10px !important;
+    border-radius: 12px !important;
+    color: #184f83 !important;
+}
+
+
+.page-header-left h1 {
+    margin: 0 !important;
+    font-size: 1.8rem !important;
+    font-weight: 700 !important;
+    color: #184f83!important;
+}
+ .page-header-left p {
+            margin: 2px 0 0 !important;
+            opacity: 0.7 !important;
+            font-size: 0.75rem !important;
+ }
         .refresh-badge {
             background: var(--primary-light);
             color: var(--primary);
@@ -488,22 +482,23 @@
     </style>
 </head>
 <body>
-    <div id="mainContent" style="display: none;">
-        <div class="bookmark-container">
-            <!-- Header -->
-            <div class="header-card">
-                <div class="header-title">
-                    <i class="bi bi-bookmark-star-fill"></i>
+<div class="page-header">
+                <div class="page-header-left">
+                    <i class="bi bi-box-seam"></i>
                     <div>
                         <h1>URL Bookmark Manager</h1>
                         <p>Secure credentials vault for all network devices and applications</p>
                     </div>
                 </div>
-                <div class="refresh-badge">
+ <div class="refresh-badge">
                     <i class="bi bi-database"></i>
                     <span id="recordCount">0</span> Records
                 </div>
             </div>
+
+
+    <div id="mainContent" style="display: none;">
+       
             
             <!-- Tabs Container -->
             <div class="tabs-container">
