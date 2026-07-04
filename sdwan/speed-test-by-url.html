@@ -28,7 +28,7 @@
             background: #fff0;
             font-family: 'Segoe UI', system-ui, sans-serif;
             min-height: 100vh;
-            padding: 20px;
+            padding: 20px 16px;
             color: var(--dark);
         }
         
@@ -37,40 +37,42 @@
             margin: 0 auto;
         }
         
-        .header-card {
-            background: white;
-            border-radius: 20px;
-            padding: 25px 30px;
-            margin-bottom: 25px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-            border: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-        
-        .header-title {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        
-        .header-title i {
-            font-size: 2rem;
-            color: var(--primary);
-            background: var(--primary-light);
-            padding: 12px;
-            border-radius: 16px;
-        }
-        
-        .header-title h1 {
-            margin: 0;
-            font-size: 1.8rem;
-            font-weight: 600;
-            color: var(--primary-dark);
-        }
+.page-header {
+    padding: 15px 2px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    flex-wrap: wrap !important;
+    justify-content: space-between !important;
+ 
+}
+.page-header-left {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+}
+
+.page-header-left i {
+    font-size: 1.8rem !important;
+    background: rgb(56 143 251 / 15%) !important;
+    padding: 10px !important;
+    border-radius: 12px !important;
+    color: #184f83 !important;
+}
+
+
+.page-header-left h1 {
+    margin: 0 !important;
+    font-size: 1.8rem !important;
+    font-weight: 700 !important;
+    color: #184f83!important;
+}
+ .page-header-left p {
+            margin: 2px 0 0 !important;
+            opacity: 0.7 !important;
+            font-size: 0.75rem !important;
+ }
+
         
         .url-input-group {
             display: flex;
@@ -482,16 +484,15 @@
     </style>
 </head>
 <body>
-    <div class="speedtest-container">
-        <div class="header-card">
-            <div class="header-title">
-                <i class="bi bi-speedometer2"></i>
-                <div>
-                    <h1>Advanced Speed Test</h1>
-                    <p>ISP + CDN + Server Routing Analysis</p>
+<div class="page-header">
+                <div class="page-header-left">
+                           <i class="bi bi-speedometer2"></i>
+                    <div>
+                        <h1>Advanced Speed Test</h1>
+                        <p>ISP + CDN + Server Routing Analysis</p>
+                    </div>
                 </div>
-            </div>
-            <div class="url-input-group">
+<div class="url-input-group">
                 <input type="text" id="fileUrl" placeholder="https://example.com/file.zip" value="https://proof.ovh.net/files/10Mb.dat">
                 <button class="btn-outline" id="analyzeServerBtn">
                     <i class="bi bi-server"></i> Analyze Server
@@ -500,6 +501,13 @@
                     <i class="bi bi-play-fill me-2"></i> Start Test
                 </button>
             </div>
+            </div>
+
+
+    <div class="speedtest-container">
+        <div class="header-card">
+         
+            
         </div>
 
         <div class="test-progress" id="testProgress">
