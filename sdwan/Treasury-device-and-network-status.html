@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Treasuries · Device & Network Monitoring</title>
+    <title>📡 Treasuries · Device & Network Monitoring</title>
 
     <!-- LOCAL CSS – same as sample -->
     <link rel="stylesheet" href="../css/bootstrap.min.css">
@@ -25,7 +25,7 @@
         body {
             background: #fff0;
             font-family: 'Segoe UI', system-ui, sans-serif;
-            padding: 20px 16px;
+            padding: 20px;
             color: var(--dark);
         }
 
@@ -34,18 +34,13 @@
             margin: 0 auto;
         }
 
-        .branch-header {
-           font-size: 1.8rem !important;
-           font-weight: 700 !important;
-            border-radius: 14px;
-            
-            margin-bottom: 18px;
-           
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 12px;
+        .page-header {
+            padding: 15px 2px !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 12px !important;
+            flex-wrap: wrap !important;
+            justify-content: space-between !important;
         }
 
         .page-header-left {
@@ -55,83 +50,92 @@
         }
 
         .page-header-left i {
-            font-size: 1.6rem !important;
-            background: rgb(56 143 251 / 12%) !important;
-            padding: 8px !important;
+            font-size: 1.8rem !important;
+            background: rgb(56 143 251 / 15%) !important;
+            padding: 10px !important;
             border-radius: 12px !important;
             color: #184f83 !important;
         }
 
         .page-header-left h1 {
             margin: 0 !important;
-            font-size: 1.3rem !important;
-            font-weight: 600 !important;
+            font-size: 1.8rem !important;
+            font-weight: 700 !important;
             color: #184f83 !important;
         }
 
         .page-header-left p {
-            margin: 0;
-            opacity: 0.6;
+            margin: 2px 0 0;
+            opacity: 0.7;
             font-size: 0.75rem;
         }
 
         .refresh-indicator {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
             background: var(--light);
-            padding: 5px 14px;
-            border-radius: 30px;
+            padding: 8px 16px;
+            border-radius: 40px;
             border: 1px solid var(--border);
-            font-size: 0.8rem;
-        }
-
-        .live-dot {
-            display: inline-block;
-            width: 10px;
-            height: 10px;
-            background: #22c55e;
-            border-radius: 50%;
-            animation: pulse 1.5s infinite;
-            box-shadow: 0 0 0 0 #22c55e;
-        }
-
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(34,197,94,0.6); }
-            70% { box-shadow: 0 0 0 8px rgba(34,197,94,0); }
-            100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
         }
 
         .refresh-spinner {
-            width: 14px;
-            height: 14px;
+            width: 16px;
+            height: 16px;
             border: 2px solid var(--primary-light);
             border-top-color: var(--primary);
             border-radius: 50%;
-            animation: spin 0.8s linear infinite;
+            animation: spin 1s linear infinite;
             display: none;
         }
 
-        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
 
         .last-updated {
-            font-size: 0.75rem;
+            font-size: 0.85rem;
             color: #64748b;
         }
 
-        .refresh-btn, .export-btn {
-            padding: 5px 16px;
-            border-radius: 30px;
-            font-size: 0.8rem;
-            font-weight: 500;
-            border: 1px solid var(--border);
+        .refresh-btn {
             background: white;
+            border: 1px solid var(--border);
             color: var(--primary);
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-size: 0.9rem;
+            font-weight: 500;
             transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
-        .refresh-btn:hover { background: var(--primary-light); }
-        .export-btn { background: var(--success); color: white; border: none; }
-        .export-btn:hover { background: #0d9668; }
+
+        .refresh-btn:hover {
+            background: var(--primary-light);
+            border-color: var(--primary);
+        }
+
+        .export-btn {
+            background: var(--success);
+            border: none;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .export-btn:hover {
+            background: #0d9668;
+            transform: translateY(-2px);
+        }
 
         .refresh-controls {
             display: flex;
@@ -139,41 +143,52 @@
             gap: 8px;
             font-size: 0.75rem;
         }
+
         .refresh-controls select {
             padding: 2px 6px;
             font-size: 0.75rem;
             border-radius: 6px;
             border: 1px solid var(--border);
             height: 28px;
+            background: white;
         }
 
+        /* Stats Cards */
         .stats-row {
             display: grid;
             grid-template-columns: repeat(8, 1fr);
-            gap: 10px;
-            margin-bottom: 18px;
+            gap: 15px;
+            margin-bottom: 30px;
         }
 
         .stat-card {
             background: white;
-            border-radius: 12px;
-            padding: 10px 14px;
+            border-radius: 20px;
+            padding: 18px 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
             border: 1px solid var(--border);
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
+            transition: transform 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.08);
         }
 
         .stat-icon {
-            width: 34px;
-            height: 34px;
-            border-radius: 10px;
+            width: 45px;
+            height: 45px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1rem;
+            font-size: 1.3rem;
             flex-shrink: 0;
         }
+
         .stat-icon.total { background: #e8f0fe; color: var(--primary); }
         .stat-icon.wan1-up { background: #e8f7ed; color: var(--success); }
         .stat-icon.wan1-down { background: #fee9e7; color: var(--danger); }
@@ -183,29 +198,53 @@
         .stat-icon.treasuries { background: #e8f0fe; color: #3b82f6; }
         .stat-icon.devices { background: #f3e8ff; color: #8b5cf6; }
 
-        .stat-info h3 { font-size: 1.1rem; font-weight: 700; margin: 0; line-height: 1.2; }
-        .stat-info p { margin: 0; color: #64748b; font-size: 0.6rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.3px; }
+        .stat-info h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0;
+            line-height: 1.2;
+        }
 
+        .stat-info p {
+            margin: 3px 0 0;
+            color: #64748b;
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        /* Section Titles */
         .section-title {
-            font-size: 1.1rem;
+            font-size: 1.3rem;
             font-weight: 600;
-            margin: 0 0 14px;
+            color: var(--dark);
+            margin: 0 0 20px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
         }
+
+        .section-title i {
+            color: var(--primary);
+            font-size: 1.5rem;
+        }
+
         .section-title .badge {
             background: var(--primary-light);
             color: var(--primary);
-            padding: 2px 14px;
+            padding: 5px 15px;
             border-radius: 30px;
-            font-size: 0.8rem;
+            font-size: 0.9rem;
+            margin-left: 10px;
         }
 
+        /* Table Card */
         .table-card {
             background: white;
-            border-radius: 14px;
-            padding: 14px;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
             border: 1px solid var(--border);
         }
 
@@ -213,130 +252,221 @@
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             color: white;
             font-weight: 500;
-            font-size: 0.75rem;
-            padding: 8px 6px;
+            font-size: 0.8rem;
+            padding: 12px 8px;
             white-space: nowrap;
             border: 1px solid #d1d5db;
         }
 
         .table td {
-            padding: 6px 5px;
+            padding: 10px 8px;
             vertical-align: middle;
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             border: 1px solid #d1d5db;
+        }
+
+        .field-value {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .treasury-badge {          
+            font-size: 0.85rem;
+            display: inline-block;
         }
 
         .copy-field-btn {
             background: transparent;
             border: none;
             color: #94a3b8;
-            padding: 0 2px;
-            border-radius: 6px;
+            padding: 2px 6px;
+            border-radius: 12px;
             cursor: pointer;
-            font-size: 0.6rem;
+            font-size: 0.75rem;
             transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            flex-shrink: 0;
         }
-        .copy-field-btn:hover { background: #e8f0fe; color: var(--primary); }
-        .copy-field-btn.copied { background: var(--success); color: white; }
+
+        .copy-field-btn:hover {
+            background: #e8f0fe;
+            color: var(--primary);
+            transform: scale(1.1);
+        }
+
+        .copy-field-btn.copied {
+            background: var(--success);
+            color: white;
+        }
+
+        .copy-field-btn .bi {
+            font-size: 0.8rem;
+        }
 
         .short-id {
-            font-family: monospace;
-            font-weight: 500;
-            background: #f1f5f9;
-            padding: 0 6px;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            border: 1px solid #e2e8f0;
+            
+            font-size: 0.85rem;
+           
             cursor: pointer;
-            max-width: 80px;
-            overflow: hidden;
-            text-overflow: ellipsis;
+           
             white-space: nowrap;
+            display: inline-block;
         }
+
         .short-id:hover { background: #e2e8f0; }
 
-        .loading { text-align: center; padding: 40px; }
+        .isp-tag {
+            
+            border-radius: 20px;
+            padding: 3px 10px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #1e293b;
+            white-space: nowrap;
+            display: inline-block;
+        }
+
+        .circuit-id-code {
+            padding: 3px 8px;
+            border-radius: 20px;
+            display: inline-block;
+           }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 60px;
+        }
+
         .spinner {
-            width: 32px;
-            height: 32px;
-            border: 3px solid var(--primary-light);
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--primary-light);
             border-top-color: var(--primary);
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
-            margin: 0 auto 12px;
+            margin: 0 auto 15px;
         }
 
-        .error-message { background: #fee9e7; color: var(--danger); padding: 18px; border-radius: 12px; text-align: center; }
-        .empty-state { text-align: center; padding: 30px; color: #64748b; }
+        .error-message {
+            background: #fee9e7;
+            color: var(--danger);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid var(--danger);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #64748b;
+            background: var(--light);
+            border-radius: 12px;
+        }
 
         .copied-tooltip {
             position: fixed;
             background: var(--success);
             color: white;
-            padding: 2px 10px;
-            border-radius: 12px;
-            font-size: 0.65rem;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
             z-index: 9999;
             pointer-events: none;
-            animation: fadeOut 1.2s ease-out forwards;
-        }
-        @keyframes fadeOut {
-            0% { opacity: 1; }
-            100% { opacity: 0; transform: translateY(-8px); }
+            animation: fadeOut 1.5s ease-out forwards;
         }
 
-        .dataTables_wrapper .dataTables_length, .dataTables_wrapper .dataTables_filter {
-            font-size: 0.8rem;
-        }
-        .dataTables_wrapper .dataTables_info, .dataTables_wrapper .dataTables_paginate {
-            font-size: 0.75rem;
-        }
-        .dataTables_wrapper .dataTables_filter input {
-            padding: 4px 8px;
-            font-size: 0.8rem;
-            height: 32px;
-            border: 1px solid #d1d5db;
-            border-radius: 4px;
-        }
-        .dataTables_wrapper .dataTables_length select {
-            padding: 2px 6px;
-            font-size: 0.8rem;
-            height: 32px;
-            border: 1px solid #d1d5db;
-            border-radius: 4px;
+        @keyframes fadeOut {
+            0% { opacity: 1; transform: translateY(0); }
+            70% { opacity: 1; }
+            100% { opacity: 0; transform: translateY(-10px); }
         }
 
         /* Status arrow badges */
         .status-arrow-up {
             color: #10b981;
             font-weight: 700;
-            font-size: 0.85rem;
+            font-size: 1rem;
             display: inline-flex;
             align-items: center;
             gap: 3px;
         }
+
         .status-arrow-down {
             color: #ef4444;
             font-weight: 700;
-            font-size: 0.85rem;
+            font-size: 1rem;
             display: inline-flex;
             align-items: center;
             gap: 3px;
         }
+
         .status-arrow-unknown {
             color: #94a3b8;
             font-weight: 400;
             font-size: 0.8rem;
         }
 
+        /* DataTables overrides */
+        .dataTables_wrapper .dataTables_length,
+        .dataTables_wrapper .dataTables_filter {
+            font-size: 0.85rem;
+        }
+
+        .dataTables_wrapper .dataTables_info,
+        .dataTables_wrapper .dataTables_paginate {
+            font-size: 0.85rem;
+        }
+
+        .dataTables_wrapper .dataTables_filter input {
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            height: 38px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+        }
+
+        .dataTables_wrapper .dataTables_length select {
+            padding: 4px 8px;
+            font-size: 0.85rem;
+            height: 38px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            background: white;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button {
+            padding: 4px 12px !important;
+            margin: 0 2px !important;
+            border-radius: 6px !important;
+            border: 1px solid #e2e8f0 !important;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+            background: var(--primary) !important;
+            color: white !important;
+            border-color: var(--primary) !important;
+        }
+
+        /* Responsive */
         @media (max-width: 1200px) { .stats-row { grid-template-columns: repeat(4, 1fr); } }
-        @media (max-width: 768px) { .stats-row { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 768px) { 
+            .stats-row { grid-template-columns: repeat(2, 1fr); }
+            .page-header { flex-direction: column; align-items: flex-start; }
+            .table td, .table th { font-size: 0.75rem; padding: 6px 4px; }
+            .page-header-left h1 { font-size: 1.2rem !important; }
+        }
         @media (max-width: 480px) { .stats-row { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
 
-<div class="branch-header">
+<div class="page-header">
     <div class="page-header-left">
         <i class="bi bi-hdd-network"></i>
         <div>
@@ -344,11 +474,12 @@
             <p>Live from Google Sheets · auto-refresh</p>
         </div>
     </div>
-    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+    <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
         <div class="refresh-indicator">
-            <span class="live-dot" title="Live connection active"></span>
-            <span class="last-updated" id="lastUpdated"><i class="bi bi-clock"></i> Loading...</span>
             <div class="refresh-spinner" id="refreshSpinner"></div>
+            <span class="last-updated" id="lastUpdated">
+                <i class="bi bi-clock"></i> Loading...
+            </span>
         </div>
         <div class="refresh-controls">
             <span>Auto-refresh</span>
@@ -360,22 +491,74 @@
                 <option value="10">10 min</option>
             </select>
         </div>
-        <button class="refresh-btn" onclick="manualRefresh()" id="refreshBtn"><i class="bi bi-arrow-repeat"></i></button>
-        <button class="export-btn" onclick="exportToCSV()" id="exportBtn"><i class="bi bi-download"></i> CSV</button>
+        <button class="refresh-btn" onclick="manualRefresh()" id="refreshBtn">
+            <i class="bi bi-arrow-repeat"></i> Refresh
+        </button>
+        <button class="export-btn" onclick="exportToCSV()" id="exportBtn">
+            <i class="bi bi-download"></i> CSV
+        </button>
     </div>
 </div>
 
 <div class="dashboard-container">
     <!-- Stats -->
     <div class="stats-row" id="statsContainer">
-        <div class="stat-card"><div class="stat-icon total"><i class="bi bi-database"></i></div><div class="stat-info"><h3 id="totalRecords">0</h3><p>Records</p></div></div>
-        <div class="stat-card"><div class="stat-icon wan1-up"><i class="bi bi-arrow-up-circle-fill"></i></div><div class="stat-info"><h3 id="wan1Up">0</h3><p>WAN1 Up</p></div></div>
-        <div class="stat-card"><div class="stat-icon wan1-down"><i class="bi bi-arrow-down-circle-fill"></i></div><div class="stat-info"><h3 id="wan1Down">0</h3><p>WAN1 Down</p></div></div>
-        <div class="stat-card"><div class="stat-icon wan2-up"><i class="bi bi-arrow-up-circle-fill"></i></div><div class="stat-info"><h3 id="wan2Up">0</h3><p>WAN2 Up</p></div></div>
-        <div class="stat-card"><div class="stat-icon wan2-down"><i class="bi bi-arrow-down-circle-fill"></i></div><div class="stat-info"><h3 id="wan2Down">0</h3><p>WAN2 Down</p></div></div>
-        <div class="stat-card"><div class="stat-icon branches"><i class="bi bi-building"></i></div><div class="stat-info"><h3 id="uniqueBranches">0</h3><p>Branches</p></div></div>
-        <div class="stat-card"><div class="stat-icon treasuries"><i class="bi bi-pin-map"></i></div><div class="stat-info"><h3 id="uniqueTreasuries">0</h3><p>Treasuries</p></div></div>
-        <div class="stat-card"><div class="stat-icon devices"><i class="bi bi-server"></i></div><div class="stat-info"><h3 id="deviceCount">0</h3><p>Devices</p></div></div>
+        <div class="stat-card">
+            <div class="stat-icon total"><i class="bi bi-database"></i></div>
+            <div class="stat-info">
+                <h3 id="totalRecords">0</h3>
+                <p>Records</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon wan1-up"><i class="bi bi-arrow-up-circle-fill"></i></div>
+            <div class="stat-info">
+                <h3 id="wan1Up">0</h3>
+                <p>WAN1 Up</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon wan1-down"><i class="bi bi-arrow-down-circle-fill"></i></div>
+            <div class="stat-info">
+                <h3 id="wan1Down">0</h3>
+                <p>WAN1 Down</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon wan2-up"><i class="bi bi-arrow-up-circle-fill"></i></div>
+            <div class="stat-info">
+                <h3 id="wan2Up">0</h3>
+                <p>WAN2 Up</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon wan2-down"><i class="bi bi-arrow-down-circle-fill"></i></div>
+            <div class="stat-info">
+                <h3 id="wan2Down">0</h3>
+                <p>WAN2 Down</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon branches"><i class="bi bi-building"></i></div>
+            <div class="stat-info">
+                <h3 id="uniqueBranches">0</h3>
+                <p>Branches</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon treasuries"><i class="bi bi-pin-map"></i></div>
+            <div class="stat-info">
+                <h3 id="uniqueTreasuries">0</h3>
+                <p>Treasuries</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon devices"><i class="bi bi-server"></i></div>
+            <div class="stat-info">
+                <h3 id="deviceCount">0</h3>
+                <p>Devices</p>
+            </div>
+        </div>
     </div>
 
     <!-- Table -->
@@ -385,7 +568,10 @@
     </div>
 
     <div class="table-card" id="tableContainer">
-        <div class="loading" id="tableLoading"><div class="spinner"></div><p>Loading sheet data...</p></div>
+        <div class="loading" id="tableLoading">
+            <div class="spinner"></div>
+            <p>Loading sheet data...</p>
+        </div>
         <div id="tableWrapper" style="display: none;">
             <div class="table-responsive">
                 <table id="deviceTable" class="table table-hover" style="width:100%">
@@ -476,7 +662,7 @@
             const $btn = $(button);
             const orig = $btn.html();
             $btn.addClass('copied').html('<i class="bi bi-check-lg"></i>');
-            setTimeout(() => { $btn.removeClass('copied').html(orig); }, 1200);
+            setTimeout(() => { $btn.removeClass('copied').html(orig); }, 1500);
             showTooltip('Copied!', button);
         }).catch(() => {
             const input = document.createElement('input');
@@ -493,8 +679,8 @@
         const $t = $(`<div class="copied-tooltip">${msg} <i class="bi bi-check-lg"></i></div>`);
         $('body').append($t);
         const rect = el.getBoundingClientRect();
-        $t.css({ left: rect.left + 'px', top: rect.top - 28 + 'px' });
-        setTimeout(() => $t.remove(), 1200);
+        $t.css({ left: rect.left + 'px', top: rect.top - 35 + 'px' });
+        setTimeout(() => $t.remove(), 1500);
     }
 
     function getStatusArrow(status) {
@@ -606,19 +792,23 @@
 
             const instShort = shortId(instanceId, 5);
             const instHtml = `
-                <span class="short-id" title="Click to copy full">${escapeHtml(instShort)}</span>
-                <button class="copy-field-btn" onclick="copyField('${escapeHtml(instanceId).replace(/'/g, "\\'")}', this)" title="Copy full"><i class="bi bi-clipboard"></i></button>
+                <div class="field-value">
+                    <span class="short-id" title="Click to copy full">${escapeHtml(instShort)}</span>
+                    <button class="copy-field-btn" onclick="copyField('${escapeHtml(instanceId).replace(/'/g, "\\'")}', this)" title="Copy full"><i class="bi bi-clipboard"></i></button>
+                </div>
             `;
 
             const apiShort = shortId(apiKey, 5);
             const apiHtml = `
-                <span class="short-id" title="Click to copy full">${escapeHtml(apiShort)}</span>
-                <button class="copy-field-btn" onclick="copyField('${escapeHtml(apiKey).replace(/'/g, "\\'")}', this)" title="Copy full"><i class="bi bi-clipboard"></i></button>
+                <div class="field-value">
+                    <span class="short-id" title="Click to copy full">${escapeHtml(apiShort)}</span>
+                    <button class="copy-field-btn" onclick="copyField('${escapeHtml(apiKey).replace(/'/g, "\\'")}', this)" title="Copy full"><i class="bi bi-clipboard"></i></button>
+                </div>
             `;
 
             const rowHtml = `
                 <tr>
-                    <td>${escapeHtml(treasury || '-')}</td>
+                    <td><span class="treasury-badge">${escapeHtml(treasury || '-')}</span></td>
                     <td>${escapeHtml(location || '-')}</td>
                     <td>${escapeHtml(serial || '-')}</td>
                     <td>${escapeHtml(deviceType || '-')}</td>
@@ -626,11 +816,11 @@
                     <td>${apiHtml}</td>
                     <td>${escapeHtml(encIP || '-')}</td>
                     <td>${escapeHtml(lan || '-')}</td>
-                    <td>${escapeHtml(wan1ISP || '-')}</td>
-                    <td>${escapeHtml(wan1ID || '-')}</td>
+                    <td><span class="isp-tag">${escapeHtml(wan1ISP || '-')}</span></td>
+                    <td>${wan1ID ? `<span class="circuit-id-code" title="${escapeHtml(wan1ID)}">${escapeHtml(wan1ID)}</span>` : '-'}</td>
                     <td>${getStatusArrow(wan1Status)}</td>
-                    <td>${escapeHtml(wan2ISP || '-')}</td>
-                    <td>${escapeHtml(wan2ID || '-')}</td>
+                    <td><span class="isp-tag">${escapeHtml(wan2ISP || '-')}</span></td>
+                    <td>${wan2ID ? `<span class="circuit-id-code" title="${escapeHtml(wan2ID)}">${escapeHtml(wan2ID)}</span>` : '-'}</td>
                     <td>${getStatusArrow(wan2Status)}</td>
                 </tr>
             `;
@@ -644,15 +834,36 @@
             order: [[0, 'asc']],
             language: {
                 search: "Search:",
-                searchPlaceholder: "Filter...",
-                lengthMenu: "Show _MENU_",
-                info: "_START_-_END_ of _TOTAL_",
-                infoEmpty: "0 of 0",
-                infoFiltered: "(filtered)",
-                paginate: { first: '«', previous: '‹', next: '›', last: '»' }
+                searchPlaceholder: "Filter table...",
+                lengthMenu: "Show _MENU_ entries",
+                info: "Showing _START_ to _END_ of _TOTAL_ entries",
+                infoEmpty: "Showing 0 to 0 of 0 entries",
+                infoFiltered: "(filtered from _MAX_ total entries)",
+                paginate: {
+                    first: '<i class="bi bi-chevron-double-left"></i>',
+                    previous: '<i class="bi bi-chevron-left"></i>',
+                    next: '<i class="bi bi-chevron-right"></i>',
+                    last: '<i class="bi bi-chevron-double-right"></i>'
+                }
             },
             dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip',
-            autoWidth: false
+            autoWidth: false,
+            columnDefs: [
+                { width: '8%', targets: 0 },
+                { width: '10%', targets: 1 },
+                { width: '8%', targets: 2 },
+                { width: '6%', targets: 3 },
+                { width: '6%', targets: 4 },
+                { width: '6%', targets: 5 },
+                { width: '7%', targets: 6 },
+                { width: '5%', targets: 7 },
+                { width: '6%', targets: 8 },
+                { width: '8%', targets: 9 },
+                { width: '5%', targets: 10 },
+                { width: '6%', targets: 11 },
+                { width: '8%', targets: 12 },
+                { width: '5%', targets: 13 }
+            ]
         });
 
         $wrapper.show();
@@ -697,7 +908,9 @@
 
     function updateLastUpdated() {
         const now = new Date();
-        $('#lastUpdated').html(`<i class="bi bi-clock"></i> ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`);
+        const dateString = now.toLocaleDateString();
+        const timeString = now.toLocaleTimeString();
+        $('#lastUpdated').html(`<i class="bi bi-clock"></i> Last updated: ${dateString} ${timeString}`);
     }
 
     // ========== EXPORT ==========
@@ -705,7 +918,7 @@
         if (!allRows.length) { alert('No data.'); return; }
         const $btn = $('#exportBtn');
         const orig = $btn.html();
-        $btn.html('⏳').prop('disabled', true);
+        $btn.html('<i class="bi bi-hourglass-split"></i> Exporting...').prop('disabled', true);
         setTimeout(() => {
             try {
                 const dispHeaders = ['Treasury','Location','Device Serial No.','Device Type','Instance ID','API Key','Encapsulation IP','LAN','WAN 1 ISP','WAN 1 ID','WAN 1Status','WAN 2 ISP','WAN 2 ID','WAN 2Status'];
@@ -724,8 +937,8 @@
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
-                $btn.html('✓').prop('disabled', false);
-                setTimeout(() => $btn.html(orig), 1500);
+                $btn.html('<i class="bi bi-check-lg"></i> Exported!').prop('disabled', false);
+                setTimeout(() => $btn.html(orig), 2000);
             } catch(e) { alert('Export error'); $btn.html(orig).prop('disabled', false); }
         }, 100);
     }
@@ -759,9 +972,12 @@
             console.error(err);
             $('#tableContainer').html(`
                 <div class="error-message">
-                    <i class="bi bi-exclamation-triangle-fill"></i>
-                    <h6>Error: ${escapeHtml(err.message)}</h6>
-                    <button class="btn btn-sm btn-primary mt-2" onclick="location.reload()">Reload</button>
+                    <i class="bi bi-exclamation-triangle-fill fs-1"></i>
+                    <h5 class="mt-3">Error Loading Data</h5>
+                    <p>${escapeHtml(err.message)}</p>
+                    <button class="btn btn-primary mt-3" onclick="location.reload()">
+                        <i class="bi bi-arrow-repeat"></i> Reload
+                    </button>
                 </div>
             `);
         } finally {
