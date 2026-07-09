@@ -216,58 +216,12 @@
             font-size: 0.75rem;
             padding: 8px 6px;
             white-space: nowrap;
-            border: 1px solid var(--primary-dark);
         }
 
         .table td {
             padding: 6px 5px;
             vertical-align: middle;
             font-size: 0.8rem;
-            border: 1px solid #dee2e6;
-        }
-
-        /* Field-specific border colors */
-        .field-treasury {
-            border-left: 3px solid var(--primary) !important;
-        }
-        .field-location {
-            border-left: 3px solid #8b5cf6 !important;
-        }
-        .field-serial {
-            border-left: 3px solid #d97706 !important;
-        }
-        .field-type {
-            border-left: 3px solid #0891b2 !important;
-        }
-        .field-instance {
-            border-left: 3px solid #059669 !important;
-        }
-        .field-api {
-            border-left: 3px solid #dc2626 !important;
-        }
-        .field-encip {
-            border-left: 3px solid #7c3aed !important;
-        }
-        .field-lan {
-            border-left: 3px solid #4f46e5 !important;
-        }
-        .field-wan1-isp {
-            border-left: 3px solid #0ea5e9 !important;
-        }
-        .field-wan1-id {
-            border-left: 3px solid #0ea5e9 !important;
-        }
-        .field-wan1-status {
-            border-left: 3px solid #0ea5e9 !important;
-        }
-        .field-wan2-isp {
-            border-left: 3px solid #f59e0b !important;
-        }
-        .field-wan2-id {
-            border-left: 3px solid #f59e0b !important;
-        }
-        .field-wan2-status {
-            border-left: 3px solid #f59e0b !important;
         }
 
         .copy-field-btn {
@@ -339,15 +293,11 @@
             padding: 4px 8px;
             font-size: 0.8rem;
             height: 32px;
-            border: 1px solid #dee2e6;
-            border-radius: 4px;
         }
         .dataTables_wrapper .dataTables_length select {
             padding: 2px 6px;
             font-size: 0.8rem;
             height: 32px;
-            border: 1px solid #dee2e6;
-            border-radius: 4px;
         }
 
         /* Status arrow badges */
@@ -483,22 +433,22 @@
         'WAN 2Status': ['WAN 2\nStatus', 'WAN 2Status', 'WAN2 Status', 'WAN2Status']
     };
 
-    // Display labels with field classes for border colors
+    // Display labels
     const DISPLAY_COLS = [
-        { key: 'Treasury', label: 'Treasury', fieldClass: 'field-treasury' },
-        { key: 'Location', label: 'Location', fieldClass: 'field-location' },
-        { key: 'Device Serial No.', label: 'Serial', fieldClass: 'field-serial' },
-        { key: 'Device Type', label: 'Type', fieldClass: 'field-type' },
-        { key: 'Instance ID', label: 'Instance ID', fieldClass: 'field-instance' },
-        { key: 'API Key', label: 'API Key', fieldClass: 'field-api' },
-        { key: 'Encapsulation IP', label: 'Enc.IP', fieldClass: 'field-encip' },
-        { key: 'LAN', label: 'LAN', fieldClass: 'field-lan' },
-        { key: 'WAN 1 ISP', label: 'WAN1 ISP', fieldClass: 'field-wan1-isp' },
-        { key: 'WAN 1 ID', label: 'WAN1 ID', fieldClass: 'field-wan1-id' },
-        { key: 'WAN 1Status', label: 'WAN1 Sts', fieldClass: 'field-wan1-status' },
-        { key: 'WAN 2 ISP', label: 'WAN2 ISP', fieldClass: 'field-wan2-isp' },
-        { key: 'WAN 2 ID', label: 'WAN2 ID', fieldClass: 'field-wan2-id' },
-        { key: 'WAN 2Status', label: 'WAN2 Sts', fieldClass: 'field-wan2-status' }
+        { key: 'Treasury', label: 'Treasury' },
+        { key: 'Location', label: 'Location' },
+        { key: 'Device Serial No.', label: 'Serial' },
+        { key: 'Device Type', label: 'Type' },
+        { key: 'Instance ID', label: 'Instance ID' },
+        { key: 'API Key', label: 'API Key' },
+        { key: 'Encapsulation IP', label: 'Enc.IP' },
+        { key: 'LAN', label: 'LAN' },
+        { key: 'WAN 1 ISP', label: 'WAN1 ISP' },
+        { key: 'WAN 1 ID', label: 'WAN1 ID' },
+        { key: 'WAN 1Status', label: 'WAN1 Sts' },
+        { key: 'WAN 2 ISP', label: 'WAN2 ISP' },
+        { key: 'WAN 2 ID', label: 'WAN2 ID' },
+        { key: 'WAN 2Status', label: 'WAN2 Sts' }
     ];
 
     // ========== HELPERS ==========
@@ -662,20 +612,20 @@
 
             const rowHtml = `
                 <tr>
-                    <td class="field-treasury">${escapeHtml(treasury || '-')}</td>
-                    <td class="field-location">${escapeHtml(location || '-')}</td>
-                    <td class="field-serial">${escapeHtml(serial || '-')}</td>
-                    <td class="field-type">${escapeHtml(deviceType || '-')}</td>
-                    <td class="field-instance">${instHtml}</td>
-                    <td class="field-api">${apiHtml}</td>
-                    <td class="field-encip">${escapeHtml(encIP || '-')}</td>
-                    <td class="field-lan">${escapeHtml(lan || '-')}</td>
-                    <td class="field-wan1-isp">${escapeHtml(wan1ISP || '-')}</td>
-                    <td class="field-wan1-id">${escapeHtml(wan1ID || '-')}</td>
-                    <td class="field-wan1-status">${getStatusArrow(wan1Status)}</td>
-                    <td class="field-wan2-isp">${escapeHtml(wan2ISP || '-')}</td>
-                    <td class="field-wan2-id">${escapeHtml(wan2ID || '-')}</td>
-                    <td class="field-wan2-status">${getStatusArrow(wan2Status)}</td>
+                    <td>${escapeHtml(treasury || '-')}</td>
+                    <td>${escapeHtml(location || '-')}</td>
+                    <td>${escapeHtml(serial || '-')}</td>
+                    <td>${escapeHtml(deviceType || '-')}</td>
+                    <td>${instHtml}</td>
+                    <td>${apiHtml}</td>
+                    <td>${escapeHtml(encIP || '-')}</td>
+                    <td>${escapeHtml(lan || '-')}</td>
+                    <td>${escapeHtml(wan1ISP || '-')}</td>
+                    <td>${escapeHtml(wan1ID || '-')}</td>
+                    <td>${getStatusArrow(wan1Status)}</td>
+                    <td>${escapeHtml(wan2ISP || '-')}</td>
+                    <td>${escapeHtml(wan2ID || '-')}</td>
+                    <td>${getStatusArrow(wan2Status)}</td>
                 </tr>
             `;
             tbody.append(rowHtml);
