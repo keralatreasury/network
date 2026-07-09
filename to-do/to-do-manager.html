@@ -138,12 +138,10 @@
         #global-loading-overlay {
             position: fixed;
             top:0;left:0;width:100%;height:100%;
-           /* background: rgba(255,255,255,0.4);*/
             display: flex;
             align-items: center;
             justify-content: center;
             z-index: 10000;
-           /* backdrop-filter: blur(2px);*/
         }
         .modal-content { border-radius: 24px; }
         .select2-container--bootstrap-5 .select2-selection { border-radius: 12px !important; min-height: 42px; }
@@ -154,9 +152,13 @@
         @media (max-width:700px) { .tab-pane { padding: 20px; } .tab-btn { padding: 12px 16px; } .filter-bar select { width:100%; } }
         .alter-table-card { background: #f9fafc; border-radius: 20px; padding: 20px; margin-bottom: 20px; }
         .alter-table-card .table { margin-bottom: 0; }
-        /* Select2 tag styling */
         .select2-selection__choice { background-color: #e9ecef !important; border: 1px solid #ced4da !important; border-radius: 4px !important; padding: 2px 8px !important; }
         .select2-selection__choice__remove { color: #dc3545 !important; margin-right: 4px !important; }
+        /* priority badge */
+        .priority-badge { padding: 2px 10px; border-radius: 30px; font-size: 0.7rem; font-weight: 600; }
+        .priority-high { background: #dc2626; color: white; }
+        .priority-medium { background: #f59e0b; color: white; }
+        .priority-low { background: #10b981; color: white; }
     </style>
 </head>
 <body>
@@ -208,7 +210,16 @@
                     <label class="form-label required">Cut off date</label>
                     <input type="text" id="cutoffDate" class="form-control flatpickr-date" placeholder="DD/MM/YYYY">
                 </div>
-                <div class="col-md-6">
+                <!-- NEW: Priority field inserted here -->
+                <div class="col-md-3">
+                    <label class="form-label required">Priority</label>
+                    <select id="prioritySelect" class="form-select" style="width:100%">
+                        <option value="Low">Low</option>
+                        <option value="Medium" selected>Medium</option>
+                        <option value="High">High</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
                     <label class="form-label required">Assigned To (User)</label>
                     <select id="assignedUserSelect" class="form-select" style="width:100%"></select>
                 </div>
@@ -243,7 +254,7 @@
             <table id="tasksTable" class="table table-striped table-hover" style="width:100%">
                 <thead><tr>
                     <th>Track ID</th><th>Category</th><th>Subject</th><th>Description</th>
-                    <th>Follow up</th><th>Assigned</th><th>Cut off</th><th>Assigned To</th>
+                    <th>Follow up</th><th>Assigned</th><th>Cut off</th><th>Priority</th><th>Assigned To</th>
                     <th>Status</th><th>Done By</th><th>Done Date</th><th>Remarks</th><th>Actions</th>
                 </tr></thead>
                 <tbody></tbody>
@@ -251,7 +262,7 @@
         </div>
     </div>
 
-    <!-- TAB 3: ALTER TABLES (Users, Follow up, Status, Category) -->
+    <!-- TAB 3: ALTER TABLES -->
     <div id="alterPane" class="tab-pane">
         <h5 class="mb-3"><i class="bi bi-database-gear"></i> Alter reference tables</h5>
         <div class="row g-4">
@@ -335,7 +346,16 @@
                         <label class="form-label required">Cut off date</label>
                         <input type="text" id="editCutoffDate" class="form-control flatpickr-edit">
                     </div>
-                    <div class="col-md-6">
+                    <!-- Priority in edit modal -->
+                    <div class="col-md-3">
+                        <label class="form-label required">Priority</label>
+                        <select id="editPriority" class="form-select">
+                            <option value="Low">Low</option>
+                            <option value="Medium">Medium</option>
+                            <option value="High">High</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
                         <label class="form-label required">Assigned To</label>
                         <select id="editAssignedUser" class="form-select" style="width:100%"></select>
                     </div>
@@ -380,7 +400,7 @@
     // ==============================================
     const SPREADSHEET_ID = "1X68uyowieVR4n3mHIkx2rm_TuHMcyBxejckfDvWMGvY";
     const API_KEY = "AIzaSyDc8tegwi2rgHyDFYm7uWBqVqQ7Fwb3uWM";
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwu2FUg1QvK2PmxaweNE4Ob8h5AychwcuA_Xe13eAcr8Psl4ElGF-Z0SrLv4rirvWSP/exec"; // replace with your own
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzBL-IGSUARJalBQtCBAp3PuPo_ITX2cgIEXhal83kmdajki3XG3wZUl27im7amERs8/exec";
 
     const SHEET_TASKS = "Data";
     const SHEET_USERS = "Users";
@@ -393,17 +413,29 @@
     let filteredTasks = [];
     let isTableLoaded = false;
 
-    // metadata arrays
     let usersList = [];
     let followupList = [];
     let statusList = [];
     let categoryList = [];
 
-    // helpers
+    // ---- cached user ----
+    const CACHE_KEY = "taskManagerUser";
+    let cachedUser = localStorage.getItem(CACHE_KEY) || "Gokul G";
+
     function showLoading(msg) { if($('#global-loading-overlay').length) return; $('body').append(`<div id="global-loading-overlay"><div style="background:white;padding:30px;border-radius:24px;text-align:center;"><i class="bi bi-arrow-repeat" style="font-size:48px;color:#0f3b5f;animation:spin 1s linear infinite;"></i><p>${msg}</p></div></div>`); }
     function hideLoading() { $('#global-loading-overlay').remove(); }
     function getTodayDMY() { let d = new Date(); return `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()}`; }
     function escapeHtml(str) { if(!str) return ''; return String(str).replace(/[&<>]/g, m => m==='&'?'&amp;':m==='<'?'&lt;':'&gt;'); }
+
+    // ---- parse date DD/MM/YYYY to Date ----
+    function parseDMY(str) {
+        if(!str) return null;
+        const parts = str.split('/');
+        if(parts.length!==3) return null;
+        const d = parseInt(parts[0]), m = parseInt(parts[1])-1, y = parseInt(parts[2]);
+        if(isNaN(d)||isNaN(m)||isNaN(y)) return null;
+        return new Date(y,m,d);
+    }
 
     // ---- fetch sheet data via API ----
     async function fetchSheetValues(sheetName, range = "A:Z") {
@@ -415,7 +447,7 @@
         } catch(e) { console.error(e); return []; }
     }
 
-    // ---- load metadata (Users, Followup, Status, Category) ----
+    // ---- load metadata ----
     async function loadAllMetadata() {
         showLoading("Loading reference data...");
         let users = await fetchSheetValues(SHEET_USERS, "A:A");
@@ -430,60 +462,35 @@
         return { usersList, followupList, statusList, categoryList };
     }
 
-    // ---- populate selects with tagging/entering support ----
+    // ---- populate selects with tagging support ----
     function populateSelects() {
-        // Add form - with tagging support for followup and assigned user
-        // Category - standard select (no tagging)
+        // Category
         let $category = $('#categorySelect');
         $category.empty().append('<option></option>');
         categoryList.forEach(v => $category.append(`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`));
         $category.select2({ theme: "bootstrap-5", placeholder: "Select Category", allowClear: true, width: '100%' });
 
-        // Follow up - with tagging (allow entering new values)
+        // Follow up - tagging
         let $followup = $('#followupMailSelect');
         $followup.empty();
         followupList.forEach(v => $followup.append(`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`));
-        $followup.select2({
-            theme: "bootstrap-5",
-            placeholder: "Select or type new",
-            allowClear: true,
-            width: '100%',
-            tags: true,
-            tokenSeparators: [',', ';'],
-            createTag: function(params) {
-                var term = $.trim(params.term);
-                if (term === '') return null;
-                return {
-                    id: term,
-                    text: term,
-                    newTag: true
-                };
-            }
-        });
+        $followup.select2({ theme: "bootstrap-5", placeholder: "Select or type new", allowClear: true, width: '100%', tags: true, tokenSeparators: [',', ';'], createTag: function(params) { var term = $.trim(params.term); if (term === '') return null; return { id: term, text: term, newTag: true }; } });
 
-        // Assigned User - with tagging
+        // Assigned User - tagging + default from cache
         let $assignedUser = $('#assignedUserSelect');
         $assignedUser.empty().append('<option></option>');
         usersList.forEach(v => $assignedUser.append(`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`));
-        $assignedUser.select2({
-            theme: "bootstrap-5",
-            placeholder: "Select or type new user",
-            allowClear: true,
-            width: '100%',
-            tags: true,
-            tokenSeparators: [',', ';'],
-            createTag: function(params) {
-                var term = $.trim(params.term);
-                if (term === '') return null;
-                return {
-                    id: term,
-                    text: term,
-                    newTag: true
-                };
-            }
-        });
+        $assignedUser.select2({ theme: "bootstrap-5", placeholder: "Select or type new user", allowClear: true, width: '100%', tags: true, tokenSeparators: [',', ';'], createTag: function(params) { var term = $.trim(params.term); if (term === '') return null; return { id: term, text: term, newTag: true }; } });
+        // set cached user if exists
+        if(cachedUser && usersList.includes(cachedUser)) {
+            $assignedUser.val(cachedUser).trigger('change');
+        } else if(cachedUser) {
+            // if not in list, create as new tag
+            let newOption = new Option(cachedUser, cachedUser, true, true);
+            $assignedUser.append(newOption).trigger('change');
+        }
 
-        // Work Status - standard select (no tagging)
+        // Work Status
         let $workStatus = $('#workStatusSelect');
         $workStatus.empty().append('<option></option>');
         statusList.forEach(v => $workStatus.append(`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`));
@@ -491,102 +498,43 @@
         $workStatus.val('Pending').trigger('change');
 
         // ---- Edit Modal Selects ----
-        // Edit Category
         let $editCategory = $('#editCategorySelect');
         $editCategory.empty().append('<option></option>');
         categoryList.forEach(v => $editCategory.append(`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`));
         $editCategory.select2({ theme: "bootstrap-5", placeholder: "Select Category", allowClear: true, dropdownParent: $('#editModal'), width: '100%' });
 
-        // Edit Follow up - with tagging
         let $editFollowup = $('#editFollowupMail');
         $editFollowup.empty();
         followupList.forEach(v => $editFollowup.append(`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`));
-        $editFollowup.select2({
-            theme: "bootstrap-5",
-            placeholder: "Select or type new",
-            allowClear: true,
-            dropdownParent: $('#editModal'),
-            width: '100%',
-            tags: true,
-            tokenSeparators: [',', ';'],
-            createTag: function(params) {
-                var term = $.trim(params.term);
-                if (term === '') return null;
-                return {
-                    id: term,
-                    text: term,
-                    newTag: true
-                };
-            }
-        });
+        $editFollowup.select2({ theme: "bootstrap-5", placeholder: "Select or type new", allowClear: true, dropdownParent: $('#editModal'), width: '100%', tags: true, tokenSeparators: [',', ';'], createTag: function(params) { var term = $.trim(params.term); if (term === '') return null; return { id: term, text: term, newTag: true }; } });
 
-        // Edit Assigned User - with tagging
         let $editAssignedUser = $('#editAssignedUser');
         $editAssignedUser.empty().append('<option></option>');
         usersList.forEach(v => $editAssignedUser.append(`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`));
-        $editAssignedUser.select2({
-            theme: "bootstrap-5",
-            placeholder: "Select or type new user",
-            allowClear: true,
-            dropdownParent: $('#editModal'),
-            width: '100%',
-            tags: true,
-            tokenSeparators: [',', ';'],
-            createTag: function(params) {
-                var term = $.trim(params.term);
-                if (term === '') return null;
-                return {
-                    id: term,
-                    text: term,
-                    newTag: true
-                };
-            }
-        });
+        $editAssignedUser.select2({ theme: "bootstrap-5", placeholder: "Select or type new user", allowClear: true, dropdownParent: $('#editModal'), width: '100%', tags: true, tokenSeparators: [',', ';'], createTag: function(params) { var term = $.trim(params.term); if (term === '') return null; return { id: term, text: term, newTag: true }; } });
 
-        // Edit Work Status
         let $editWorkStatus = $('#editWorkStatus');
         $editWorkStatus.empty().append('<option></option>');
         statusList.forEach(v => $editWorkStatus.append(`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`));
         $editWorkStatus.select2({ theme: "bootstrap-5", placeholder: "Select Status", dropdownParent: $('#editModal'), width: '100%' });
 
-        // Edit Done By - with tagging
         let $editDoneBy = $('#editDoneBy');
         $editDoneBy.empty().append('<option></option>');
         usersList.forEach(v => $editDoneBy.append(`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`));
-        $editDoneBy.select2({
-            theme: "bootstrap-5",
-            placeholder: "Select or type new user",
-            allowClear: true,
-            dropdownParent: $('#editModal'),
-            width: '100%',
-            tags: true,
-            tokenSeparators: [',', ';'],
-            createTag: function(params) {
-                var term = $.trim(params.term);
-                if (term === '') return null;
-                return {
-                    id: term,
-                    text: term,
-                    newTag: true
-                };
-            }
-        });
+        $editDoneBy.select2({ theme: "bootstrap-5", placeholder: "Select or type new user", allowClear: true, dropdownParent: $('#editModal'), width: '100%', tags: true, tokenSeparators: [',', ';'], createTag: function(params) { var term = $.trim(params.term); if (term === '') return null; return { id: term, text: term, newTag: true }; } });
 
-        // ---- Filter dropdown ----
+        // Filter dropdown
         let $filter = $('#statusFilter');
         $filter.empty().append('<option value="ALL">-- All --</option>');
         statusList.forEach(s => $filter.append(`<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`));
         $filter.select2({ theme: "bootstrap-5", placeholder: "Filter by status", width: '250px' });
-        // Set default to "Pending" if it exists
         let defaultStatus = "Pending";
-        if (statusList.includes(defaultStatus)) {
-            $filter.val(defaultStatus).trigger('change');
-        } else {
-            $filter.val('ALL').trigger('change');
-        }
+        if (statusList.includes(defaultStatus)) { $filter.val(defaultStatus).trigger('change'); } else { $filter.val('ALL').trigger('change'); }
+
+        // Priority select (no change needed, static)
     }
 
-    // ---- parse tasks from sheet ----
+    // ---- parse tasks (added priority column) ----
     function parseTasks(rows) {
         if (!rows || rows.length < 2) return [];
         let tasks = [];
@@ -602,11 +550,12 @@
                     followup: r[4] || '',
                     assignedDate: r[5] || '',
                     cutoffDate: r[6] || '',
-                    assignedTo: r[7] || '',
-                    workStatus: r[8] || '',
-                    doneBy: r[9] || '',
-                    doneDate: r[10] || '',
-                    remarks: r[11] || ''
+                    priority: r[7] || 'Medium',
+                    assignedTo: r[8] || '',
+                    workStatus: r[9] || '',
+                    doneBy: r[10] || '',
+                    doneDate: r[11] || '',
+                    remarks: r[12] || ''
                 });
             }
         }
@@ -614,10 +563,10 @@
         return tasks;
     }
 
-    // ---- load tasks from sheet (with optional filter) ----
+    // ---- load tasks ----
     async function loadTasks(filterStatus = 'ALL') {
         showLoading("Loading tasks...");
-        let rows = await fetchSheetValues(SHEET_TASKS, "A:L");
+        let rows = await fetchSheetValues(SHEET_TASKS, "A:M");
         let tasks = parseTasks(rows);
         allTasks = tasks;
         if (filterStatus === 'ALL') filteredTasks = [...tasks];
@@ -626,7 +575,7 @@
         return filteredTasks;
     }
 
-    // ---- render DataTable ----
+    // ---- init DataTable (columns adjusted for priority) ----
     function initDataTable() {
         if (dataTable) { dataTable.destroy(); dataTable = null; }
         dataTable = $('#tasksTable').DataTable({
@@ -639,6 +588,13 @@
                 { data: "followup", render: d => d ? (d.length>20?d.substring(0,20)+'...':d) : '' },
                 { data: "assignedDate" },
                 { data: "cutoffDate" },
+                { data: "priority", render: d => {
+                    let cls = 'priority-badge ';
+                    if(d === 'High') cls += 'priority-high';
+                    else if(d === 'Medium') cls += 'priority-medium';
+                    else cls += 'priority-low';
+                    return `<span class="${cls}">${d || 'Medium'}</span>`;
+                }},
                 { data: "assignedTo" },
                 { data: "workStatus", render: d => {
                     let cls = 'badge-status';
@@ -693,7 +649,7 @@
         isTableLoaded = true;
     }
 
-    // ---- save (add/update) via Apps Script ----
+    // ---- save task (add/update) with priority ----
     async function saveTask(record, isUpdate = false, rowId = null) {
         let action = isUpdate ? "UPDATE_TASK" : "ADD_TASK";
         let payload = { action, sheetName: SHEET_TASKS, data: record, rowId };
@@ -717,7 +673,7 @@
         } catch(e) { hideLoading(); Swal.fire("Error", "Delete failed", "error"); return false; }
     }
 
-    // ---- alter table: add row to reference sheet ----
+    // ---- add ref item ----
     async function addRefItem(sheetName, value, listArray, listId) {
         if (!value || value.trim() === "") { Swal.fire("Empty", "Please enter a value", "warning"); return false; }
         if (listArray.includes(value.trim())) { Swal.fire("Duplicate", "Already exists", "info"); return false; }
@@ -727,7 +683,6 @@
             await fetch(APPS_SCRIPT_URL, { method: "POST", mode: "no-cors", cache: "no-cache", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
             hideLoading();
             Swal.fire("Added", `"${value.trim()}" added to ${sheetName}`, "success");
-            // refresh metadata and UI
             await loadAllMetadata();
             populateSelects();
             renderAlterLists();
@@ -747,23 +702,19 @@
         categoryList.forEach(c => { $('#categoryList').append(`<li class="list-group-item">${escapeHtml(c)}</li>`); });
     }
 
-    // ---- edit modal ----
+    // ---- open edit modal ----
     function openEditModal(record) {
         $('#editRowId').val(record.rowIndex);
         $('#editCategorySelect').val(record.category).trigger('change');
         $('#editSubject').val(record.subject);
         $('#editDesc').val(record.description);
-        
-        // Handle followup - if it's a single value, split if needed or set as single
         if (record.followup) {
             let followupValues = record.followup.split(',').map(s => s.trim()).filter(s => s);
             $('#editFollowupMail').val(followupValues).trigger('change');
-        } else {
-            $('#editFollowupMail').val(null).trigger('change');
-        }
-        
+        } else { $('#editFollowupMail').val(null).trigger('change'); }
         $('#editAssignedDate').val(record.assignedDate);
         $('#editCutoffDate').val(record.cutoffDate);
+        $('#editPriority').val(record.priority || 'Medium');
         $('#editAssignedUser').val(record.assignedTo).trigger('change');
         $('#editWorkStatus').val(record.workStatus).trigger('change');
         $('#editDoneBy').val(record.doneBy).trigger('change');
@@ -781,18 +732,20 @@
         let category = $('#categorySelect').val();
         let subject = $('#subjectInput').val().trim();
         if (!category || !subject) { Swal.fire("Required", "Category and Subject are required", "warning"); return; }
-        
-        // Get followup values (could be multiple from tagging)
         let followupVal = $('#followupMailSelect').val();
         let followupStr = followupVal ? (Array.isArray(followupVal) ? followupVal.join(', ') : followupVal) : '';
-        
+        let assignedUser = $('#assignedUserSelect').val() || cachedUser;
+        // store in cache
+        if (assignedUser) { localStorage.setItem(CACHE_KEY, assignedUser); cachedUser = assignedUser; }
+
         let record = {
             category, subject,
             description: $('#descInput').val() || '',
             followup: followupStr,
             assignedDate: $('#assignedDate').val() || getTodayDMY(),
             cutoffDate: $('#cutoffDate').val() || '',
-            assignedTo: $('#assignedUserSelect').val() || '',
+            priority: $('#prioritySelect').val() || 'Medium',
+            assignedTo: assignedUser,
             workStatus: $('#workStatusSelect').val() || 'Pending',
             doneBy: '',
             doneDate: '',
@@ -803,10 +756,11 @@
             $('#taskForm')[0].reset();
             $('#categorySelect').val(null).trigger('change');
             $('#followupMailSelect').val(null).trigger('change');
-            $('#assignedUserSelect').val(null).trigger('change');
+            $('#assignedUserSelect').val(assignedUser).trigger('change');
             $('#workStatusSelect').val('Pending').trigger('change');
             $('#assignedDate').val(getTodayDMY());
             $('#cutoffDate').val('');
+            $('#prioritySelect').val('Medium').trigger('change');
             if (isTableLoaded) await refreshTable();
         }
     });
@@ -814,11 +768,11 @@
     // ---- update via modal ----
     $('#confirmUpdateBtn').on('click', async function() {
         let rowId = $('#editRowId').val();
-        
-        // Get followup values from tagging
         let followupVal = $('#editFollowupMail').val();
         let followupStr = followupVal ? (Array.isArray(followupVal) ? followupVal.join(', ') : followupVal) : '';
-        
+        let assignedUser = $('#editAssignedUser').val() || cachedUser;
+        if (assignedUser) { localStorage.setItem(CACHE_KEY, assignedUser); cachedUser = assignedUser; }
+
         let record = {
             category: $('#editCategorySelect').val(),
             subject: $('#editSubject').val().trim(),
@@ -826,7 +780,8 @@
             followup: followupStr,
             assignedDate: $('#editAssignedDate').val() || '',
             cutoffDate: $('#editCutoffDate').val() || '',
-            assignedTo: $('#editAssignedUser').val() || '',
+            priority: $('#editPriority').val() || 'Medium',
+            assignedTo: assignedUser,
             workStatus: $('#editWorkStatus').val() || 'Pending',
             doneBy: $('#editDoneBy').val() || '',
             doneDate: $('#editDoneDate').val() || '',
@@ -845,10 +800,11 @@
         $('#taskForm')[0].reset();
         $('#categorySelect').val(null).trigger('change');
         $('#followupMailSelect').val(null).trigger('change');
-        $('#assignedUserSelect').val(null).trigger('change');
+        $('#assignedUserSelect').val(cachedUser).trigger('change');
         $('#workStatusSelect').val('Pending').trigger('change');
         $('#assignedDate').val(getTodayDMY());
         $('#cutoffDate').val('');
+        $('#prioritySelect').val('Medium').trigger('change');
     });
 
     // ---- tabs ----
@@ -861,12 +817,7 @@
     }
 
     $('#tabAddBtn').on('click', () => switchTab('add'));
-    $('#tabListBtn').on('click', () => { 
-        switchTab('list'); 
-        if (!isTableLoaded) {
-            $('#filterRecordCount').text('Click "View" to load tasks');
-        }
-    });
+    $('#tabListBtn').on('click', () => { switchTab('list'); if (!isTableLoaded) { $('#filterRecordCount').text('Click "View" to load tasks'); } });
     $('#tabAlterBtn').on('click', () => { switchTab('alter'); renderAlterLists(); });
 
     // ---- view filter ----
@@ -879,11 +830,7 @@
     });
     $('#clearFilterBtn').on('click', function() {
         let defaultStatus = "Pending";
-        if (statusList.includes(defaultStatus)) {
-            $('#statusFilter').val(defaultStatus).trigger('change');
-        } else {
-            $('#statusFilter').val('ALL').trigger('change');
-        }
+        if (statusList.includes(defaultStatus)) { $('#statusFilter').val(defaultStatus).trigger('change'); } else { $('#statusFilter').val('ALL').trigger('change'); }
         if (isTableLoaded) refreshTable();
     });
     $('#refreshTableBtn').on('click', refreshTable);
@@ -891,31 +838,19 @@
     // ---- alter buttons ----
     $('#addUserBtn').on('click', async function() {
         let val = $('#newUserInput').val().trim();
-        if (await addRefItem(SHEET_USERS, val, usersList, 'userList')) {
-            $('#newUserInput').val('');
-            await loadAllMetadata(); populateSelects(); renderAlterLists();
-        }
+        if (await addRefItem(SHEET_USERS, val, usersList, 'userList')) { $('#newUserInput').val(''); await loadAllMetadata(); populateSelects(); renderAlterLists(); }
     });
     $('#addFollowupBtn').on('click', async function() {
         let val = $('#newFollowupInput').val().trim();
-        if (await addRefItem(SHEET_FOLLOWUP, val, followupList, 'followupList')) {
-            $('#newFollowupInput').val('');
-            await loadAllMetadata(); populateSelects(); renderAlterLists();
-        }
+        if (await addRefItem(SHEET_FOLLOWUP, val, followupList, 'followupList')) { $('#newFollowupInput').val(''); await loadAllMetadata(); populateSelects(); renderAlterLists(); }
     });
     $('#addStatusBtn').on('click', async function() {
         let val = $('#newStatusInput').val().trim();
-        if (await addRefItem(SHEET_STATUS, val, statusList, 'statusList')) {
-            $('#newStatusInput').val('');
-            await loadAllMetadata(); populateSelects(); renderAlterLists();
-        }
+        if (await addRefItem(SHEET_STATUS, val, statusList, 'statusList')) { $('#newStatusInput').val(''); await loadAllMetadata(); populateSelects(); renderAlterLists(); }
     });
     $('#addCategoryBtn').on('click', async function() {
         let val = $('#newCategoryInput').val().trim();
-        if (await addRefItem(SHEET_CATEGORY, val, categoryList, 'categoryList')) {
-            $('#newCategoryInput').val('');
-            await loadAllMetadata(); populateSelects(); renderAlterLists();
-        }
+        if (await addRefItem(SHEET_CATEGORY, val, categoryList, 'categoryList')) { $('#newCategoryInput').val(''); await loadAllMetadata(); populateSelects(); renderAlterLists(); }
     });
 
     // ---- flatpickr ----
@@ -926,6 +861,28 @@
         editFlatpickr = flatpickr("#editAssignedDate, #editCutoffDate, #editDoneDate", { dateFormat: "d/m/Y" });
     }
 
+    // ---- check cutoff dates and show popup ----
+    function showCutoffAlert(tasks) {
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        const cutoffTasks = tasks.filter(t => {
+            if(!t.cutoffDate) return false;
+            const d = parseDMY(t.cutoffDate);
+            if(!d) return false;
+            d.setHours(0,0,0,0);
+            return d <= today && t.workStatus !== 'Done' && t.workStatus !== 'Terminated';
+        });
+        if(cutoffTasks.length === 0) return;
+        let msg = cutoffTasks.map(t => `🔔 #${t.trackId} "${t.subject}" (cutoff: ${t.cutoffDate})`).join('<br>');
+        Swal.fire({
+            icon: 'warning',
+            title: '⚠️ Tasks reached cutoff date!',
+            html: msg,
+            confirmButtonColor: '#dc2626',
+            confirmButtonText: 'Acknowledge'
+        });
+    }
+
     // ---- init ----
     $(async function() {
         await loadAllMetadata();
@@ -934,11 +891,19 @@
         initFlatpickr();
         $('#assignedDate').val(getTodayDMY());
         $('#workStatusSelect').val('Pending').trigger('change');
+        // set cached user
+        if(cachedUser) {
+            let $au = $('#assignedUserSelect');
+            if(usersList.includes(cachedUser)) { $au.val(cachedUser).trigger('change'); }
+            else { let newOpt = new Option(cachedUser, cachedUser, true, true); $au.append(newOpt).trigger('change'); }
+        }
         let defaultStatus = "Pending";
-        if (statusList.includes(defaultStatus)) {
-            $('#filterRecordCount').text(`Click "View" to load tasks with status: ${defaultStatus}`);
-        } else {
-            $('#filterRecordCount').text('Click "View" to load tasks');
+        if (statusList.includes(defaultStatus)) { $('#filterRecordCount').text(`Click "View" to load tasks with status: ${defaultStatus}`); } else { $('#filterRecordCount').text('Click "View" to load tasks'); }
+
+        // load tasks and check cutoff
+        await loadTasks('ALL');
+        if (allTasks.length > 0) {
+            showCutoffAlert(allTasks);
         }
     });
 </script>

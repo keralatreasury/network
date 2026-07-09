@@ -154,6 +154,9 @@
         @media (max-width:700px) { .tab-pane { padding: 20px; } .tab-btn { padding: 12px 16px; } .filter-bar select { width:100%; } }
         .alter-table-card { background: #f9fafc; border-radius: 20px; padding: 20px; margin-bottom: 20px; }
         .alter-table-card .table { margin-bottom: 0; }
+        /* Select2 tag styling */
+        .select2-selection__choice { background-color: #e9ecef !important; border: 1px solid #ced4da !important; border-radius: 4px !important; padding: 2px 8px !important; }
+        .select2-selection__choice__remove { color: #dc3545 !important; margin-right: 4px !important; }
     </style>
 </head>
 <body>
@@ -195,7 +198,7 @@
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Follow up Email / Url</label>
-                    <select id="followupMailSelect" class="form-select" style="width:100%"></select>
+                    <select id="followupMailSelect" class="form-select" style="width:100%" multiple></select>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label required">Assigned Date</label>
@@ -322,7 +325,7 @@
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">Follow up Email/Url</label>
-                        <select id="editFollowupMail" class="form-select" style="width:100%"></select>
+                        <select id="editFollowupMail" class="form-select" style="width:100%" multiple></select>
                     </div>
                     <div class="col-md-3">
                         <label class="form-label required">Assigned Date</label>
@@ -427,44 +430,160 @@
         return { usersList, followupList, statusList, categoryList };
     }
 
-    // ---- populate selects ----
+    // ---- populate selects with tagging/entering support ----
     function populateSelects() {
-        // Add form
-        const selMap = {
-            '#categorySelect': categoryList,
-            '#followupMailSelect': followupList,
-            '#assignedUserSelect': usersList,
-            '#workStatusSelect': statusList
-        };
-        $.each(selMap, (sel, arr) => {
-            let $sel = $(sel);
-            $sel.empty().append('<option></option>');
-            arr.forEach(v => $sel.append(`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`));
-            if($sel.attr('id') === 'workStatusSelect') $sel.val('Pending');
-            $sel.select2({ theme: "bootstrap-5", placeholder: "Select", allowClear: true, width: '100%' });
+        // Add form - with tagging support for followup and assigned user
+        // Category - standard select (no tagging)
+        let $category = $('#categorySelect');
+        $category.empty().append('<option></option>');
+        categoryList.forEach(v => $category.append(`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`));
+        $category.select2({ theme: "bootstrap-5", placeholder: "Select Category", allowClear: true, width: '100%' });
+
+        // Follow up - with tagging (allow entering new values)
+        let $followup = $('#followupMailSelect');
+        $followup.empty();
+        followupList.forEach(v => $followup.append(`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`));
+        $followup.select2({
+            theme: "bootstrap-5",
+            placeholder: "Select or type new",
+            allowClear: true,
+            width: '100%',
+            tags: true,
+            tokenSeparators: [',', ';'],
+            createTag: function(params) {
+                var term = $.trim(params.term);
+                if (term === '') return null;
+                return {
+                    id: term,
+                    text: term,
+                    newTag: true
+                };
+            }
         });
 
-        // Edit modal
-        const editMap = {
-            '#editCategorySelect': categoryList,
-            '#editFollowupMail': followupList,
-            '#editAssignedUser': usersList,
-            '#editWorkStatus': statusList,
-            '#editDoneBy': usersList
-        };
-        $.each(editMap, (sel, arr) => {
-            let $sel = $(sel);
-            $sel.empty().append('<option></option>');
-            arr.forEach(v => $sel.append(`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`));
-            $sel.select2({ theme: "bootstrap-5", placeholder: "Select", allowClear: true, dropdownParent: $('#editModal'), width: '100%' });
+        // Assigned User - with tagging
+        let $assignedUser = $('#assignedUserSelect');
+        $assignedUser.empty().append('<option></option>');
+        usersList.forEach(v => $assignedUser.append(`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`));
+        $assignedUser.select2({
+            theme: "bootstrap-5",
+            placeholder: "Select or type new user",
+            allowClear: true,
+            width: '100%',
+            tags: true,
+            tokenSeparators: [',', ';'],
+            createTag: function(params) {
+                var term = $.trim(params.term);
+                if (term === '') return null;
+                return {
+                    id: term,
+                    text: term,
+                    newTag: true
+                };
+            }
         });
 
-        // filter dropdown
+        // Work Status - standard select (no tagging)
+        let $workStatus = $('#workStatusSelect');
+        $workStatus.empty().append('<option></option>');
+        statusList.forEach(v => $workStatus.append(`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`));
+        $workStatus.select2({ theme: "bootstrap-5", placeholder: "Select Status", width: '100%' });
+        $workStatus.val('Pending').trigger('change');
+
+        // ---- Edit Modal Selects ----
+        // Edit Category
+        let $editCategory = $('#editCategorySelect');
+        $editCategory.empty().append('<option></option>');
+        categoryList.forEach(v => $editCategory.append(`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`));
+        $editCategory.select2({ theme: "bootstrap-5", placeholder: "Select Category", allowClear: true, dropdownParent: $('#editModal'), width: '100%' });
+
+        // Edit Follow up - with tagging
+        let $editFollowup = $('#editFollowupMail');
+        $editFollowup.empty();
+        followupList.forEach(v => $editFollowup.append(`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`));
+        $editFollowup.select2({
+            theme: "bootstrap-5",
+            placeholder: "Select or type new",
+            allowClear: true,
+            dropdownParent: $('#editModal'),
+            width: '100%',
+            tags: true,
+            tokenSeparators: [',', ';'],
+            createTag: function(params) {
+                var term = $.trim(params.term);
+                if (term === '') return null;
+                return {
+                    id: term,
+                    text: term,
+                    newTag: true
+                };
+            }
+        });
+
+        // Edit Assigned User - with tagging
+        let $editAssignedUser = $('#editAssignedUser');
+        $editAssignedUser.empty().append('<option></option>');
+        usersList.forEach(v => $editAssignedUser.append(`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`));
+        $editAssignedUser.select2({
+            theme: "bootstrap-5",
+            placeholder: "Select or type new user",
+            allowClear: true,
+            dropdownParent: $('#editModal'),
+            width: '100%',
+            tags: true,
+            tokenSeparators: [',', ';'],
+            createTag: function(params) {
+                var term = $.trim(params.term);
+                if (term === '') return null;
+                return {
+                    id: term,
+                    text: term,
+                    newTag: true
+                };
+            }
+        });
+
+        // Edit Work Status
+        let $editWorkStatus = $('#editWorkStatus');
+        $editWorkStatus.empty().append('<option></option>');
+        statusList.forEach(v => $editWorkStatus.append(`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`));
+        $editWorkStatus.select2({ theme: "bootstrap-5", placeholder: "Select Status", dropdownParent: $('#editModal'), width: '100%' });
+
+        // Edit Done By - with tagging
+        let $editDoneBy = $('#editDoneBy');
+        $editDoneBy.empty().append('<option></option>');
+        usersList.forEach(v => $editDoneBy.append(`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`));
+        $editDoneBy.select2({
+            theme: "bootstrap-5",
+            placeholder: "Select or type new user",
+            allowClear: true,
+            dropdownParent: $('#editModal'),
+            width: '100%',
+            tags: true,
+            tokenSeparators: [',', ';'],
+            createTag: function(params) {
+                var term = $.trim(params.term);
+                if (term === '') return null;
+                return {
+                    id: term,
+                    text: term,
+                    newTag: true
+                };
+            }
+        });
+
+        // ---- Filter dropdown ----
         let $filter = $('#statusFilter');
         $filter.empty().append('<option value="ALL">-- All --</option>');
         statusList.forEach(s => $filter.append(`<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`));
         $filter.select2({ theme: "bootstrap-5", placeholder: "Filter by status", width: '250px' });
-        $filter.val('ALL').trigger('change');
+        // Set default to "Pending" if it exists
+        let defaultStatus = "Pending";
+        if (statusList.includes(defaultStatus)) {
+            $filter.val(defaultStatus).trigger('change');
+        } else {
+            $filter.val('ALL').trigger('change');
+        }
     }
 
     // ---- parse tasks from sheet ----
@@ -634,7 +753,15 @@
         $('#editCategorySelect').val(record.category).trigger('change');
         $('#editSubject').val(record.subject);
         $('#editDesc').val(record.description);
-        $('#editFollowupMail').val(record.followup).trigger('change');
+        
+        // Handle followup - if it's a single value, split if needed or set as single
+        if (record.followup) {
+            let followupValues = record.followup.split(',').map(s => s.trim()).filter(s => s);
+            $('#editFollowupMail').val(followupValues).trigger('change');
+        } else {
+            $('#editFollowupMail').val(null).trigger('change');
+        }
+        
         $('#editAssignedDate').val(record.assignedDate);
         $('#editCutoffDate').val(record.cutoffDate);
         $('#editAssignedUser').val(record.assignedTo).trigger('change');
@@ -654,10 +781,15 @@
         let category = $('#categorySelect').val();
         let subject = $('#subjectInput').val().trim();
         if (!category || !subject) { Swal.fire("Required", "Category and Subject are required", "warning"); return; }
+        
+        // Get followup values (could be multiple from tagging)
+        let followupVal = $('#followupMailSelect').val();
+        let followupStr = followupVal ? (Array.isArray(followupVal) ? followupVal.join(', ') : followupVal) : '';
+        
         let record = {
             category, subject,
             description: $('#descInput').val() || '',
-            followup: $('#followupMailSelect').val() || '',
+            followup: followupStr,
             assignedDate: $('#assignedDate').val() || getTodayDMY(),
             cutoffDate: $('#cutoffDate').val() || '',
             assignedTo: $('#assignedUserSelect').val() || '',
@@ -682,11 +814,16 @@
     // ---- update via modal ----
     $('#confirmUpdateBtn').on('click', async function() {
         let rowId = $('#editRowId').val();
+        
+        // Get followup values from tagging
+        let followupVal = $('#editFollowupMail').val();
+        let followupStr = followupVal ? (Array.isArray(followupVal) ? followupVal.join(', ') : followupVal) : '';
+        
         let record = {
             category: $('#editCategorySelect').val(),
             subject: $('#editSubject').val().trim(),
             description: $('#editDesc').val() || '',
-            followup: $('#editFollowupMail').val() || '',
+            followup: followupStr,
             assignedDate: $('#editAssignedDate').val() || '',
             cutoffDate: $('#editCutoffDate').val() || '',
             assignedTo: $('#editAssignedUser').val() || '',
@@ -724,7 +861,12 @@
     }
 
     $('#tabAddBtn').on('click', () => switchTab('add'));
-    $('#tabListBtn').on('click', () => { switchTab('list'); if(!isTableLoaded) refreshTable(); });
+    $('#tabListBtn').on('click', () => { 
+        switchTab('list'); 
+        if (!isTableLoaded) {
+            $('#filterRecordCount').text('Click "View" to load tasks');
+        }
+    });
     $('#tabAlterBtn').on('click', () => { switchTab('alter'); renderAlterLists(); });
 
     // ---- view filter ----
@@ -736,7 +878,12 @@
         isTableLoaded = true;
     });
     $('#clearFilterBtn').on('click', function() {
-        $('#statusFilter').val('ALL').trigger('change');
+        let defaultStatus = "Pending";
+        if (statusList.includes(defaultStatus)) {
+            $('#statusFilter').val(defaultStatus).trigger('change');
+        } else {
+            $('#statusFilter').val('ALL').trigger('change');
+        }
         if (isTableLoaded) refreshTable();
     });
     $('#refreshTableBtn').on('click', refreshTable);
@@ -787,8 +934,12 @@
         initFlatpickr();
         $('#assignedDate').val(getTodayDMY());
         $('#workStatusSelect').val('Pending').trigger('change');
-        // no auto-load table; user clicks "Manage Tasks" or View
-        $('#filterRecordCount').text('Click "View" to load tasks');
+        let defaultStatus = "Pending";
+        if (statusList.includes(defaultStatus)) {
+            $('#filterRecordCount').text(`Click "View" to load tasks with status: ${defaultStatus}`);
+        } else {
+            $('#filterRecordCount').text('Click "View" to load tasks');
+        }
     });
 </script>
 </body>
