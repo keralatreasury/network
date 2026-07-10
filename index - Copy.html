@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>NOC Admin | Network Operations Center</title>
+    <title>Log In</title>
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     
@@ -24,6 +24,274 @@
     <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
     
     <style>
+        /* ===== NAVBAR USER STYLES ===== */
+        .navbar-user-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 4px 12px 4px 8px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: transparent;
+            border: 1px solid transparent;
+            position: relative;
+            margin-left: 10px;
+        }
+        .navbar-user-section:hover {
+            background: var(--dropdown-hover);
+            border-color: var(--border-color);
+        }
+        .navbar-user-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #184e81 0%, #0457a4 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 16px;
+            font-weight: 600;
+            flex-shrink: 0;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(4, 87, 164, 0.3);
+            position: relative;
+        }
+        .navbar-user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        .navbar-user-avatar .avatar-text {
+            z-index: 1;
+        }
+        .navbar-user-name {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            white-space: nowrap;
+            max-width: 120px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .navbar-user-chevron {
+            color: var(--text-muted);
+            font-size: 0.7rem;
+            margin-left: 2px;
+            transition: transform 0.25s ease;
+        }
+        .navbar-user-section.active .navbar-user-chevron {
+            transform: rotate(180deg);
+        }
+
+        /* User Popup Dropdown */
+        .user-popup-dropdown {
+            position: absolute;
+            top: calc(100% + 10px);
+            right: 0;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            box-shadow: 0 20px 60px var(--shadow-color);
+            min-width: 320px;
+            max-width: 360px;
+            padding: 0;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px) scale(0.96);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 9999;
+            overflow: hidden;
+        }
+        .user-popup-dropdown.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0) scale(1);
+        }
+        .user-popup-header {
+            padding: 18px 22px 14px 22px;
+            background: linear-gradient(135deg, var(--navbar-start) 0%, var(--navbar-end) 100%);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .user-popup-avatar-large {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #184e81 0%, #0457a4 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 24px;
+            font-weight: 600;
+            flex-shrink: 0;
+            overflow: hidden;
+            box-shadow: 0 4px 16px rgba(4, 87, 164, 0.3);
+            position: relative;
+        }
+        .user-popup-avatar-large img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        .user-popup-avatar-large .avatar-text {
+            z-index: 1;
+        }
+        .user-popup-name {
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .user-popup-role {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+        .user-popup-body {
+            padding: 14px 22px 18px 22px;
+        }
+        .user-popup-info-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 7px 0;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.85rem;
+        }
+        .user-popup-info-item:last-child {
+            border-bottom: none;
+        }
+        .user-popup-info-item .label {
+            color: var(--text-muted);
+            min-width: 65px;
+            font-weight: 500;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .user-popup-info-item .value {
+            color: var(--text-primary);
+            word-break: break-word;
+            flex: 1;
+            font-size: 0.85rem;
+        }
+        .user-popup-info-item i {
+            color: var(--logo-color);
+            font-size: 0.95rem;
+            width: 18px;
+            text-align: center;
+        }
+        .user-popup-footer {
+            padding: 10px 22px 18px 22px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+        }
+        .user-popup-footer .logout-btn {
+            background: transparent;
+            border: 1px solid #dc2626;
+            color: #dc2626;
+            padding: 5px 16px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .user-popup-footer .logout-btn:hover {
+            background: #dc2626;
+            color: #fff;
+        }
+
+        /* Click outside overlay */
+        .user-popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 9998;
+            display: none;
+        }
+        .user-popup-overlay.show {
+            display: block;
+        }
+
+        /* Dark theme */
+        body.dark-theme .navbar-user-section:hover {
+            background: var(--dropdown-hover);
+        }
+        body.dark-theme .user-popup-dropdown {
+            background: var(--bg-secondary);
+            border-color: var(--border-color);
+        }
+        body.dark-theme .user-popup-header {
+            background: linear-gradient(135deg, #2d3a4f 0%, #1e293b 100%);
+        }
+        body.dark-theme .user-popup-avatar-large {
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+            .navbar-user-name {
+                max-width: 70px;
+                font-size: 0.75rem;
+            }
+            .navbar-user-avatar {
+                width: 30px;
+                height: 30px;
+                font-size: 13px;
+            }
+            .user-popup-dropdown {
+                min-width: 280px;
+                max-width: 310px;
+                right: -5px;
+            }
+            .user-popup-header {
+                padding: 14px 16px 10px 16px;
+            }
+            .user-popup-body {
+                padding: 10px 16px 14px 16px;
+            }
+            .user-popup-footer {
+                padding: 8px 16px 14px 16px;
+            }
+            .user-popup-avatar-large {
+                width: 42px;
+                height: 42px;
+                font-size: 18px;
+            }
+            .user-popup-name {
+                font-size: 0.9rem;
+            }
+        }
+        @media (max-width: 576px) {
+            .navbar-user-name {
+                display: none;
+            }
+            .navbar-user-section {
+                padding: 4px 6px 4px 6px;
+                margin-left: 5px;
+            }
+            .navbar-user-chevron {
+                display: none;
+            }
+        }
+
+        /* Notification styles */
         .notification-icon-wrapper {
             position: relative;
             display: inline-flex;
@@ -80,8 +348,40 @@
             font-family: monospace;
             cursor: pointer;
         }
-        .refresh-indicator { display: none; }
     </style>
+    
+    <!-- DEVICE DETECTION & MOBILE REDIRECT -->
+    <script>
+        (function() {
+            const currentPath = window.location.pathname;
+            const isAppPage = currentPath.includes('app.html');
+            
+            if (!isAppPage) {
+                const isMobileWidth = window.innerWidth <= 768;
+                const isMobileUA = /Mobile|iPhone|iPad|Android|iPod|BlackBerry|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent);
+                const isMobile = isMobileWidth || isMobileUA;
+                const isInIframe = window.self !== window.top;
+                
+                function checkDailyRedirectRefresh() {
+                    const lastLoginDate = localStorage.getItem('lastLoginDate');
+                    const today = new Date().toDateString();
+                    if (lastLoginDate !== today) {
+                        sessionStorage.clear();
+                        localStorage.setItem('lastLoginDate', today);
+                        return true;
+                    }
+                    return false;
+                }
+                
+                if (isMobile && !isInIframe) {
+                    checkDailyRedirectRefresh();
+                    const redirectUrl = "app.html?nocache=" + Date.now();
+                    window.location.href = redirectUrl;
+                    return;
+                }
+            }
+        })();
+    </script>
 </head>
 <body class="light-theme">
     <!-- Login Overlay -->
@@ -166,6 +466,54 @@
                             </span>
                         </label>
                     </div>
+                    <!-- User Section in Navbar -->
+                    <div class="navbar-user-section" id="navbarUserSection">
+                        <div class="navbar-user-avatar" id="navbarUserAvatar">
+                            <span class="avatar-text" id="navbarAvatarText">U</span>
+                        </div>
+                        <span class="navbar-user-name" id="navbarUserName">User</span>
+                        <i class="bi bi-chevron-down navbar-user-chevron" id="navbarUserChevron"></i>
+                    </div>
+                    <!-- User Popup Dropdown -->
+                    <div class="user-popup-overlay" id="userPopupOverlay"></div>
+                    <div class="user-popup-dropdown" id="userPopupDropdown">
+                        <div class="user-popup-header">
+                            <div class="user-popup-avatar-large" id="popupAvatar">
+                                <span class="avatar-text" id="popupAvatarText">U</span>
+                            </div>
+                            <div>
+                                <div class="user-popup-name" id="popupUserName">User</div>
+                                <div class="user-popup-role" id="popupUserRole">NOC Admin</div>
+                            </div>
+                        </div>
+                        <div class="user-popup-body">
+                            <div class="user-popup-info-item">
+                                <i class="bi bi-person"></i>
+                                <span class="label">User ID</span>
+                                <span class="value" id="popupUserId">—</span>
+                            </div>
+                            <div class="user-popup-info-item">
+                                <i class="bi bi-envelope"></i>
+                                <span class="label">Email</span>
+                                <span class="value" id="popupUserEmail">—</span>
+                            </div>
+                            <div class="user-popup-info-item">
+                                <i class="bi bi-building"></i>
+                                <span class="label">Treasury</span>
+                                <span class="value" id="popupUserTreasury">—</span>
+                            </div>
+                            <div class="user-popup-info-item" style="border-bottom: none; padding-bottom: 4px;">
+                                <i class="bi bi-clock"></i>
+                                <span class="label">Logged In</span>
+                                <span class="value" id="popupUserLoginTime">—</span>
+                            </div>
+                        </div>
+                        <div class="user-popup-footer">
+                            <button class="logout-btn" id="popupLogoutBtn">
+                                <i class="bi bi-box-arrow-right"></i> Logout
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </nav>
@@ -207,266 +555,382 @@
         const APP_VERSION_ID = "20250102_v5_FIXED";
         const LAST_CLEAR_DATE_KEY = "lastCacheClearDate";
         
-        // Function to reset login button state (enables it and hides spinner)
-        function resetLoginButtonState() {
-            const loginBtn = document.getElementById('loginBtn');
-            const loginSpinner = document.getElementById('loginSpinner');
-            const loginText = document.getElementById('loginText');
-            
-            if (loginBtn) {
-                loginBtn.disabled = false;
+        // ======================== USER POPUP FUNCTIONS ========================
+        function getUserInitials(name) {
+            if (!name) return 'U';
+            const parts = name.trim().split(' ');
+            if (parts.length >= 2) {
+                return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
             }
-            if (loginSpinner) {
-                loginSpinner.classList.add('d-none');
-            }
-            if (loginText) {
-                loginText.textContent = 'Login';
+            return name.charAt(0).toUpperCase();
+        }
+
+        function showUserPopup() {
+            const dropdown = document.getElementById('userPopupDropdown');
+            const overlay = document.getElementById('userPopupOverlay');
+            const section = document.getElementById('navbarUserSection');
+            if (dropdown) dropdown.classList.add('show');
+            if (overlay) overlay.classList.add('show');
+            if (section) section.classList.add('active');
+        }
+
+        function hideUserPopup() {
+            const dropdown = document.getElementById('userPopupDropdown');
+            const overlay = document.getElementById('userPopupOverlay');
+            const section = document.getElementById('navbarUserSection');
+            if (dropdown) dropdown.classList.remove('show');
+            if (overlay) overlay.classList.remove('show');
+            if (section) section.classList.remove('active');
+        }
+
+        function toggleUserPopup() {
+            const dropdown = document.getElementById('userPopupDropdown');
+            if (dropdown && dropdown.classList.contains('show')) {
+                hideUserPopup();
+            } else {
+                showUserPopup();
             }
         }
-        
-        function performDailyCacheClear() {
-            const today = new Date().toDateString();
-            const lastClear = localStorage.getItem(LAST_CLEAR_DATE_KEY);
-            if (lastClear !== today) {
-                console.log("[System] Daily cache cleanup triggered");
-                if ('caches' in window) {
-                    caches.keys().then(names => {
-                        names.forEach(name => {
-                            if (name.includes('network') || name.includes('css') || name.includes('js')) {
-                                caches.delete(name);
-                            }
-                        });
-                    });
+
+        function updateNavbarUser(userData) {
+            if (!userData) {
+                console.warn('updateNavbarUser: No user data provided');
+                return;
+            }
+            
+            console.log('Updating navbar with user data:', userData);
+            
+            const username = userData.username || 'User';
+            const userId = userData.userId || userData.username || '—';
+            const email = userData.email || '—';
+            const treasury = userData.treasury || '—';
+            const imageUrl = userData.imageUrl || null;
+            const loginTime = userData.loginTime || new Date().toISOString();
+            
+            // Update navbar avatar
+            const avatarContainer = document.getElementById('navbarUserAvatar');
+            const avatarText = document.getElementById('navbarAvatarText');
+            
+            if (!avatarContainer) {
+                console.warn('Avatar container not found');
+                return;
+            }
+            
+            // Clear existing image
+            const existingImg = avatarContainer.querySelector('img');
+            if (existingImg) existingImg.remove();
+            
+            if (imageUrl && imageUrl.trim() !== '' && imageUrl.trim() !== 'null') {
+                const img = document.createElement('img');
+                img.src = imageUrl;
+                img.alt = username;
+                img.onerror = function() {
+                    console.warn('Failed to load avatar image:', imageUrl);
+                    this.style.display = 'none';
+                    if (avatarText) {
+                        avatarText.style.display = 'flex';
+                        avatarText.textContent = getUserInitials(username);
+                    }
+                };
+                img.onload = function() {
+                    console.log('Avatar image loaded successfully');
+                    if (avatarText) avatarText.style.display = 'none';
+                };
+                avatarContainer.appendChild(img);
+                if (avatarText) avatarText.style.display = 'none';
+            } else {
+                if (avatarText) {
+                    avatarText.style.display = 'flex';
+                    avatarText.textContent = getUserInitials(username);
                 }
-                const keysToKeep = ['currentUser', 'branchCode', 'selectedBranch', 'theme', 'refreshInterval', 'soundEnabled', LAST_CLEAR_DATE_KEY, 'lastActivityTimestamp'];
-                for (let i = 0; i < localStorage.length; i++) {
-                    const key = localStorage.key(i);
-                    if (!keysToKeep.includes(key)) {
-                        localStorage.removeItem(key);
+            }
+            
+            // Update navbar username
+            const nameSpan = document.getElementById('navbarUserName');
+            if (nameSpan) {
+                const displayName = username.length > 15 ? username.substring(0, 14) + '…' : username;
+                nameSpan.textContent = displayName;
+            }
+            
+            // Update popup
+            const popupAvatar = document.getElementById('popupAvatar');
+            const popupAvatarText = document.getElementById('popupAvatarText');
+            
+            if (popupAvatar) {
+                const existingPopupImg = popupAvatar.querySelector('img');
+                if (existingPopupImg) existingPopupImg.remove();
+                
+                if (imageUrl && imageUrl.trim() !== '' && imageUrl.trim() !== 'null') {
+                    const img = document.createElement('img');
+                    img.src = imageUrl;
+                    img.alt = username;
+                    img.onerror = function() {
+                        this.style.display = 'none';
+                        if (popupAvatarText) {
+                            popupAvatarText.style.display = 'flex';
+                            popupAvatarText.textContent = getUserInitials(username);
+                        }
+                    };
+                    img.onload = function() {
+                        if (popupAvatarText) popupAvatarText.style.display = 'none';
+                    };
+                    popupAvatar.appendChild(img);
+                    if (popupAvatarText) popupAvatarText.style.display = 'none';
+                } else {
+                    if (popupAvatarText) {
+                        popupAvatarText.style.display = 'flex';
+                        popupAvatarText.textContent = getUserInitials(username);
                     }
                 }
-                localStorage.setItem(LAST_CLEAR_DATE_KEY, today);
+            }
+            
+            const popupUserName = document.getElementById('popupUserName');
+            if (popupUserName) popupUserName.textContent = username;
+            
+            const popupUserRole = document.getElementById('popupUserRole');
+            if (popupUserRole) {
+                popupUserRole.textContent = userId.includes('BR') ? 'Branch User' : 'NOC Admin';
+            }
+            
+            const popupUserId = document.getElementById('popupUserId');
+            if (popupUserId) popupUserId.textContent = userId;
+            
+            const popupUserEmail = document.getElementById('popupUserEmail');
+            if (popupUserEmail) popupUserEmail.textContent = email;
+            
+            const popupUserTreasury = document.getElementById('popupUserTreasury');
+            if (popupUserTreasury) popupUserTreasury.textContent = treasury || '—';
+            
+            try {
+                const date = new Date(loginTime);
+                const formatted = date.toLocaleString('en-IN', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                const popupLoginTime = document.getElementById('popupUserLoginTime');
+                if (popupLoginTime) popupLoginTime.textContent = formatted;
+            } catch(e) {
+                const popupLoginTime = document.getElementById('popupUserLoginTime');
+                if (popupLoginTime) popupLoginTime.textContent = loginTime || '—';
             }
         }
-        
-        // ======================== INACTIVITY LOGOUT ========================
-        let inactivityTimer = null;
-        const INACTIVITY_LIMIT_MS = 15 * 60 * 1000; // 5 minutes (change to 15*60*1000 for 15 min)
-        
-        function resetInactivityTimer() {
-            if (!window.isAuthenticated) return;
-            if (inactivityTimer) clearTimeout(inactivityTimer);
-            inactivityTimer = setTimeout(() => {
-                if (window.isAuthenticated === true) {
-                    console.log("[Security] Inactivity timeout: auto-logout triggered");
-                    performSilentLogout();
+
+        // ======================== OVERRIDE FUNCTIONS ========================
+        // Store original functions
+        const origDisplayLoggedInUser = window.displayLoggedInUser;
+        const origLoadMenuData = window.loadMenuData;
+        const origCheckExistingSession = window.checkExistingSession;
+        const origLogout = window.logout;
+        const origHandleLogin = window.handleLogin;
+
+        // Override displayLoggedInUser
+        window.displayLoggedInUser = function() {
+            const storedUser = localStorage.getItem('currentUser');
+            if (storedUser) {
+                try {
+                    const userData = JSON.parse(storedUser);
+                    currentUser = userData;
+                    window.currentUser = userData;
+                    updateNavbarUser(userData);
+                } catch (e) {
+                    console.error('Error parsing user data:', e);
                 }
-            }, INACTIVITY_LIMIT_MS);
-        }
-        
-        function performSilentLogout() {
-            // Reset login button state BEFORE calling logout
-            resetLoginButtonState();
-            
-            // Clear the inactivity timer
-            if (inactivityTimer) {
-                clearTimeout(inactivityTimer);
-                inactivityTimer = null;
             }
-            
-            // Call existing logout function
-            if (typeof window.logout === 'function') {
-                window.logout();
+        };
+
+        // Override checkExistingSession
+        window.checkExistingSession = function() {
+            const storedUser = localStorage.getItem('currentUser');
+            if (storedUser) {
+                try {
+                    const userData = JSON.parse(storedUser);
+                    const loginTime = new Date(userData.loginTime);
+                    const now = new Date();
+                    const hoursSinceLogin = (now - loginTime) / (1000 * 60 * 60);
+                    
+                    if (hoursSinceLogin > 24) {
+                        window.logout();
+                        return;
+                    }
+                    
+                    isAuthenticated = true;
+                    currentUser = userData;
+                    window.isAuthenticated = true;
+                    window.currentUser = userData;
+                    
+                    const loginOverlay = document.getElementById('loginOverlay');
+                    const dashboardContainer = document.getElementById('dashboardContainer');
+                    
+                    loginOverlay.style.display = 'none';
+                    dashboardContainer.style.display = 'block';
+                    
+                    updateNavbarUser(userData);
+                    
+                    if (typeof window.loadMenuData === 'function') {
+                        window.loadMenuData(userData.menuSheet);
+                    }
+                    setTimeout(() => {
+                        if (typeof window.fetchAndDisplayFlashNews === 'function') {
+                            window.fetchAndDisplayFlashNews();
+                        }
+                        if (typeof window.initNotificationSystem === 'function') {
+                            window.initNotificationSystem();
+                        }
+                    }, 100);
+                } catch (e) {
+                    console.error('Error restoring session:', e);
+                    window.logout();
+                }
+            }
+        };
+
+        // Override loadMenuData
+        window.loadMenuData = function(menuSheetName) {
+            if (typeof origLoadMenuData === 'function') {
+                origLoadMenuData(menuSheetName);
+            }
+            const storedUser = localStorage.getItem('currentUser');
+            if (storedUser) {
+                try {
+                    const userData = JSON.parse(storedUser);
+                    updateNavbarUser(userData);
+                } catch(e) {}
+            }
+        };
+
+        // Override logout
+        window.logout = function() {
+            if (typeof origLogout === 'function') {
+                origLogout.apply(this, arguments);
             } else {
-                // Fallback logout logic
                 localStorage.removeItem('currentUser');
                 sessionStorage.removeItem('currentUser');
                 window.isAuthenticated = false;
                 window.currentUser = null;
                 const loginOverlay = document.getElementById('loginOverlay');
                 const dashboardContainer = document.getElementById('dashboardContainer');
-                const flashContainer = document.getElementById('flashNewsContainer');
-                if (flashContainer) flashContainer.classList.add('hidden');
                 if (loginOverlay) loginOverlay.style.display = 'flex';
                 if (dashboardContainer) dashboardContainer.style.display = 'none';
-                document.getElementById('username').value = '';
-                document.getElementById('password').value = '';
+                const usernameField = document.getElementById('username');
+                const passwordField = document.getElementById('password');
+                if (usernameField) usernameField.value = '';
+                if (passwordField) passwordField.value = '';
                 const badge = document.getElementById('notificationBadge');
                 if (badge) { badge.textContent = '0'; badge.classList.add('zero'); }
-                document.title = 'NOC Admin';
+                document.title = 'NOC Admin | Network Operations Center';
+            }
+            hideUserPopup();
+        };
+
+        // ======================== INITIALIZATION ========================
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('[System] Initializing...');
+            
+            // Init theme
+            if (typeof window.initTheme === 'function') {
+                window.initTheme();
             }
             
-            // Additional reset to ensure login button is enabled
-            setTimeout(() => {
-                resetLoginButtonState();
-                // Clear any stale error messages
-                const loginError = document.getElementById('loginError');
-                if (loginError) loginError.style.display = 'none';
-            }, 100);
-        }
-        
-        function bindActivityListeners() {
-            const events = ['mousedown', 'keydown', 'touchstart', 'scroll', 'mousemove', 'click'];
-            const activityHandler = () => {
-                if (window.isAuthenticated === true) {
-                    resetInactivityTimer();
-                    localStorage.setItem('lastActivityTimestamp', Date.now().toString());
-                }
-            };
-            events.forEach(event => {
-                window.addEventListener(event, activityHandler, { passive: true });
-            });
-            const iframe = document.getElementById('content-frame');
-            if (iframe) {
-                iframe.addEventListener('load', () => {
-                    try {
-                        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                        if (iframeDoc) {
-                            const iframeEvents = ['mousedown', 'keydown', 'touchstart', 'click'];
-                            iframeEvents.forEach(ev => {
-                                iframeDoc.addEventListener(ev, activityHandler);
-                            });
-                        }
-                    } catch(e) { /* cross-origin */ }
+            const themeToggle = document.getElementById('theme-toggle');
+            if (themeToggle && typeof window.toggleTheme === 'function') {
+                themeToggle.addEventListener('change', window.toggleTheme);
+            }
+            
+            // Login button
+            const loginBtn = document.getElementById('loginBtn');
+            if (loginBtn) {
+                loginBtn.addEventListener('click', function() {
+                    if (typeof window.handleLogin === 'function') {
+                        window.handleLogin();
+                    }
                 });
             }
-        }
-        
-        // Wrap the original handleLogin to ensure button state is managed
-        const originalHandleLogin = window.handleLogin;
-        if (typeof originalHandleLogin === 'function') {
-            window.handleLogin = async function() {
-                // Button is already disabled by original function, but we ensure it works
-                try {
-                    await originalHandleLogin.apply(this, arguments);
-                } catch(error) {
-                    // If login fails, reset button state
-                    resetLoginButtonState();
-                    throw error;
-                }
-                
-                setTimeout(() => {
-                    if (window.isAuthenticated === true) {
-                        resetInactivityTimer();
-                    } else {
-                        // If login failed for any reason, reset button
-                        resetLoginButtonState();
-                    }
-                }, 500);
-            };
-        }
-        
-        // Wrap logout to properly reset button state
-        if (typeof window.logout === 'function') {
-            const originalLogout = window.logout;
-            window.logout = function() {
-                if (inactivityTimer) clearTimeout(inactivityTimer);
-                originalLogout.apply(this, arguments);
-                // Reset login button after logout
-                resetLoginButtonState();
-            };
-        } else {
-            window.logout = function() {
-                if (inactivityTimer) clearTimeout(inactivityTimer);
-                localStorage.removeItem('currentUser');
-                sessionStorage.removeItem('currentUser');
-                window.isAuthenticated = false;
-                window.currentUser = null;
-                const loginOverlay = document.getElementById('loginOverlay');
-                const dashboardContainer = document.getElementById('dashboardContainer');
-                if (loginOverlay) loginOverlay.style.display = 'flex';
-                if (dashboardContainer) dashboardContainer.style.display = 'none';
-                document.getElementById('username').value = '';
-                document.getElementById('password').value = '';
-                const badge = document.getElementById('notificationBadge');
-                if (badge) { badge.textContent = '0'; badge.classList.add('zero'); }
-                document.title = 'NOC Admin';
-                resetLoginButtonState();
-            };
-        }
-        
-        function watchAuthState() {
-            let lastAuthState = window.isAuthenticated;
-            setInterval(() => {
-                if (window.isAuthenticated !== lastAuthState) {
-                    lastAuthState = window.isAuthenticated;
-                    if (window.isAuthenticated === true) {
-                        resetInactivityTimer();
-                    } else if (window.isAuthenticated === false) {
-                        if (inactivityTimer) clearTimeout(inactivityTimer);
-                        // Reset button state when auth becomes false
-                        resetLoginButtonState();
-                    }
-                }
-            }, 500);
-        }
-        
-        // Initialize everything
-        document.addEventListener('DOMContentLoaded', function() {
-            performDailyCacheClear();
             
-            const versionSpan = document.getElementById('appVersion');
-            if (versionSpan) versionSpan.textContent = APP_VERSION_ID;
+            // Enter key handlers
+            const username = document.getElementById('username');
+            const password = document.getElementById('password');
             
-            // Cache clear button (optional)
-            const infoDiv = document.createElement('div');
-            infoDiv.className = 'cache-info-badge';
-            infoDiv.innerHTML = `<i class="bi bi-arrow-repeat"></i> Clear Cache`;
-            infoDiv.onclick = function() {
-                if (confirm('Clear all cache and reload?')) {
-                    localStorage.clear();
-                    sessionStorage.clear();
-                    if ('caches' in window) {
-                        caches.keys().then(names => names.forEach(name => caches.delete(name)));
+            if (username) {
+                username.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (password) password.focus();
                     }
-                    window.location.reload(true);
-                }
-            };
-            document.body.appendChild(infoDiv);
-            
-            bindActivityListeners();
-            watchAuthState();
-            
-            setTimeout(() => {
-                if (window.isAuthenticated === true) {
-                    resetInactivityTimer();
-                } else {
-                    // Ensure login button is enabled if not authenticated
-                    resetLoginButtonState();
-                }
-            }, 800);
-        });
-        
-        // Monitor login button clicks to ensure it gets reset if something goes wrong
-        const loginBtnElement = document.getElementById('loginBtn');
-        if (loginBtnElement) {
-            loginBtnElement.addEventListener('click', function() {
-                // Small delay to check if login gets stuck
-                setTimeout(() => {
-                    const isDisabled = loginBtnElement.disabled;
-                    const isAuthenticated = window.isAuthenticated;
-                    if (isDisabled === true && isAuthenticated !== true) {
-                        // Login button is stuck disabled but not authenticated - reset it
-                        console.log("[Fix] Detected stuck login button, resetting...");
-                        resetLoginButtonState();
-                    }
-                }, 3000);
-            });
-        }
-        
-        // Also monitor for any error that might leave button disabled
-        window.addEventListener('error', function() {
-            if (!window.isAuthenticated) {
-                resetLoginButtonState();
+                });
             }
+            
+            if (password) {
+                password.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (typeof window.handleLogin === 'function') {
+                            window.handleLogin();
+                        }
+                    }
+                });
+            }
+            
+            // Sidebar toggle
+            if (typeof window.initDesktopSidebarToggle === 'function') {
+                window.initDesktopSidebarToggle();
+            }
+            
+            // User popup event listeners
+            const userSection = document.getElementById('navbarUserSection');
+            if (userSection) {
+                userSection.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    toggleUserPopup();
+                });
+            }
+            
+            const overlay = document.getElementById('userPopupOverlay');
+            if (overlay) {
+                overlay.addEventListener('click', function() {
+                    hideUserPopup();
+                });
+            }
+            
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    hideUserPopup();
+                }
+            });
+            
+            const logoutBtn = document.getElementById('popupLogoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function() {
+                    hideUserPopup();
+                    if (typeof window.logout === 'function') {
+                        window.logout();
+                    }
+                });
+            }
+            
+            // Check existing session
+            if (typeof window.checkExistingSession === 'function') {
+                window.checkExistingSession();
+            }
+            
+            // Focus username
+            setTimeout(() => {
+                if (!isAuthenticated && username) {
+                    username.focus();
+                }
+            }, 100);
         });
-        
-        window.fetchUnreadChatCount = window.fetchUnreadChatCount || function() {};
-        window.openChatInIframe = window.openChatInIframe || function() {};
-        window.APP_VERSION = APP_VERSION_ID;
-        window.resetLoginButtonState = resetLoginButtonState;
-        
-        console.log("[Security] 5-min inactivity logout active | Daily cache reset enabled | Login button reset on logout");
+
+        // Expose functions globally
+        window.updateNavbarUser = updateNavbarUser;
+        window.showUserPopup = showUserPopup;
+        window.hideUserPopup = hideUserPopup;
+        window.toggleUserPopup = toggleUserPopup;
+        window.getUserInitials = getUserInitials;
+
+        console.log('[System] Navbar user system initialized');
     </script>
 </body>
 </html>

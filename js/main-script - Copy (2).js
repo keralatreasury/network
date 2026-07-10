@@ -1049,58 +1049,13 @@ function loadUrlInIframe(url) {
     iframe.src = fullUrl;
 }
 
-// ======================== SIDEBAR TOGGLE FUNCTION (UPDATED) ========================
 function initDesktopSidebarToggle() {
     const btn = document.getElementById('desktopSidebarToggle');
     const sidebar = document.getElementById('desktopSidebarContainer');
-    const contentArea = document.getElementById('contentArea');
-    
-    if (!btn || !sidebar) {
-        console.warn('Sidebar toggle elements not found');
-        return;
-    }
-    
-    // Check if sidebar is collapsed from localStorage
-    const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
-    if (isCollapsed) {
-        sidebar.classList.add('collapsed');
-        if (contentArea) contentArea.classList.add('expanded');
-    }
-    
-    // Remove any existing listeners to prevent duplicates
-    btn.removeEventListener('click', handleSidebarToggle);
-    btn.addEventListener('click', handleSidebarToggle);
-}
-
-function handleSidebarToggle(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    const sidebar = document.getElementById('desktopSidebarContainer');
-    const contentArea = document.getElementById('contentArea');
-    
-    if (!sidebar) return;
-    
-    sidebar.classList.toggle('collapsed');
-    if (contentArea) contentArea.classList.toggle('expanded');
-    
-    // Save state
-    const collapsed = sidebar.classList.contains('collapsed');
-    localStorage.setItem('sidebarCollapsed', collapsed ? 'true' : 'false');
-    
-    // Resize iframe when sidebar toggles
-    setTimeout(() => {
-        const iframe = document.getElementById('content-frame');
-        if (iframe && iframe.contentWindow) {
-            try {
-                iframe.contentWindow.dispatchEvent(new Event('resize'));
-            } catch(e) {
-                // Cross-origin, ignore
-            }
-        }
-        window.dispatchEvent(new Event('resize'));
-        adjustWrapperHeightForTicker();
-    }, 300);
+    if (!btn || !sidebar) return;
+    btn.addEventListener('click', () => {
+        sidebar.classList.toggle('collapsed');
+    });
 }
 
 // ======================== RESET LOGIN BUTTON STATE ========================
@@ -1151,7 +1106,6 @@ document.addEventListener('DOMContentLoaded', function() {
         password.addEventListener('input', hideLoginError);
     }
     
-    // Initialize sidebar toggle (called after DOM is ready)
     initDesktopSidebarToggle();
     
     const welcomeMsg = document.getElementById('welcome-message');
@@ -1209,7 +1163,6 @@ window.initNotificationSystem = initNotificationSystem;
 window.resetLoginButtonState = resetLoginButtonState;
 window.fetchUserDetailsFromLoginSheet = fetchUserDetailsFromLoginSheet;
 window.loadMenuData = loadMenuData;
-window.initDesktopSidebarToggle = initDesktopSidebarToggle;
 
 console.log('[System] All systems initialized');
 console.log('[System] User details will be fetched from Login sheet columns: A-Username, B-UserID, E-Email, H-Treasury, J-ImageURL');

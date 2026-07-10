@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📡 Treasuries · Device & Network Monitoring</title>
+    <title>Treasuries · Device & Network Monitoring</title>
 
     <!-- LOCAL CSS – same as sample -->
     <link rel="stylesheet" href="../css/bootstrap.min.css">
@@ -308,11 +308,8 @@
         }
 
         .short-id {
-            
             font-size: 0.85rem;
-           
             cursor: pointer;
-           
             white-space: nowrap;
             display: inline-block;
         }
@@ -320,7 +317,6 @@
         .short-id:hover { background: #e2e8f0; }
 
         .isp-tag {
-            
             border-radius: 20px;
             padding: 3px 10px;
             font-size: 0.75rem;
@@ -334,7 +330,7 @@
             padding: 3px 8px;
             border-radius: 20px;
             display: inline-block;
-           }
+        }
 
         /* Loading */
         .loading {
@@ -750,6 +746,18 @@
         console.log('Processed rows:', allRows.length);
     }
 
+    // ========== DESTROY TABLE ==========
+    function destroyDataTable() {
+        if (dataTable) {
+            dataTable.destroy();
+            dataTable = null;
+        }
+        $('#deviceTable').off();
+        $('#tableBody').empty();
+        $('#dynamicHead').empty();
+        $('#tableWrapper').hide();
+    }
+
     // ========== RENDER ==========
     function renderTable() {
         const $wrapper = $('#tableWrapper');
@@ -764,6 +772,7 @@
         }
         $empty.hide();
 
+        // Build table header
         let theadHtml = `<tr>`;
         DISPLAY_COLS.forEach(col => {
             theadHtml += `<th>${col.label}</th>`;
@@ -771,6 +780,7 @@
         theadHtml += `</tr>`;
         $('#dynamicHead').html(theadHtml);
 
+        // Build table body
         const tbody = $('#tableBody');
         tbody.empty();
 
@@ -827,7 +837,7 @@
             tbody.append(rowHtml);
         });
 
-        if (dataTable) dataTable.destroy();
+        // Initialize DataTable
         dataTable = $('#deviceTable').DataTable({
             pageLength: 25,
             lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
@@ -948,19 +958,30 @@
         if (autoRefreshTimer) { clearInterval(autoRefreshTimer); autoRefreshTimer = null; }
         if (minutes > 0) {
             autoRefreshTimer = setInterval(() => {
-                if (!isRefreshing) loadAllData();
+                if (!isRefreshing) {
+                    console.log('Auto-refresh triggered');
+                    loadAllData();
+                }
             }, minutes * 60 * 1000);
         }
     }
 
     // ========== LOAD MAIN ==========
     async function loadAllData() {
-        if (isRefreshing) return;
+        if (isRefreshing) {
+            console.log('Refresh already in progress, skipping...');
+            return;
+        }
+        
         isRefreshing = true;
+        console.log('Starting refresh...');
         $('#refreshSpinner').show();
         $('#refreshBtn').prop('disabled', true);
+        
+        // Destroy existing DataTable before rebuilding
+        destroyDataTable();
+        
         $('#tableLoading').show();
-        $('#tableWrapper').hide();
         $('#tableEmpty').hide();
 
         try {
@@ -968,8 +989,9 @@
             processData(rows);
             renderTable();
             updateLastUpdated();
+            console.log('Refresh completed successfully');
         } catch (err) {
-            console.error(err);
+            console.error('Refresh error:', err);
             $('#tableContainer').html(`
                 <div class="error-message">
                     <i class="bi bi-exclamation-triangle-fill fs-1"></i>
@@ -988,7 +1010,10 @@
         }
     }
 
-    function manualRefresh() { loadAllData(); }
+    function manualRefresh() {
+        console.log('Manual refresh triggered');
+        loadAllData();
+    }
 
     // ========== INIT ==========
     $(document).ready(function() {
@@ -996,6 +1021,7 @@
 
         $('#refreshIntervalSelect').on('change', function() {
             const val = parseInt($(this).val(), 10);
+            console.log('Auto-refresh interval changed to:', val, 'minutes');
             startAutoRefresh(val);
         });
         startAutoRefresh(2);
