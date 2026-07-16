@@ -21,8 +21,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="./css/main-style.css?v=20250102">
     
-    <!-- PWA Manifest & Favicon 
-    <link rel="manifest" href="/network/manifest.json"> -->
+    <!-- PWA Manifest & Favicon -->
     <link rel="icon" type="image/svg+xml" href="./images/favicon.svg">
     <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
     
@@ -48,16 +47,110 @@
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f0f4f9;
+            background: #f5f8fc;
             color: var(--text-dark);
             display: flex;
             flex-direction: column;
-            overflow-y: auto !important; /* Force scroll */
+            overflow-y: auto !important;
+        }
+
+        /* ===== GRADIENT BACKGROUND WITH COLOR DODGES ===== */
+        .gradient-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: linear-gradient(160deg, #f5f8fc 0%, #e8eef5 50%, #dce6f0 100%);
+            overflow: hidden;
+        }
+
+        /* ===== COLOR DODGE EFFECTS (Lemon, Grey, Red, Blue, Yellow) ===== */
+        .color-dodge {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            animation: floatDodge 20s ease-in-out infinite;
+            opacity: 0.5;
+        }
+
+        /* Lemon Yellow Dodge */
+        .color-dodge-lemon {
+            top: -8%;
+            left: -5%;
+            width: 30%;
+            aspect-ratio: 1/1;
+            background: radial-gradient(circle, rgba(255, 215, 0, 0.35), rgba(255, 215, 0, 0.05));
+            filter: blur(90px);
+            animation: floatDodge 22s ease-in-out infinite;
+        }
+
+        /* Grey Dodge */
+        .color-dodge-grey {
+            bottom: -5%;
+            right: -3%;
+            width: 28%;
+            aspect-ratio: 1/1;
+            background: radial-gradient(circle, rgba(180, 190, 200, 0.3), rgba(180, 190, 200, 0.05));
+            filter: blur(85px);
+            animation: floatDodge 25s ease-in-out infinite reverse;
+        }
+
+        /* Red Dodge */
+        .color-dodge-red {
+            top: 15%;
+            right: 5%;
+            width: 22%;
+            aspect-ratio: 1/1;
+            background: radial-gradient(circle, rgba(220, 50, 50, 0.2), rgba(220, 50, 50, 0.03));
+            filter: blur(75px);
+            animation: floatDodge 18s ease-in-out infinite 2s;
+        }
+
+        /* Blue Dodge */
+        .color-dodge-blue {
+            bottom: 15%;
+            left: 3%;
+            width: 25%;
+            aspect-ratio: 1/1;
+            background: radial-gradient(circle, rgba(30, 100, 200, 0.25), rgba(30, 100, 200, 0.04));
+            filter: blur(80px);
+            animation: floatDodge 20s ease-in-out infinite 1.5s;
+        }
+
+        /* Yellow Dodge */
+        .color-dodge-yellow {
+            top: 45%;
+            left: 20%;
+            width: 18%;
+            aspect-ratio: 1/1;
+            background: radial-gradient(circle, rgba(255, 200, 0, 0.25), rgba(255, 200, 0, 0.04));
+            filter: blur(70px);
+            animation: floatDodge 16s ease-in-out infinite 3s;
+        }
+
+        /* Extra Lemon Dodge (lighter) */
+        .color-dodge-lemon-light {
+            top: 60%;
+            right: 25%;
+            width: 15%;
+            aspect-ratio: 1/1;
+            background: radial-gradient(circle, rgba(255, 230, 100, 0.2), rgba(255, 230, 100, 0.03));
+            filter: blur(60px);
+            animation: floatDodge 19s ease-in-out infinite 4s;
+        }
+
+        @keyframes floatDodge {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(40px, -25px) scale(1.15); }
+            50% { transform: translate(-25px, 35px) scale(0.85); }
+            75% { transform: translate(25px, 15px) scale(1.1); }
         }
 
         /* ===== NAVBAR ===== */
         .landing-navbar {
-            background: rgba(255, 255, 255, 0.92);
+            background: rgba(255, 255, 255, 0.85);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             padding: 14px 0;
@@ -70,6 +163,7 @@
         }
 
         .landing-navbar.scrolled {
+            background: rgba(255, 255, 255, 0.95);
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.06);
         }
 
@@ -151,25 +245,20 @@
             font-size: 1.1rem;
         }
 
-        /* ===== HERO SECTION - FIXED SCROLLING ===== */
+        /* ===== HERO SECTION ===== */
         .hero-section {
             display: flex;
             align-items: center;
             padding: 40px 0 60px;
-            background: linear-gradient(160deg, #f0f4f9 0%, #e2eaf3 100%);
             position: relative;
             flex-shrink: 0;
             min-height: auto;
-        }
-
-        .hero-section::before,
-        .hero-section::after {
-            display: none;
+            z-index: 1;
         }
 
         .hero-content {
             position: relative;
-            z-index: 1;
+            z-index: 2;
             width: 100%;
         }
 
@@ -339,8 +428,12 @@
         /* ===== FEATURES SECTION ===== */
         .features-section {
             padding: 60px 0 80px;
-            background: #fff;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
             flex-shrink: 0;
+            position: relative;
+            z-index: 1;
         }
 
         .features-section .section-title {
@@ -360,7 +453,9 @@
         }
 
         .feature-card {
-            background: #f8faff;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
             border-radius: 20px;
             padding: 32px 28px;
             border: 1px solid rgba(10, 75, 122, 0.06);
@@ -372,6 +467,7 @@
             transform: translateY(-6px);
             box-shadow: 0 12px 40px rgba(10, 75, 122, 0.08);
             border-color: rgba(10, 75, 122, 0.12);
+            background: rgba(255, 255, 255, 0.95);
         }
 
         .feature-card .icon-wrapper {
@@ -404,20 +500,102 @@
         /* ===== FOOTER ===== */
         .landing-footer {
             background: var(--text-dark);
-            color: rgba(255, 255, 255, 0.6);
-            padding: 28px 0;
-            text-align: center;
-            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.7);
+            padding: 20px 0;
             flex-shrink: 0;
+            position: relative;
+            z-index: 1;
         }
 
-        .landing-footer a {
-            color: rgba(255, 255, 255, 0.7);
+        .landing-footer .container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .footer-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
             text-decoration: none;
         }
 
-        .landing-footer a:hover {
+        .footer-brand .logo-icon-small {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #fff;
+            flex-shrink: 0;
+        }
+
+        .footer-brand .logo-icon-small img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .footer-brand .brand-text {
+            line-height: 1.2;
+        }
+
+        .footer-brand .brand-text h6 {
+            font-size: 0.95rem;
+            font-weight: 700;
             color: #fff;
+            margin: 0;
+        }
+
+        .footer-brand .brand-text span {
+            font-size: 0.65rem;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .footer-center {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .footer-center .copyright {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.4);
+            white-space: nowrap;
+        }
+
+        .footer-center .divider {
+            color: rgba(255, 255, 255, 0.15);
+            font-size: 1.2rem;
+            font-weight: 300;
+        }
+
+        .footer-links {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: rgba(255, 255, 255, 0.6);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .footer-links a:hover {
+            color: #fff;
+            transform: translateY(-1px);
+        }
+
+        .footer-links a i {
+            font-size: 0.9rem;
         }
 
         /* ===== RESPONSIVE ===== */
@@ -506,6 +684,23 @@
             .feature-card {
                 padding: 24px 20px;
             }
+
+            .landing-footer .container {
+                flex-direction: column;
+                text-align: center;
+                gap: 10px;
+            }
+            .footer-links {
+                justify-content: center;
+                gap: 16px;
+            }
+            .footer-center {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            .footer-center .divider {
+                display: none;
+            }
         }
 
         @media (max-width: 480px) {
@@ -528,6 +723,13 @@
             .hero-image-container img {
                 max-height: 200px;
             }
+            .footer-links {
+                flex-direction: column;
+                gap: 8px;
+            }
+            .footer-center .copyright {
+                font-size: 0.7rem;
+            }
         }
 
         /* ===== SCROLL ANIMATION ===== */
@@ -548,9 +750,161 @@
                 transform: translateY(0);
             }
         }
+/* ===== FOOTER ===== */
+.landing-footer {
+    background: var(--text-dark);
+    color: rgba(255, 255, 255, 0.7);
+    padding: 24px 0 16px;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+}
+
+.landing-footer .container {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.footer-main {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    min-width: 100%;
+}
+
+.footer-copyright {
+    text-align: center;
+    padding-top: 16px;
+    margin-top: 0;
+}
+
+.footer-copyright span {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.35);
+    letter-spacing: 0.3px;
+}
+
+.footer-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+}
+
+.footer-brand .logo-icon-small {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #fff;
+    flex-shrink: 0;
+}
+
+.footer-brand .logo-icon-small img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.footer-brand .brand-text {
+    line-height: 1.2;
+}
+
+.footer-brand .brand-text h6 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #fff;
+    margin: 0;
+}
+
+.footer-brand .brand-text span {
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.footer-links {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.footer-links a {
+    color: rgba(255, 255, 255, 0.6);
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.footer-links a:hover {
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+.footer-links a i {
+    font-size: 0.9rem;
+}
+
+/* ===== RESPONSIVE - Updated ===== */
+@media (max-width: 768px) {
+    .landing-footer {
+        padding: 20px 0 12px;
+    }
+    .footer-main {
+        flex-direction: column;
+        text-align: center;
+        gap: 12px;
+        padding-bottom: 12px;
+    }
+    .footer-links {
+        justify-content: center;
+        gap: 16px;
+    }
+    .footer-copyright {
+        padding-top: 12px;
+    }
+    .footer-copyright span {
+        font-size: 0.7rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .footer-links {
+        flex-direction: column;
+        gap: 6px;
+    }
+    .footer-copyright span {
+        font-size: 0.65rem;
+    }
+}
     </style>
 </head>
 <body>
+
+    <!-- ===== GRADIENT BACKGROUND WITH COLOR DODGES ===== -->
+    <div class="gradient-bg">
+        <!-- Lemon Yellow Dodge -->
+        <div class="color-dodge color-dodge-lemon"></div>
+        <!-- Grey Dodge -->
+        <div class="color-dodge color-dodge-grey"></div>
+        <!-- Red Dodge -->
+        <div class="color-dodge color-dodge-red"></div>
+        <!-- Blue Dodge -->
+        <div class="color-dodge color-dodge-blue"></div>
+        <!-- Yellow Dodge -->
+        <div class="color-dodge color-dodge-yellow"></div>
+        <!-- Extra Lemon Dodge -->
+        <div class="color-dodge color-dodge-lemon-light"></div>
+    </div>
 
     <!-- ===== NAVBAR ===== -->
     <nav class="landing-navbar" id="landingNavbar">
@@ -655,12 +1009,36 @@
     </section>
 
     <!-- ===== FOOTER ===== -->
+      <!-- ===== FOOTER ===== -->
     <footer class="landing-footer">
         <div class="container">
-            <p class="mb-0">
-                &copy; 2026 <a href="#">NOC Admin</a> — Network Operations Center. 
-                All rights reserved.
-            </p>
+            <!-- Main Footer Content -->
+            <div class="footer-main">
+                <a href="#" class="footer-brand">
+                    <div class="logo-icon-small">
+                        <img src="https://profile.mgovcloud.in/file?fs=thumb&ID=2109903&nps=404&allowCORP=true" alt="NOC Logo">
+                    </div>
+                    <div class="brand-text">
+                        <h6>NOC Admin</h6>
+                        <span>Network Operations Center</span>
+                    </div>
+                </a>
+                <div class="footer-links">
+                    <a href="./blog/index.html">
+                        <i class="bi bi-pencil-square"></i> Blog
+                    </a>
+                    <a href="https://itcelltreasury.github.io/apps/">
+                        <i class="bi bi-grid-3x3-gap-fill"></i> Apps Portal
+                    </a>
+                    <a href="https://chat.whatsapp.com/EoAK9KNXOOa9V1fM7KaWBK">
+                        <i class="bi bi-whatsapp"></i> WhatsApp Join
+                    </a>
+                </div>
+            </div>
+            <!-- Copyright Section with Top Margin -->
+            <div class="footer-copyright">
+                <span>&copy; 2026 NOC Admin. All rights reserved.</span>
+            </div>
         </div>
     </footer>
 
@@ -692,8 +1070,6 @@
                 }
             });
         });
-
-        
     </script>
 </body>
 </html>
