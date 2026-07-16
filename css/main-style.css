@@ -167,18 +167,18 @@ body {
     display: none; 
 }
 
-.slider {
-   background-color: #2d3a4f21;
-    bottom: 0;
-    cursor: pointer;
-    left: 0;
-    position: absolute;
-    right: 0;
-    top: 0;
-    transition: 0.4s;
-    border-radius: 34px;
-    border: 1px solid #2d3a4f00;rder-color);
-}
+  .sidebar {
+            transition: width 0.3s ease, flex 0.3s ease, margin 0.3s ease;
+            width: 280px;
+            min-width: 280px;
+            flex-shrink: 0;
+            overflow: hidden;
+            position: relative;
+            overflow-y: auto;
+            z-index: 999;
+            box-shadow: 18px 0 38px -28px 
+ color-mix(in srgb, #012970, transparent 64%);
+        }
 
 .slider:before {
     background-color: #fff;
