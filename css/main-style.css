@@ -72,8 +72,9 @@ body {
 .navbar-custom {
     background: linear-gradient(135deg, var(--navbar-start) 0%, var(--navbar-end) 100%);
     padding: 0.5rem 1rem;
-    box-shadow: 0 4px 20px var(--shadow-color);
+    box-shadow: 0px 2px 20px rgba(1, 41, 112, 0.1);
     border-bottom: 1px solid var(--border-color);
+    z-index: 997;
 }
 
 .navbar-brand {
