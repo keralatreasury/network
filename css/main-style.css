@@ -164,7 +164,7 @@ body {
     position: relative;
     width: 60px;
     border-radius: 50px;
-  border: solid 1px #b8d4ff;
+  border: solid 1px var(--dropdown-hover) !important;
 }
 
 .theme-switch input { 
