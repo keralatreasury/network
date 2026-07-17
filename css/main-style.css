@@ -163,6 +163,8 @@ body {
     height: 34px;
     position: relative;
     width: 60px;
+    border-radius: 50px;
+  border: solid 1px #b8d4ff;
 }
 
 .theme-switch input { 
@@ -183,7 +185,7 @@ body {
         }
 
 .slider:before {
-    background-color: #d8e7fe;
+    background-color: #b8d4ff;
     bottom: 4px;
     content: "";
     height: 22px;
