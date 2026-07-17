@@ -121,7 +121,7 @@ body {
 /* Hamburger Toggle Buttons */
 .sidebar-toggle-btn {
     background: transparent;
-    border: 1px solid var(--border-color);
+    border: 1px solid #cbd5e100;
     border-radius: 8px;
     width: 40px;
     height: 40px;
