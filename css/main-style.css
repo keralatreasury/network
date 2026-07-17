@@ -185,7 +185,7 @@ body {
         }
 
 .slider:before {
-    background-color: #b8d4ff;
+    background-color: var(--dropdown-hover);
     bottom: 4px;
     content: "";
     height: 22px;
