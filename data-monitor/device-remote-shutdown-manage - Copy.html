@@ -13,7 +13,7 @@
 
     <style>
         body {
-            background: #f4f7fc;
+            background: #fff0;
             font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
             padding: 20px 16px;
         }
@@ -147,24 +147,6 @@
             opacity: 0.6;
             cursor: not-allowed;
         }
-        .btn-refresh-custom {
-            background: #6c757d;
-            border: none;
-            padding: 10px 20px;
-            font-weight: 600;
-            border-radius: 60px;
-            transition: 0.2s;
-            color: white;
-            font-size: 0.9rem;
-        }
-        .btn-refresh-custom:hover:not(:disabled) {
-            background: #5a6268;
-            color: white;
-        }
-        .btn-refresh-custom:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
         .footer-note {
             font-size: 12px;
             text-align: center;
@@ -247,12 +229,6 @@
             border: 1px solid #bfdbfe;
             display: block;
         }
-        .status-message.waiting {
-            background: #fef3c7;
-            color: #92400e;
-            border: 1px solid #fde68a;
-            display: block;
-        }
         .flatpickr-input {
             background: white;
         }
@@ -279,40 +255,6 @@
         .loading-spinner {
             font-size: 3rem;
             color: #0b2b4a;
-        }
-        .auto-refresh-indicator {
-            font-size: 0.85rem;
-            color: #6c757d;
-            padding: 5px 12px;
-            background: #f8f9fa;
-            border-radius: 20px;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .auto-refresh-indicator .pulse {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #28a745;
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-            0% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.5; transform: scale(0.8); }
-            100% { opacity: 1; transform: scale(1); }
-        }
-        .auto-refresh-indicator .pulse.inactive {
-            background: #dc3545;
-            animation: none;
-        }
-        .filter-row .col-md-2 {
-            flex: 0 0 auto;
-            width: auto;
-        }
-        .filter-row .col-md-2 .form-control {
-            min-width: 180px;
         }
     </style>
 </head>
@@ -352,17 +294,6 @@
                     <button id="viewConfirmBtn" class="btn btn-primary-custom w-100">
                         <i class="bi bi-search"></i> View Requests
                     </button>
-                </div>
-                <div class="col-md-2">
-                    <button id="stopAutoRefreshBtn" class="btn btn-refresh-custom w-100" style="display:none;">
-                        <i class="bi bi-pause-circle"></i> Stop Auto-Refresh
-                    </button>
-                </div>
-                <div class="col-md-2">
-                    <span id="autoRefreshStatus" class="auto-refresh-indicator">
-                        <span class="pulse" id="pulseIndicator"></span>
-                        <span id="refreshStatusText">Idle</span>
-                    </span>
                 </div>
             </div>
         </div>
@@ -423,16 +354,6 @@ const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyTCjW0tn9vEoD8
 const SHEET_ID = "1dMKhs6mIicwqRIbakYp7mzI8CXGbJ-VXHkmNXDRT8wA";
 const SHEET_NAME = "Data";
 const API_KEY = "AIzaSyDc8tegwi2rgHyDFYm7uWBqVqQ7Fwb3uWM";
-
-// ============================================================
-//  AUTO-REFRESH VARIABLES
-// ============================================================
-
-let autoRefreshInterval = null;
-let isAutoRefreshActive = false;
-let refreshCount = 0;
-let hasPendingRecords = false;
-let isFirstLoad = true;
 
 // ============================================================
 //  HELPERS
@@ -609,20 +530,11 @@ function switchTab(tab) {
         $('#powerOnPane').removeClass('active-pane');
         $('#tabConfirmBtn').addClass('active');
         $('#tabPowerOnBtn').removeClass('active');
-        // Restart auto-refresh when switching to confirm tab
-        if (isAutoRefreshActive) {
-            stopAutoRefresh();
-            startAutoRefresh();
-        }
     } else {
         $('#powerOnPane').addClass('active-pane');
         $('#confirmPane').removeClass('active-pane');
         $('#tabPowerOnBtn').addClass('active');
         $('#tabConfirmBtn').removeClass('active');
-        // Stop auto-refresh when switching away from confirm tab
-        if (isAutoRefreshActive) {
-            stopAutoRefresh();
-        }
     }
 }
 
@@ -636,15 +548,7 @@ $('#tabPowerOnBtn').on('click', () => switchTab('powerOn'));
 flatpickr("#confirmDate", {
     dateFormat: "d/m/Y",
     defaultDate: getTodayDate(),
-    allowInput: true,
-    onChange: function(selectedDates, dateStr) {
-        // Stop auto-refresh when user changes date manually
-        if (isAutoRefreshActive) {
-            stopAutoRefresh();
-        }
-        // Reset pending records flag
-        hasPendingRecords = false;
-    }
+    allowInput: true
 });
 
 flatpickr("#powerOnDate", {
@@ -663,120 +567,6 @@ function showLoading() {
 
 function hideLoading() {
     $('#loadingOverlay').removeClass('active');
-}
-
-// ============================================================
-//  AUTO-REFRESH FUNCTIONS
-// ============================================================
-
-function startAutoRefresh() {
-    if (autoRefreshInterval) {
-        clearInterval(autoRefreshInterval);
-    }
-    
-    isAutoRefreshActive = true;
-    refreshCount = 0;
-    
-    // Show stop button
-    $('#stopAutoRefreshBtn').show();
-    
-    // Update status indicator
-    $('#pulseIndicator').removeClass('inactive').addClass('pulse');
-    $('#refreshStatusText').text('Auto-Refresh Active (5s)');
-    
-    // If we have pending records, don't auto-refresh
-    if (hasPendingRecords) {
-        $('#refreshStatusText').text('Pending Found - Monitoring');
-        return;
-    }
-    
-    // Start the interval
-    autoRefreshInterval = setInterval(async function() {
-        refreshCount++;
-        $('#refreshStatusText').text(`Checking... (${refreshCount})`);
-        
-        try {
-            const date = $('#confirmDate').val();
-            if (!date) {
-                $('#refreshStatusText').text('No date set');
-                return;
-            }
-            
-            if (!date.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
-                $('#refreshStatusText').text('Invalid date');
-                return;
-            }
-            
-            const range = `${SHEET_NAME}!A:I`;
-            const data = await readSheetData(range);
-            
-            if (!data.values || data.values.length < 2) {
-                $('#refreshStatusText').text(`No data (${refreshCount})`);
-                return;
-            }
-            
-            const rows = data.values.slice(1);
-            let foundPending = false;
-            
-            for (let i = 0; i < rows.length; i++) {
-                const row = rows[i];
-                if (!row || row.length === 0) continue;
-                
-                const branch = row[0] ? row[0].toString().trim() : '';
-                if (!branch) continue;
-                
-                const rawDate = row.length > 3 ? (row[3] || "").toString().trim() : "";
-                const convertedDate = convertToDDMMYYYY(rawDate);
-                const confirmVal = row.length > 5 ? (row[5] || "").toString().trim() : "";
-                
-                if (convertedDate === date && !confirmVal) {
-                    foundPending = true;
-                    break;
-                }
-            }
-            
-            if (foundPending && !hasPendingRecords) {
-                // New pending records found - refresh the view
-                hasPendingRecords = true;
-                $('#refreshStatusText').text('⚠️ Pending Found!');
-                $('#pulseIndicator').removeClass('pulse').addClass('inactive');
-                // Stop auto-refresh
-                stopAutoRefresh();
-                // Refresh the view
-                $('#viewConfirmBtn').click();
-            } else if (!foundPending) {
-                hasPendingRecords = false;
-                $('#refreshStatusText').text(`Waiting... (${refreshCount})`);
-                $('#pulseIndicator').removeClass('inactive').addClass('pulse');
-            }
-            
-        } catch (err) {
-            console.error('Auto-refresh error:', err);
-            $('#refreshStatusText').text('Error checking');
-        }
-    }, 5000); // Check every 5 seconds
-}
-
-function stopAutoRefresh() {
-    if (autoRefreshInterval) {
-        clearInterval(autoRefreshInterval);
-        autoRefreshInterval = null;
-    }
-    isAutoRefreshActive = false;
-    $('#stopAutoRefreshBtn').hide();
-    $('#pulseIndicator').removeClass('pulse').addClass('inactive');
-    $('#refreshStatusText').text('Idle');
-}
-
-function resetAutoRefresh() {
-    // Reset the pending records flag
-    hasPendingRecords = false;
-    
-    // Restart auto-refresh if it was active
-    if (isAutoRefreshActive) {
-        stopAutoRefresh();
-        startAutoRefresh();
-    }
 }
 
 // ============================================================
@@ -840,24 +630,12 @@ $('#viewConfirmBtn').on('click', async function() {
             }
         }
         
-        // Update pending records flag
-        hasPendingRecords = records.length > 0;
-        
         renderConfirmRecords(records);
         
         if (records.length === 0) {
             $statusMsg.addClass('info').html(`<i class="bi bi-info-circle"></i> No pending requests found for date: <strong>${date}</strong>.`).show();
-            
-            // Start auto-refresh if not already active
-            if (!isAutoRefreshActive) {
-                startAutoRefresh();
-            }
         } else {
             $statusMsg.addClass('info').html(`<i class="bi bi-list"></i> Found ${records.length} pending request(s) for date: <strong>${date}</strong>.`).show();
-            // Stop auto-refresh if pending records found
-            if (isAutoRefreshActive) {
-                stopAutoRefresh();
-            }
         }
         
     } catch (err) {
@@ -871,19 +649,6 @@ $('#viewConfirmBtn').on('click', async function() {
     }
 });
 
-// Stop auto-refresh button handler
-$('#stopAutoRefreshBtn').on('click', function() {
-    stopAutoRefresh();
-    $('#refreshStatusText').text('Stopped');
-    Swal.fire({
-        icon: 'info',
-        title: 'Auto-Refresh Stopped',
-        text: 'Auto-refresh has been stopped. Click "View Requests" to check manually.',
-        timer: 2000,
-        showConfirmButton: false
-    });
-});
-
 function renderConfirmRecords(records) {
     const container = $('#confirmRecordsContainer');
     
@@ -893,7 +658,6 @@ function renderConfirmRecords(records) {
                 <i class="bi bi-check-circle"></i>
                 <h5>No Pending Requests</h5>
                 <p>All requests for the selected date have been confirmed.</p>
-                <p class="text-muted small">Auto-refresh will check for new requests every 5 seconds.</p>
             </div>
         `);
         return;
@@ -977,9 +741,6 @@ function renderConfirmRecords(records) {
                 timer: 2000,
                 showConfirmButton: false
             });
-            
-            // Reset pending flag and refresh
-            hasPendingRecords = false;
             
             setTimeout(() => {
                 $('#viewConfirmBtn').click();
@@ -1200,7 +961,6 @@ function renderPowerOnRecords(records) {
 // ============================================================
 
 $(document).ready(function() {
-    // Initial load after 500ms
     setTimeout(() => {
         $('#viewConfirmBtn').click();
     }, 500);
