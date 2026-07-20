@@ -361,7 +361,7 @@
                 <div class="col-md-2">
                     <span id="autoRefreshStatus" class="auto-refresh-indicator">
                         <span class="pulse" id="pulseIndicator"></span>
-                        <span id="refreshStatusText">Idle</span>
+                        <span id="refreshStatusText"></span>
                     </span>
                 </div>
             </div>
@@ -762,7 +762,7 @@ function stopAutoRefresh() {
     isAutoRefreshActive = false;
     $('#stopAutoRefreshBtn').hide();
     $('#pulseIndicator').removeClass('pulse').addClass('inactive');
-    $('#refreshStatusText').text('Idle');
+    $('#refreshStatusText').text('');
 }
 
 function resetAutoRefresh() {
