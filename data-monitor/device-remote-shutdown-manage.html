@@ -1178,7 +1178,7 @@ $('#viewConfirmBtn').on('click', async function() {
         
         if (!data.values || data.values.length < 2) {
             renderConfirmRecords([]);
-            $statusMsg.addClass('info').html('<i class="bi bi-info-circle"></i> No data found in sheet.').show();
+            $statusMsg.addClass('info').html('<i class="bi bi-info-circle"></i> No data found.').show();
             return;
         }
         
@@ -1392,7 +1392,7 @@ $('#viewPowerOnBtn').on('click', async function() {
         
         if (!data.values || data.values.length < 2) {
             renderPowerOnRecords([]);
-            $statusMsg.addClass('info').html('<i class="bi bi-info-circle"></i> No data found in sheet.').show();
+            $statusMsg.addClass('info').html('<i class="bi bi-info-circle"></i> No data found.').show();
             return;
         }
         
