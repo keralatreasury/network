@@ -101,6 +101,9 @@
             display: inline-block;
             animation: pulse-badge 1.5s ease-in-out infinite;
         }
+        .tab-btn .badge-notification.poweron-badge {
+            background: #d97706;
+        }
         @keyframes pulse-badge {
             0%, 100% { transform: scale(1); }
             50% { transform: scale(1.1); }
@@ -429,6 +432,29 @@
         .toast-copy.show {
             opacity: 1;
         }
+        /* notification sound toggle */
+        .sound-toggle {
+            font-size: 0.8rem;
+            color: #6c757d;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            background: #f8f9fa;
+            border: 1px solid #e2e8f0;
+            transition: 0.2s;
+        }
+        .sound-toggle:hover {
+            background: #e9ecef;
+        }
+        .sound-toggle i {
+            font-size: 0.9rem;
+        }
+        .sound-toggle.muted {
+            opacity: 0.5;
+        }
     </style>
 </head>
 <body>
@@ -440,6 +466,12 @@
 <div class="loading-overlay" id="loadingOverlay">
     <div class="custom-loader"></div>
 </div>
+
+<!-- Audio for notifications -->
+<audio id="notificationSound" preload="auto">
+    <source src="./sweet.mp3" type="audio/mpeg">
+    Your browser does not support the audio element.
+</audio>
 
 <div class="page-header">
     <div class="page-header-left">
@@ -459,6 +491,7 @@
         </button>
         <button class="tab-btn" id="tabPowerOnBtn">
             <i class="bi bi-power"></i> Device Power On
+            <span class="badge-notification poweron-badge" id="powerOnBadge">0</span>
         </button>
     </div>
 
@@ -486,6 +519,11 @@
                         <span id="refreshStatusText">Auto-Check Active</span>
                     </span>
                 </div>
+                <div class="col-md-2">
+                    <span class="sound-toggle" id="soundToggle" title="Toggle notification sound">
+                        <i class="bi bi-volume-up"></i> Sound
+                    </span>
+                </div>
             </div>
         </div>
         <div id="confirmStatusMsg" class="status-message"></div>
@@ -510,6 +548,12 @@
                     <button id="viewPowerOnBtn" class="btn btn-primary-custom w-100">
                         <i class="bi bi-search"></i> View Requests
                     </button>
+                </div>
+                <div class="col-md-4">
+                    <span id="powerOnCheckStatus" class="auto-refresh-indicator" style="background:#f8f9fa;">
+                        <span class="pulse" id="powerOnPulse"></span>
+                        <span id="powerOnStatusText">Checking...</span>
+                    </span>
                 </div>
             </div>
         </div>
@@ -561,6 +605,62 @@ const SHEET_NAME = "Data";
 const API_KEY = "AIzaSyDc8tegwi2rgHyDFYm7uWBqVqQ7Fwb3uWM";
 
 // ============================================================
+//  NOTIFICATION SOUND
+// ============================================================
+
+let soundEnabled = true;
+let notificationSound = null;
+
+function initSound() {
+    try {
+        notificationSound = document.getElementById('notificationSound');
+        if (!notificationSound) {
+            notificationSound = new Audio('./sweet.mp3');
+        }
+        // Preload
+        notificationSound.load();
+    } catch (e) {
+        console.warn('Sound not available:', e);
+        notificationSound = null;
+    }
+}
+
+function playNotificationSound() {
+    if (!soundEnabled) return;
+    try {
+        if (notificationSound) {
+            notificationSound.currentTime = 0;
+            notificationSound.play().catch(e => {
+                // Autoplay may be blocked, create a new Audio element as fallback
+                try {
+                    const fallbackSound = new Audio('./sweet.mp3');
+                    fallbackSound.play().catch(() => {});
+                } catch (err) {}
+            });
+        } else {
+            // Try creating a new Audio element
+            try {
+                const fallbackSound = new Audio('./sweet.mp3');
+                fallbackSound.play().catch(() => {});
+            } catch (err) {}
+        }
+    } catch (e) {
+        // Silently fail
+    }
+}
+
+// Sound toggle
+$('#soundToggle').on('click', function() {
+    soundEnabled = !soundEnabled;
+    $(this).toggleClass('muted');
+    if (soundEnabled) {
+        $(this).html('<i class="bi bi-volume-up"></i> Sound');
+    } else {
+        $(this).html('<i class="bi bi-volume-mute"></i> Muted');
+    }
+});
+
+// ============================================================
 //  AUTO-CHECK VARIABLES
 // ============================================================
 
@@ -568,6 +668,14 @@ let autoCheckInterval = null;
 let isAutoCheckActive = false;
 let checkCount = 0;
 let pendingCount = 0;
+let previousPendingCount = -1;
+
+// Power On auto-check variables
+let powerOnCheckInterval = null;
+let isPowerOnCheckActive = false;
+let powerOnCheckCount = 0;
+let powerOnPendingCount = 0;
+let previousPowerOnCount = -1;
 
 // Bulk selection state
 let selectedPowerOnRows = new Set();
@@ -773,6 +881,9 @@ function switchTab(tab) {
         if (!isAutoCheckActive) {
             startAutoCheck();
         }
+        if (isPowerOnCheckActive) {
+            stopPowerOnCheck();
+        }
     } else {
         $('#powerOnPane').addClass('active-pane');
         $('#confirmPane').removeClass('active-pane');
@@ -780,6 +891,9 @@ function switchTab(tab) {
         $('#tabConfirmBtn').removeClass('active');
         if (isAutoCheckActive) {
             stopAutoCheck();
+        }
+        if (!isPowerOnCheckActive) {
+            startPowerOnCheck();
         }
     }
 }
@@ -796,7 +910,6 @@ flatpickr("#confirmDate", {
     defaultDate: getTodayDate(),
     allowInput: true,
     onChange: function(selectedDates, dateStr) {
-        // Restart auto-check with new date
         if (isAutoCheckActive) {
             stopAutoCheck();
             startAutoCheck();
@@ -807,7 +920,13 @@ flatpickr("#confirmDate", {
 flatpickr("#powerOnDate", {
     dateFormat: "d/m/Y",
     defaultDate: getPreviousDate(),
-    allowInput: true
+    allowInput: true,
+    onChange: function(selectedDates, dateStr) {
+        if (isPowerOnCheckActive) {
+            stopPowerOnCheck();
+            startPowerOnCheck();
+        }
+    }
 });
 
 // ============================================================
@@ -823,7 +942,7 @@ function hideLoading() {
 }
 
 // ============================================================
-//  AUTO-CHECK FUNCTIONS
+//  AUTO-CHECK FOR SHUTDOWN CONFIRMATION
 // ============================================================
 
 function startAutoCheck() {
@@ -833,15 +952,13 @@ function startAutoCheck() {
     
     isAutoCheckActive = true;
     checkCount = 0;
+    previousPendingCount = -1;
     
     $('#stopAutoRefreshBtn').show();
     $('#pulseIndicator').removeClass('inactive').addClass('pulse');
     $('#refreshStatusText').text('Auto-Check Active');
     
-    // Do initial check immediately
     performAutoCheck();
-    
-    // Then check every 10 seconds
     autoCheckInterval = setInterval(performAutoCheck, 10000);
 }
 
@@ -894,15 +1011,18 @@ async function performAutoCheck() {
             }
         }
         
-        updatePendingBadge(count);
+        // Check if count increased and play sound
+        if (count > 0 && count > previousPendingCount && previousPendingCount >= 0) {
+            playNotificationSound();
+        }
         
-        // If count changed from previous, refresh the view
-        if (count !== pendingCount) {
-            pendingCount = count;
-            // Only auto-refresh if on confirm tab
-            if ($('#confirmPane').hasClass('active-pane')) {
-                $('#viewConfirmBtn').click();
-            }
+        previousPendingCount = count;
+        updatePendingBadge(count);
+        pendingCount = count;
+        
+        // Refresh view if count changed and on confirm tab
+        if ($('#confirmPane').hasClass('active-pane')) {
+            $('#viewConfirmBtn').click();
         }
         
         $('#refreshStatusText').text(`Checked (${checkCount}) · ${count} pending`);
@@ -918,13 +1038,114 @@ function updatePendingBadge(count) {
     if (count > 0) {
         $badge.text(count);
         $badge.addClass('show');
-        // Update the badge on the tab button
         $('#tabConfirmBtn .badge-notification').text(count).addClass('show');
     } else {
         $badge.removeClass('show');
         $('#tabConfirmBtn .badge-notification').removeClass('show');
     }
-    pendingCount = count;
+}
+
+// ============================================================
+//  AUTO-CHECK FOR POWER ON VERIFICATION
+// ============================================================
+
+function startPowerOnCheck() {
+    if (powerOnCheckInterval) {
+        clearInterval(powerOnCheckInterval);
+    }
+    
+    isPowerOnCheckActive = true;
+    powerOnCheckCount = 0;
+    previousPowerOnCount = -1;
+    
+    $('#powerOnPulse').removeClass('inactive').addClass('pulse');
+    $('#powerOnStatusText').text('Auto-Check Active');
+    
+    performPowerOnCheck();
+    powerOnCheckInterval = setInterval(performPowerOnCheck, 10000);
+}
+
+function stopPowerOnCheck() {
+    if (powerOnCheckInterval) {
+        clearInterval(powerOnCheckInterval);
+        powerOnCheckInterval = null;
+    }
+    isPowerOnCheckActive = false;
+    $('#powerOnPulse').removeClass('pulse').addClass('inactive');
+    $('#powerOnStatusText').text('Stopped');
+}
+
+async function performPowerOnCheck() {
+    powerOnCheckCount++;
+    const date = $('#powerOnDate').val();
+    
+    if (!date || !date.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+        $('#powerOnStatusText').text('Invalid date');
+        return;
+    }
+    
+    try {
+        const range = `${SHEET_NAME}!A:I`;
+        const data = await readSheetData(range);
+        
+        if (!data.values || data.values.length < 2) {
+            updatePowerOnBadge(0);
+            $('#powerOnStatusText').text(`No data (${powerOnCheckCount})`);
+            return;
+        }
+        
+        const rows = data.values.slice(1);
+        let count = 0;
+        
+        for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
+            if (!row || row.length === 0) continue;
+            
+            const branch = row[0] ? row[0].toString().trim() : '';
+            if (!branch) continue;
+            
+            const rawDate = row.length > 3 ? (row[3] || "").toString().trim() : "";
+            const convertedDate = convertToDDMMYYYY(rawDate);
+            const confirmVal = row.length > 5 ? (row[5] || "").toString().trim() : "";
+            const restartedVal = row.length > 6 ? (row[6] || "").toString().trim() : "";
+            
+            if (convertedDate === date && confirmVal === "Yes" && !restartedVal) {
+                count++;
+            }
+        }
+        
+        // Check if count increased and play sound
+        if (count > 0 && count > previousPowerOnCount && previousPowerOnCount >= 0) {
+            playNotificationSound();
+        }
+        
+        previousPowerOnCount = count;
+        updatePowerOnBadge(count);
+        powerOnPendingCount = count;
+        
+        // Refresh view if count changed and on power on tab
+        if ($('#powerOnPane').hasClass('active-pane')) {
+            $('#viewPowerOnBtn').click();
+        }
+        
+        $('#powerOnStatusText').text(`Checked (${powerOnCheckCount}) · ${count} pending`);
+        
+    } catch (err) {
+        console.error('PowerOn auto-check error:', err);
+        $('#powerOnStatusText').text('Error checking');
+    }
+}
+
+function updatePowerOnBadge(count) {
+    const $badge = $('#powerOnBadge');
+    if (count > 0) {
+        $badge.text(count);
+        $badge.addClass('show');
+        $('#tabPowerOnBtn .badge-notification').text(count).addClass('show');
+    } else {
+        $badge.removeClass('show');
+        $('#tabPowerOnBtn .badge-notification').removeClass('show');
+    }
 }
 
 // ============================================================
@@ -989,8 +1210,6 @@ $('#viewConfirmBtn').on('click', async function() {
         }
         
         renderConfirmRecords(records);
-        
-        // Update pending badge with actual count from this view
         updatePendingBadge(records.length);
         
         if (records.length === 0) {
@@ -999,7 +1218,6 @@ $('#viewConfirmBtn').on('click', async function() {
             $statusMsg.addClass('info').html(`<i class="bi bi-list"></i> Found ${records.length} pending request(s) for date: <strong>${date}</strong>.`).show();
         }
         
-        // Ensure auto-check is running
         if (!isAutoCheckActive) {
             startAutoCheck();
         }
@@ -1087,7 +1305,6 @@ function renderConfirmRecords(records) {
     
     container.html(html);
     
-    // Click-to-copy for branch
     $('.clickable-branch').on('click', function() {
         const branch = $(this).data('branch');
         copyToClipboard(branch);
@@ -1143,7 +1360,7 @@ function renderConfirmRecords(records) {
 }
 
 // ============================================================
-//  TAB 2: DEVICE POWER ON VERIFICATION (with Bulk)
+//  TAB 2: DEVICE POWER ON VERIFICATION
 // ============================================================
 
 $('#viewPowerOnBtn').on('click', async function() {
@@ -1166,7 +1383,6 @@ $('#viewPowerOnBtn').on('click', async function() {
     $statusMsg.hide().removeClass('error success info');
     showLoading();
     
-    // Clear selections
     selectedPowerOnRows.clear();
     $('#bulkActions').hide();
     
@@ -1210,6 +1426,7 @@ $('#viewPowerOnBtn').on('click', async function() {
         }
         
         renderPowerOnRecords(records);
+        updatePowerOnBadge(records.length);
         
         if (records.length === 0) {
             $statusMsg.addClass('info').html(`<i class="bi bi-info-circle"></i> No pending power on verifications found for date: <strong>${date}</strong>.`).show();
@@ -1219,6 +1436,10 @@ $('#viewPowerOnBtn').on('click', async function() {
             $('#bulkActions').show();
             $('#selectAllPowerOn').prop('checked', false);
             updateSelectedCount();
+        }
+        
+        if (!isPowerOnCheckActive && $('#powerOnPane').hasClass('active-pane')) {
+            startPowerOnCheck();
         }
         
     } catch (err) {
@@ -1299,13 +1520,11 @@ function renderPowerOnRecords(records) {
     
     container.html(html);
     
-    // Click-to-copy for branch
     $('.clickable-branch').on('click', function() {
         const branch = $(this).data('branch');
         copyToClipboard(branch);
     });
     
-    // Individual checkbox handler
     $('.power-on-checkbox').on('change', function() {
         const rowIndex = parseInt($(this).data('row'));
         if ($(this).is(':checked')) {
@@ -1319,7 +1538,6 @@ function renderPowerOnRecords(records) {
         $('#selectAllPowerOn').prop('checked', totalCheckboxes > 0 && checkedCheckboxes === totalCheckboxes);
     });
     
-    // "Select All" handler
     $('#selectAllPowerOn').off('change').on('change', function() {
         const isChecked = $(this).is(':checked');
         $('.power-on-checkbox').prop('checked', isChecked);
@@ -1332,7 +1550,6 @@ function renderPowerOnRecords(records) {
         updateSelectedCount();
     });
     
-    // Individual power on button
     $('.power-on-btn').on('click', async function() {
         const rowIndex = $(this).data('row');
         const branch = $(this).data('branch');
@@ -1502,23 +1719,36 @@ $('#clearSelectionBtn').on('click', function() {
 // ============================================================
 
 $(document).ready(function() {
-    // Set initial date
-    flatpickr("#confirmDate", {
+    // Initialize sound
+    initSound();
+    
+    // Set initial date for power on
+    flatpickr("#powerOnDate", {
         dateFormat: "d/m/Y",
-        defaultDate: getTodayDate(),
+        defaultDate: getPreviousDate(),
         allowInput: true,
         onChange: function(selectedDates, dateStr) {
-            if (isAutoCheckActive) {
-                stopAutoCheck();
-                startAutoCheck();
+            if (isPowerOnCheckActive) {
+                stopPowerOnCheck();
+                startPowerOnCheck();
             }
         }
     });
     
-    // Load initial data and start auto-check
+    // Load initial data and start auto-checks
     setTimeout(() => {
         $('#viewConfirmBtn').click();
         startAutoCheck();
+        
+        // Also start power on check after a slight delay
+        setTimeout(() => {
+            if ($('#powerOnPane').hasClass('active-pane')) {
+                startPowerOnCheck();
+            } else {
+                // Pre-load power on data in background
+                $('#viewPowerOnBtn').click();
+            }
+        }, 1000);
     }, 500);
 });
 </script>
