@@ -694,6 +694,9 @@ function closeWaitingModal() {
 // ============================================================
 //  INIT
 // ============================================================
+// ============================================================
+//  INIT
+// ============================================================
 $(document).ready(async function() {
     setDefaultDateTime();
 
@@ -713,10 +716,9 @@ $(document).ready(async function() {
         branches.forEach(function(branch) {
             $('#branchSelect').append(new Option(branch, branch));
         });
-        // Set default selection to first branch if available
-        if (branches.length > 0) {
-            $('#branchSelect').val(branches[0]).trigger('change');
-        }
+        // DO NOT auto-select - let user choose
+        // Just set placeholder text
+        $('#branchSelect').val(null).trigger('change');
     }
 
     // Handle branch selection change
@@ -731,11 +733,7 @@ $(document).ready(async function() {
         }
     });
 
-    // Trigger initial load for first branch
-    if (branches.length > 0) {
-        const firstBranch = branches[0];
-        $('#branchSelect').val(firstBranch).trigger('change');
-    }
+    // DO NOT trigger initial load - wait for user selection
 
     $('#submitShutdownBtn').on('click', submitShutdownRequest);
     $('#closeWaitingBtn').on('click', closeWaitingModal);
@@ -747,6 +745,8 @@ $(document).ready(async function() {
         }
     });
 });
+
+
 </script>
 </body>
 </html>
