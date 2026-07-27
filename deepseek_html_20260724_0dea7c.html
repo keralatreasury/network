@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Internal Dev Sandbox - Kerala Treasury NOC Project Staging -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>NOC Admin</title>
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    
+    <!-- Cache Control Meta Tags -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
+    <!-- Local CSS resources -->
+    <link rel="stylesheet" href="./css/bootstrap.min.css?v=20250102">
+    <link rel="stylesheet" href="./css/bootstrap-icons.min.css?v=20250102">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Malayalam:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./css/main-style.css?v=20250102">
+    
+    <!-- PWA Manifest & Favicon -->
+    <link rel="manifest" href="/network/manifest.json">
+    <link rel="icon" type="image/svg+xml" href="./images/favicon.svg">
+    <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+    
+    <style>
+        /* ===== NAVBAR USER STYLES ===== */
+        .navbar-user-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 4px 12px 4px 8px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: transparent;
+            border: 1px solid transparent;
+            position: relative;
+            margin-left: 10px;
+        }
+        .navbar-user-section:hover {
+            background: var(--dropdown-hover);
+            border-color: var(--border-color);
+        }
+        .navbar-user-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #184e81 0%, #0457a4 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 16px;
+            font-weight: 600;
+            flex-shrink: 0;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(4, 87, 164, 0.3);
+            position: relative;
+        }
+        .navbar-user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        .navbar-user-avatar .avatar-text {
+            z-index: 1;
+        }
+        .navbar-user-name {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            white-space: nowrap;
+            max-width: 120px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .navbar-user-chevron {
+            color: var(--text-muted);
+            font-size: 0.7rem;
+            margin-left: 2px;
+            transition: transform 0.25s ease;
+        }
+        .navbar-user-section.active .navbar-user-chevron {
+            transform: rotate(180deg);
+        }
+
+        /* User Popup Dropdown */
+        .user-popup-dropdown {
+            position: absolute;
+            top: calc(100% + 10px);
+            right: 0;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            box-shadow: 0 20px 60px var(--shadow-color);
+            min-width: 320px;
+            max-width: 360px;
+            padding: 0;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px) scale(0.96);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 9999;
+            overflow: hidden;
+        }
+        .user-popup-dropdown.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0) scale(1);
+        }
+        .user-popup-header {
+
+            padding: 18px 22px 14px 22px;
+            background: linear-gradient(135deg, var(--navbar-start) 0%, var(--navbar-end) 100%);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .user-popup-avatar-large {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #184e81 0%, #0457a4 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 24px;
+            font-weight: 600;
+            flex-shrink: 0;
+            overflow: hidden;
+            box-shadow: 0 4px 16px rgba(4, 87, 164, 0.3);
+            position: relative;
+        }
+        .user-popup-avatar-large img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        .user-popup-avatar-large .avatar-text {
+            z-index: 1;
+        }
+        .user-popup-name {
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .user-popup-role {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+        .user-popup-body {
+            padding: 14px 22px 18px 22px;
+        }
+        .user-popup-info-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 7px 0;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.85rem;
+        }
+        .user-popup-info-item:last-child {
+            border-bottom: none;
+        }
+        .user-popup-info-item .label {
+            color: var(--text-muted);
+            min-width: 65px;
+            font-weight: 500;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .user-popup-info-item .value {
+            color: var(--text-primary);
+            word-break: break-word;
+            flex: 1;
+            font-size: 0.85rem;
+        }
+        .user-popup-info-item i {
+            color: var(--logo-color);
+            font-size: 0.95rem;
+            width: 18px;
+            text-align: center;
+        }
+        .user-popup-footer {
+            padding: 10px 22px 18px 22px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+        }
+        .user-popup-footer .logout-btn {
+            background: transparent;
+            border: 1px solid #dc2626;
+            color: #dc2626;
+            padding: 5px 16px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .user-popup-footer .logout-btn:hover {
+            background: #dc2626;
+            color: #fff;
+        }
+
+        /* Click outside overlay */
+        .user-popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 9998;
+            display: none;
+        }
+        .user-popup-overlay.show {
+            display: block;
+        }
+
+        /* Dark theme */
+        body.dark-theme .navbar-user-section:hover {
+            background: var(--dropdown-hover);
+        }
+        body.dark-theme .user-popup-dropdown {
+            background: var(--bg-secondary);
+            border-color: var(--border-color);
+        }
+        body.dark-theme .user-popup-header {
+            background: linear-gradient(135deg, #2d3a4f 0%, #1e293b 100%);
+        }
+        body.dark-theme .user-popup-avatar-large {
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+            .navbar-user-name {
+                max-width: 70px;
+                font-size: 0.75rem;
+            }
+            .navbar-user-avatar {
+                width: 30px;
+                height: 30px;
+                font-size: 13px;
+            }
+            .user-popup-dropdown {
+                min-width: 280px;
+                max-width: 310px;
+                right: -5px;
+            }
+            .user-popup-header {
+                padding: 14px 16px 10px 16px;
+            }
+            .user-popup-body {
+                padding: 10px 16px 14px 16px;
+            }
+            .user-popup-footer {
+                padding: 8px 16px 14px 16px;
+            }
+            .user-popup-avatar-large {
+                width: 42px;
+                height: 42px;
+                font-size: 18px;
+            }
+            .user-popup-name {
+                font-size: 0.9rem;
+            }
+        }
+        @media (max-width: 576px) {
+            .navbar-user-name {
+                display: none;
+            }
+            .navbar-user-section {
+                padding: 4px 6px 4px 6px;
+                margin-left: 5px;
+            }
+            .navbar-user-chevron {
+                display: none;
+            }
+        }
+
+        /* Notification styles - AdminLTE like dropdown */
+        .notification-icon-wrapper {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+        .notification-icon {
+            font-size: 1.4rem;
+            color: var(--text-primary);
+            background: transparent;
+            border: none;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px;
+            transition: background 0.2s;
+        }
+        .notification-icon:hover {
+            background: rgba(0,0,0,0.05);
+        }
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -8px;
+            background-color: #dc2626;
+            color: white;
+            border-radius: 50%;
+            min-width: 18px;
+            height: 18px;
+            font-size: 10px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            animation: pulse-red 1.5s infinite;
+        }
+        .notification-badge.zero { display: none; }
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }
+            70% { box-shadow: 0 0 0 6px rgba(220, 38, 38, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+        }
+        /* Notification Dropdown */
+        .notification-dropdown {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: 0 20px 60px var(--shadow-color);
+            width: 380px;
+            max-width: 90vw;
+            max-height: 450px;
+            overflow: hidden;
+            z-index: 9999;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px) scale(0.96);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .notification-dropdown.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0) scale(1);
+        }
+        .notification-dropdown-header {
+            padding: 12px 16px;
+            font-weight: 600;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-secondary);
+        }
+        .notification-dropdown-header span {
+            font-size: 0.9rem;
+        }
+        .notification-dropdown-header .badge-count {
+            background: #dc2626;
+            color: #fff;
+            border-radius: 20px;
+            padding: 1px 10px;
+            font-size: 0.75rem;
+        }
+        .notification-dropdown-body {
+            max-height: 330px;
+            overflow-y: auto;
+            padding: 4px 0;
+        }
+        .notification-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 16px;
+            cursor: pointer;
+            transition: background 0.15s;
+            border-bottom: 1px solid var(--border-color);
+            text-decoration: none;
+            color: var(--text-primary);
+        }
+        .notification-item:last-child {
+            border-bottom: none;
+        }
+        .notification-item:hover {
+            background: var(--dropdown-hover);
+        }
+        .notification-item .icon-circle {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            background: rgba(4, 87, 164, 0.1);
+            color: #0457a4;
+            font-size: 1.1rem;
+        }
+        .notification-item .info {
+            flex: 1;
+            min-width: 0;
+        }
+        .notification-item .info .title {
+            font-weight: 500;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .notification-item .info .desc {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+        .notification-item .info .count-badge {
+            background: #dc2626;
+            color: #fff;
+            border-radius: 20px;
+            padding: 0 8px;
+            font-size: 0.7rem;
+            margin-left: 6px;
+            display: inline-block;
+        }
+        .notification-dropdown-footer {
+            padding: 8px 16px;
+            border-top: 1px solid var(--border-color);
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            background: var(--bg-secondary);
+        }
+        .notification-dropdown-footer a {
+            color: var(--logo-color);
+            text-decoration: none;
+        }
+        .notification-dropdown-footer a:hover {
+            text-decoration: underline;
+        }
+        .notification-dropdown-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 9998;
+            display: none;
+        }
+        .notification-dropdown-overlay.show {
+            display: block;
+        }
+        .flash-news-container.hidden { display: none !important; }
+        .cache-info-badge {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.6);
+            color: #fff;
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-size: 10px;
+            z-index: 9999;
+            font-family: monospace;
+            cursor: pointer;
+        }
+        /* Dark theme adjustments */
+        body.dark-theme .notification-dropdown {
+            background: var(--bg-secondary);
+            border-color: var(--border-color);
+        }
+        body.dark-theme .notification-item:hover {
+            background: var(--dropdown-hover);
+        }
+        body.dark-theme .notification-item .icon-circle {
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+        }
+    </style>
+    
+    <!-- DEVICE DETECTION & MOBILE REDIRECT -->
+    <script>
+        (function() {
+            const currentPath = window.location.pathname;
+            const isAppPage = currentPath.includes('app.html');
+            
+            if (!isAppPage) {
+                const isMobileWidth = window.innerWidth <= 768;
+                const isMobileUA = /Mobile|iPhone|iPad|Android|iPod|BlackBerry|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent);
+                const isMobile = isMobileWidth || isMobileUA;
+                const isInIframe = window.self !== window.top;
+                
+                function checkDailyRedirectRefresh() {
+                    const lastLoginDate = localStorage.getItem('lastLoginDate');
+                    const today = new Date().toDateString();
+                    if (lastLoginDate !== today) {
+                        sessionStorage.clear();
+                        localStorage.setItem('lastLoginDate', today);
+                        return true;
+                    }
+                    return false;
+                }
+                
+                if (isMobile && !isInIframe) {
+                    checkDailyRedirectRefresh();
+                    const redirectUrl = "app.html?nocache=" + Date.now();
+                    window.location.href = redirectUrl;
+                    return;
+                }
+            }
+        })();
+    </script>
+</head>
+<body class="light-theme">
+    <!-- Login Overlay -->
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-container">
+            <div class="login-card">
+                <div class="login-header">
+                    <div class="login-logo">
+                        <img class="top_bar_pic" id="headder_thumb_pic" src="https://profile.mgovcloud.in/file?fs=thumb&amp;ID=2109903&amp;nps=404&amp;allowCORP=true" style="width: 100%; height: 100%;">
+                    </div>
+                    <h2>NOC Admin</h2>
+                    <p>Network Operations Center</p>
+                </div>
+                <div class="login-body">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username</label>
+                        <input type="text" class="form-control" id="username" placeholder="Enter username">
+                    </div>
+                    <div class="mb-3">
+                        <label for="" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password" placeholder="Enter password">
+                    </div>
+                    <div class="text-center mb-2" style="font-size: 11px; color: var(--text-muted);">
+                        Version: <span id="appVersion">20250102_v5</span>
+                    </div>
+                    <div class="login-error" id="loginError" style="display: none;">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        <span id="errorMessageText">Invalid username or password</span>
+                    </div>
+                    <button class="btn btn-primary w-100" id="loginBtn">
+                        <span class="spinner-border spinner-border-sm d-none" id="loginSpinner" role="status"></span>
+                        <span id="loginText">Login</span>
+                    </button> 
+                    <div style="text-align: center; margin-top: 15px;">
+                        <a href="password-manager.html" target="_blank"> Forgot Password</a> ● 
+                        <a href="./blog/index.html" target="_blank"> NOC / blog</a> ●
+                        <a href="#" onclick="location.reload(true); return false;" style="color: var(--text-muted);"> Refresh</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div class="dashboard-container" id="dashboardContainer" style="display: none;">
+        <div id="flashNewsContainer" class="flash-news-container hidden">
+            <div class="flash-news-ticker" id="flashNewsTicker"></div>
+        </div>
+
+        <nav class="navbar navbar-custom">
+            <div class="container-fluid">
+                <div class="d-flex align-items-center">
+                    <a class="navbar-brand" href="#">
+                        <div class="logo">
+                            <img class="top_bar_pic" src="https://profile.mgovcloud.in/file?fs=thumb&amp;ID=2109903&amp;nps=404&amp;allowCORP=true" style="width: 100%; height: 100%;">
+                        </div>
+                        <div class="brand-text">
+                            <h1>NOC Admin</h1>
+                            <span>Network Operations Center</span>
+                        </div>
+                    </a>
+                    <button class="sidebar-toggle-btn desktop-toggle" id="desktopSidebarToggle" title="Toggle sidebar">
+                        <i class="bi bi-list"></i>
+                    </button>
+                    <button class="sidebar-toggle-btn mobile-only-toggle d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileMenuOffcanvas" aria-label="Menu">
+                        <i class="bi bi-list"></i>
+                    </button>
+                </div>
+                <div class="d-flex align-items-center">
+                    <!-- Notification Bell with Dropdown -->
+                    <div class="notification-icon-wrapper" id="notificationIconWrapper">
+                        <button class="notification-icon" id="notificationIconBtn" title="Notifications">
+                           <i class="bi bi-bell-fill"></i>
+                        </button>
+                        <span class="notification-badge zero" id="notificationBadge">0</span>
+                        <!-- Dropdown -->
+                        <div class="notification-dropdown" id="notificationDropdown">
+                            <div class="notification-dropdown-header">
+                                <span>Notifications</span>
+                                <span class="badge-count" id="notifCountLabel">0</span>
+                            </div>
+                            <div class="notification-dropdown-body" id="notificationDropdownBody">
+                                <div style="padding: 20px; text-align: center; color: var(--text-muted);">Loading notifications...</div>
+                            </div>
+                            <div class="notification-dropdown-footer">
+                                <a href="#" onclick="return false;">View all</a>
+                            </div>
+                        </div>
+                        <div class="notification-dropdown-overlay" id="notificationOverlay"></div>
+                    </div>
+
+                    <div class="theme-switch-wrapper">
+                        <label class="theme-switch">
+                            <input type="checkbox" id="theme-toggle">
+                            <span class="slider">
+                                <i class="bi bi-sun"></i>
+                                <i class="bi bi-moon"></i>
+                            </span>
+                        </label>
+                    </div>
+                    <!-- User Section in Navbar -->
+                    <div class="navbar-user-section" id="navbarUserSection">
+                        <div class="navbar-user-avatar" id="navbarUserAvatar">
+                            <span class="avatar-text" id="navbarAvatarText">U</span>
+                        </div>
+                        <span class="navbar-user-name" id="navbarUserName">User</span>
+                        <i class="bi bi-chevron-down navbar-user-chevron" id="navbarUserChevron"></i>
+                    </div>
+                    <!-- User Popup Dropdown -->
+                    <div class="user-popup-overlay" id="userPopupOverlay"></div>
+                    <div class="user-popup-dropdown" id="userPopupDropdown">
+                        <div class="user-popup-header">
+                            <div class="user-popup-avatar-large" id="popupAvatar">
+                                <span class="avatar-text" id="popupAvatarText">U</span>
+                            </div>
+                            <div>
+                                <div class="user-popup-name" id="popupUserName">User</div>
+                                <div class="user-popup-role" id="popupUserRole">NOC Admin</div>
+                            </div>
+                        </div>
+                        <div class="user-popup-body">
+                            <div class="user-popup-info-item">
+                                <i class="bi bi-person"></i>
+                                <span class="label">User ID</span>
+                                <span class="value" id="popupUserId">—</span>
+                            </div>
+                            <div class="user-popup-info-item">
+                                <i class="bi bi-envelope"></i>
+                                <span class="label">Email</span>
+                                <span class="value" id="popupUserEmail">—</span>
+                            </div>
+                            <div class="user-popup-info-item">
+                                <i class="bi bi-building"></i>
+                                <span class="label">Treasury</span>
+                                <span class="value" id="popupUserTreasury">—</span>
+                            </div>
+                            <div class="user-popup-info-item" style="border-bottom: none; padding-bottom: 4px;">
+                                <i class="bi bi-clock"></i>
+                                <span class="label">Logged In</span>
+                                <span class="value" id="popupUserLoginTime">—</span>
+                            </div>
+                        </div>
+                        <div class="user-popup-footer">
+                            <button class="logout-btn" id="popupLogoutBtn">
+                                <i class="bi bi-box-arrow-right"></i> Logout
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <div class="wrapper">
+            <div class="sidebar d-none d-lg-block" id="desktopSidebarContainer">
+                <div class="sidebar-menu-container" id="desktopSidebar">
+                    <div class="text-muted p-3"><div class="loading-spinner"></div> Loading menu...</div>
+                </div>
+            </div>
+            <div class="content-area" id="contentArea">
+                <iframe id="content-frame" src="about:blank" title="Content"></iframe>
+                <div class="loading" id="loading"><div class="loading-spinner"></div> Loading...</div>
+                <div class="welcome-message" id="welcome-message">
+                    <h2><i class="bi bi-compass"></i> NOC Admin</h2>
+                    <p>Select a menu item to get started</p>
+                    <p class="text-muted mt-3" style="font-size: 0.9rem;">Network Operations Center</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="offcanvas offcanvas-start d-lg-none" tabindex="-1" id="mobileMenuOffcanvas">
+            <div class="offcanvas-header">
+                <h5 class="offcanvas-title"><i class="bi bi-compass me-2"></i>NOC Admin</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+            </div>
+            <div class="offcanvas-body" id="mobileSidebar">
+                <div class="text-muted"><div class="loading-spinner"></div> Loading menu...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Local JS resources -->
+    <script src="./js/bootstrap.bundle.min.js?v=20250102"></script>
+    <script src="./js/main-script.js?v=20250102"></script>
+    
+    <script>
+        // ======================== APP VERSION & DAILY CACHE CLEAR ========================
+        const APP_VERSION_ID = "20250102_v5_FIXED";
+        const LAST_CLEAR_DATE_KEY = "lastCacheClearDate";
+        
+        // ======================== USER POPUP FUNCTIONS ========================
+        function getUserInitials(name) {
+            if (!name) return 'U';
+            const parts = name.trim().split(' ');
+            if (parts.length >= 2) {
+                return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+            }
+            return name.charAt(0).toUpperCase();
+        }
+
+        function showUserPopup() {
+            const dropdown = document.getElementById('userPopupDropdown');
+            const overlay = document.getElementById('userPopupOverlay');
+            const section = document.getElementById('navbarUserSection');
+            if (dropdown) dropdown.classList.add('show');
+            if (overlay) overlay.classList.add('show');
+            if (section) section.classList.add('active');
+        }
+
+        function hideUserPopup() {
+            const dropdown = document.getElementById('userPopupDropdown');
+            const overlay = document.getElementById('userPopupOverlay');
+            const section = document.getElementById('navbarUserSection');
+            if (dropdown) dropdown.classList.remove('show');
+            if (overlay) overlay.classList.remove('show');
+            if (section) section.classList.remove('active');
+        }
+
+        function toggleUserPopup() {
+            const dropdown = document.getElementById('userPopupDropdown');
+            if (dropdown && dropdown.classList.contains('show')) {
+                hideUserPopup();
+            } else {
+                showUserPopup();
+            }
+        }
+
+        function updateNavbarUser(userData) {
+            if (!userData) {
+                console.warn('updateNavbarUser: No user data provided');
+                return;
+            }
+            
+            console.log('Updating navbar with user data:', userData);
+            
+            const username = userData.username || 'User';
+            const userId = userData.userId || userData.username || '—';
+            const email = userData.email || '—';
+            const treasury = userData.treasury || '—';
+            const imageUrl = userData.imageUrl || null;
+            const loginTime = userData.loginTime || new Date().toISOString();
+            
+            // Update navbar avatar
+            const avatarContainer = document.getElementById('navbarUserAvatar');
+            const avatarText = document.getElementById('navbarAvatarText');
+            
+            if (!avatarContainer) {
+                console.warn('Avatar container not found');
+                return;
+            }
+            
+            // Clear existing image
+            const existingImg = avatarContainer.querySelector('img');
+            if (existingImg) existingImg.remove();
+            
+            if (imageUrl && imageUrl.trim() !== '' && imageUrl.trim() !== 'null') {
+                const img = document.createElement('img');
+                img.src = imageUrl;
+                img.alt = username;
+                img.onerror = function() {
+                    console.warn('Failed to load avatar image:', imageUrl);
+                    this.style.display = 'none';
+                    if (avatarText) {
+                        avatarText.style.display = 'flex';
+                        avatarText.textContent = getUserInitials(username);
+                    }
+                };
+                img.onload = function() {
+                    console.log('Avatar image loaded successfully');
+                    if (avatarText) avatarText.style.display = 'none';
+                };
+                avatarContainer.appendChild(img);
+                if (avatarText) avatarText.style.display = 'none';
+            } else {
+                if (avatarText) {
+                    avatarText.style.display = 'flex';
+                    avatarText.textContent = getUserInitials(username);
+                }
+            }
+            
+            // Update navbar username
+            const nameSpan = document.getElementById('navbarUserName');
+            if (nameSpan) {
+                const displayName = username.length > 15 ? username.substring(0, 14) + '…' : username;
+                nameSpan.textContent = displayName;
+            }
+            
+            // Update popup
+            const popupAvatar = document.getElementById('popupAvatar');
+            const popupAvatarText = document.getElementById('popupAvatarText');
+            
+            if (popupAvatar) {
+                const existingPopupImg = popupAvatar.querySelector('img');
+                if (existingPopupImg) existingPopupImg.remove();
+                
+                if (imageUrl && imageUrl.trim() !== '' && imageUrl.trim() !== 'null') {
+                    const img = document.createElement('img');
+                    img.src = imageUrl;
+                    img.alt = username;
+                    img.onerror = function() {
+                        this.style.display = 'none';
+                        if (popupAvatarText) {
+                            popupAvatarText.style.display = 'flex';
+                            popupAvatarText.textContent = getUserInitials(username);
+                        }
+                    };
+                    img.onload = function() {
+                        if (popupAvatarText) popupAvatarText.style.display = 'none';
+                    };
+                    popupAvatar.appendChild(img);
+                    if (popupAvatarText) popupAvatarText.style.display = 'none';
+                } else {
+                    if (popupAvatarText) {
+                        popupAvatarText.style.display = 'flex';
+                        popupAvatarText.textContent = getUserInitials(username);
+                    }
+                }
+            }
+            
+            const popupUserName = document.getElementById('popupUserName');
+            if (popupUserName) popupUserName.textContent = username;
+            
+            const popupUserRole = document.getElementById('popupUserRole');
+            if (popupUserRole) {
+                popupUserRole.textContent = userId.includes('BR') ? 'Branch User' : 'NOC Admin';
+            }
+            
+            const popupUserId = document.getElementById('popupUserId');
+            if (popupUserId) popupUserId.textContent = userId;
+            
+            const popupUserEmail = document.getElementById('popupUserEmail');
+            if (popupUserEmail) popupUserEmail.textContent = email;
+            
+            const popupUserTreasury = document.getElementById('popupUserTreasury');
+            if (popupUserTreasury) popupUserTreasury.textContent = treasury || '—';
+            
+            try {
+                const date = new Date(loginTime);
+                const formatted = date.toLocaleString('en-IN', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                const popupLoginTime = document.getElementById('popupUserLoginTime');
+                if (popupLoginTime) popupLoginTime.textContent = formatted;
+            } catch(e) {
+                const popupLoginTime = document.getElementById('popupUserLoginTime');
+                if (popupLoginTime) popupLoginTime.textContent = loginTime || '—';
+            }
+        }
+
+        // ======================== NOTIFICATION SYSTEM (Dashboard Sheet) ========================
+        const SPREADSHEET_ID = '1jd1xZe9x2mrZm5KAwGT12vMNYjbrnynsmelNKeK95jc';
+        const API_KEY = 'AIzaSyBB1V3vJpNZ9X1GIF-YOwoa6YSt_iXMLo0';
+        const DASHBOARD_SHEET = 'Dashboard';
+        const DASHBOARD_RANGE = 'A:G';
+
+        let notificationData = [];
+        let notificationInterval = null;
+        let currentNotifCount = 0;
+
+        async function fetchDashboardNotifications() {
+            try {
+                const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${DASHBOARD_SHEET}!${DASHBOARD_RANGE}?key=${API_KEY}&_=${Date.now()}`;
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.error) {
+                    console.error('Dashboard API error:', data.error);
+                    return [];
+                }
+                
+                if (!data.values || data.values.length < 2) {
+                    console.log('No data in Dashboard sheet');
+                    return [];
+                }
+                
+                const rows = data.values;
+                const items = [];
+                // Column mapping: A=bgcolor, B=icon color, C=icon class, D=count, E=item name, F=link, G=show (Yes/No)
+                for (let i = 1; i < rows.length; i++) {
+                    const row = rows[i];
+                    if (row.length < 7) continue;
+                    const show = row[6] ? row[6].toString().trim() : '';
+                    if (show !== 'Yes') continue;
+                    
+                    const iconClass = row[2] ? row[2].toString().trim() : 'bi bi-bell';
+                    const count = row[3] ? row[3].toString().trim() : '0';
+                    const itemName = row[4] ? row[4].toString().trim() : 'Notification';
+                    const link = row[5] ? row[5].toString().trim() : '#';
+                    const bgColor = row[0] ? row[0].toString().trim() : '#f0f0f0';
+                    const iconColor = row[1] ? row[1].toString().trim() : '#0457a4';
+                    
+                    items.push({
+                        icon: iconClass,
+                        count: count,
+                        name: itemName,
+                        link: link,
+                        bgColor: bgColor,
+                        iconColor: iconColor
+                    });
+                }
+                return items;
+            } catch (error) {
+                console.error('Error fetching dashboard notifications:', error);
+                return [];
+            }
+        }
+
+        function renderNotificationDropdown(items) {
+            const body = document.getElementById('notificationDropdownBody');
+            const badge = document.getElementById('notificationBadge');
+            const countLabel = document.getElementById('notifCountLabel');
+            
+            if (!body) return;
+            
+            if (!items || items.length === 0) {
+                body.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--text-muted);">No notifications</div>`;
+                if (badge) { badge.textContent = '0'; badge.classList.add('zero'); }
+                if (countLabel) countLabel.textContent = '0';
+                currentNotifCount = 0;
+                return;
+            }
+            
+            let html = '';
+            let totalCount = 0;
+            items.forEach(item => {
+                const countNum = parseInt(item.count) || 0;
+                totalCount += countNum;
+                const iconHtml = item.icon.includes('bi-') ? `<i class="${item.icon}"></i>` : item.icon;
+                const countBadge = countNum > 0 ? `<span class="count-badge">${countNum}</span>` : '';
+                html += `
+                    <div class="notification-item" data-link="${item.link}" data-name="${item.name}">
+                        <div class="icon-circle" style="background: ${item.bgColor || '#f0f0f0'}; color: ${item.iconColor || '#0457a4'};">
+                            ${iconHtml}
+                        </div>
+                        <div class="info">
+                            <div class="title">${item.name} ${countBadge}</div>
+                            <div class="desc">${countNum > 0 ? countNum + ' item(s)' : 'No items'}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            body.innerHTML = html;
+            
+            // Update badge
+            if (badge) {
+                if (totalCount > 0) {
+                    badge.textContent = totalCount > 99 ? '99+' : totalCount;
+                    badge.classList.remove('zero');
+                } else {
+                    badge.textContent = '0';
+                    badge.classList.add('zero');
+                }
+            }
+            if (countLabel) countLabel.textContent = totalCount;
+            currentNotifCount = totalCount;
+            
+            // Click handlers for items
+            body.querySelectorAll('.notification-item').forEach(el => {
+                el.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const link = this.dataset.link;
+                    if (link && link !== '#' && link.trim() !== '') {
+                        loadUrlInIframe(link);
+                    }
+                    // Close dropdown
+                    closeNotificationDropdown();
+                });
+            });
+        }
+
+        async function refreshNotifications() {
+            const items = await fetchDashboardNotifications();
+            notificationData = items;
+            renderNotificationDropdown(items);
+        }
+
+        function toggleNotificationDropdown() {
+            const dropdown = document.getElementById('notificationDropdown');
+            const overlay = document.getElementById('notificationOverlay');
+            if (!dropdown) return;
+            const isOpen = dropdown.classList.contains('show');
+            if (isOpen) {
+                closeNotificationDropdown();
+            } else {
+                openNotificationDropdown();
+            }
+        }
+
+        function openNotificationDropdown() {
+            const dropdown = document.getElementById('notificationDropdown');
+            const overlay = document.getElementById('notificationOverlay');
+            if (dropdown) dropdown.classList.add('show');
+            if (overlay) overlay.classList.add('show');
+            // Refresh on open
+            refreshNotifications();
+        }
+
+        function closeNotificationDropdown() {
+            const dropdown = document.getElementById('notificationDropdown');
+            const overlay = document.getElementById('notificationOverlay');
+            if (dropdown) dropdown.classList.remove('show');
+            if (overlay) overlay.classList.remove('show');
+        }
+
+        function initNotificationSystem() {
+            // Remove old chat related listeners
+            const notifBtn = document.getElementById('notificationIconBtn');
+            if (notifBtn) {
+                notifBtn.removeEventListener('click', openChatInIframe);
+                notifBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    toggleNotificationDropdown();
+                });
+            }
+            
+            // Overlay close
+            const overlay = document.getElementById('notificationOverlay');
+            if (overlay) {
+                overlay.addEventListener('click', function() {
+                    closeNotificationDropdown();
+                });
+            }
+            
+            // Initial fetch
+            refreshNotifications();
+            
+            // Set interval for 1 minute
+            if (notificationInterval) clearInterval(notificationInterval);
+            notificationInterval = setInterval(() => {
+                if (isAuthenticated) {
+                    refreshNotifications();
+                }
+            }, 60000); // 1 min
+        }
+
+        function stopNotificationInterval() {
+            if (notificationInterval) {
+                clearInterval(notificationInterval);
+                notificationInterval = null;
+            }
+        }
+
+        // Override logout to stop interval
+        const origLogout = window.logout;
+        window.logout = function() {
+            stopNotificationInterval();
+            if (typeof origLogout === 'function') {
+                origLogout.apply(this, arguments);
+            } else {
+                // fallback
+                localStorage.removeItem('currentUser');
+                sessionStorage.removeItem('currentUser');
+                window.isAuthenticated = false;
+                window.currentUser = null;
+                const loginOverlay = document.getElementById('loginOverlay');
+                const dashboardContainer = document.getElementById('dashboardContainer');
+                if (loginOverlay) loginOverlay.style.display = 'flex';
+                if (dashboardContainer) dashboardContainer.style.display = 'none';
+                const usernameField = document.getElementById('username');
+                const passwordField = document.getElementById('password');
+                if (usernameField) usernameField.value = '';
+                if (passwordField) passwordField.value = '';
+                const badge = document.getElementById('notificationBadge');
+                if (badge) { badge.textContent = '0'; badge.classList.add('zero'); }
+                document.title = 'NOC Admin | Network Operations Center';
+            }
+            closeNotificationDropdown();
+            hideUserPopup();
+        };
+
+        // Override checkExistingSession to init notification system
+        const origCheckSession = window.checkExistingSession;
+        window.checkExistingSession = function() {
+            if (typeof origCheckSession === 'function') {
+                origCheckSession.apply(this, arguments);
+            }
+            // After session restore, init notification
+            if (window.isAuthenticated) {
+                setTimeout(() => {
+                    initNotificationSystem();
+                }, 200);
+            }
+        };
+
+        // Override handleLogin to init notification after login
+        const origHandleLogin = window.handleLogin;
+        window.handleLogin = async function() {
+            if (typeof origHandleLogin === 'function') {
+                await origHandleLogin.apply(this, arguments);
+            }
+            if (window.isAuthenticated) {
+                setTimeout(() => {
+                    initNotificationSystem();
+                }, 300);
+            }
+        };
+
+        // ======================== OVERRIDE FUNCTIONS ========================
+        // Store original functions
+        const origDisplayLoggedInUser = window.displayLoggedInUser;
+        const origLoadMenuData = window.loadMenuData;
+
+        // Override displayLoggedInUser
+        window.displayLoggedInUser = function() {
+            const storedUser = localStorage.getItem('currentUser');
+            if (storedUser) {
+                try {
+                    const userData = JSON.parse(storedUser);
+                    currentUser = userData;
+                    window.currentUser = userData;
+                    updateNavbarUser(userData);
+                } catch (e) {
+                    console.error('Error parsing user data:', e);
+                }
+            }
+        };
+
+        // Override loadMenuData
+        window.loadMenuData = function(menuSheetName) {
+            if (typeof origLoadMenuData === 'function') {
+                origLoadMenuData(menuSheetName);
+            }
+            const storedUser = localStorage.getItem('currentUser');
+            if (storedUser) {
+                try {
+                    const userData = JSON.parse(storedUser);
+                    updateNavbarUser(userData);
+                } catch(e) {}
+            }
+        };
+
+        // ======================== INITIALIZATION ========================
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('[System] Initializing...');
+            
+            // Init theme
+            if (typeof window.initTheme === 'function') {
+                window.initTheme();
+            }
+            
+            const themeToggle = document.getElementById('theme-toggle');
+            if (themeToggle && typeof window.toggleTheme === 'function') {
+                themeToggle.addEventListener('change', window.toggleTheme);
+            }
+            
+            // Login button
+            const loginBtn = document.getElementById('loginBtn');
+            if (loginBtn) {
+                loginBtn.addEventListener('click', function() {
+                    if (typeof window.handleLogin === 'function') {
+                        window.handleLogin();
+                    }
+                });
+            }
+            
+            // Enter key handlers
+            const username = document.getElementById('username');
+            const password = document.getElementById('password');
+            
+            if (username) {
+                username.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (password) password.focus();
+                    }
+                });
+            }
+            
+            if (password) {
+                password.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (typeof window.handleLogin === 'function') {
+                            window.handleLogin();
+                        }
+                    }
+                });
+            }
+            
+            // Sidebar toggle
+            if (typeof window.initDesktopSidebarToggle === 'function') {
+                window.initDesktopSidebarToggle();
+            }
+            
+            // User popup event listeners
+            const userSection = document.getElementById('navbarUserSection');
+            if (userSection) {
+                userSection.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    toggleUserPopup();
+                });
+            }
+            
+            const overlay = document.getElementById('userPopupOverlay');
+            if (overlay) {
+                overlay.addEventListener('click', function() {
+                    hideUserPopup();
+                });
+            }
+            
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    hideUserPopup();
+                    closeNotificationDropdown();
+                }
+            });
+            
+            const logoutBtn = document.getElementById('popupLogoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function() {
+                    hideUserPopup();
+                    if (typeof window.logout === 'function') {
+                        window.logout();
+                    }
+                });
+            }
+            
+            // Check existing session
+            if (typeof window.checkExistingSession === 'function') {
+                window.checkExistingSession();
+            }
+            
+            // Focus username
+            setTimeout(() => {
+                if (!isAuthenticated && username) {
+                    username.focus();
+                }
+            }, 100);
+        });
+
+        // Expose functions globally
+        window.updateNavbarUser = updateNavbarUser;
+        window.showUserPopup = showUserPopup;
+        window.hideUserPopup = hideUserPopup;
+        window.toggleUserPopup = toggleUserPopup;
+        window.getUserInitials = getUserInitials;
+        window.refreshNotifications = refreshNotifications;
+        window.initNotificationSystem = initNotificationSystem;
+        window.stopNotificationInterval = stopNotificationInterval;
+
+        console.log('[System] Navbar user system initialized');
+        console.log('[System] Notification system using Dashboard sheet');
+    </script>
+</body>
+</html>
