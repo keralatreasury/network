@@ -403,6 +403,35 @@ function setDefaultDateTime() {
 }
 
 // ============================================================
+//  CHECK FOR CONFIRMED REQUEST ON SAME DATE
+// ============================================================
+async function checkExistingConfirmedRequest(branch, date) {
+    try {
+        const range = `${TARGET_SHEET_NAME}!A:F`;
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${TARGET_SHEET_ID}/values/${range}?key=${TARGET_API_KEY}`;
+        const resp = await fetch(url);
+        if (!resp.ok) return { hasConfirmed: false };
+        const data = await resp.json();
+        if (!data.values || data.values.length < 2) return { hasConfirmed: false };
+        const rows = data.values.slice(1);
+        for (let row of rows) {
+            if (row.length >= 6) {
+                const rowBranch = (row[0] || '').toString().trim();
+                const rowDate = (row[3] || '').toString().trim();
+                const confirmVal = (row[5] || '').toString().trim();
+                if (rowBranch === branch.trim() && rowDate === date.trim() && confirmVal === 'Yes') {
+                    return { hasConfirmed: true };
+                }
+            }
+        }
+        return { hasConfirmed: false };
+    } catch (err) {
+        console.error('checkExistingConfirmedRequest error:', err);
+        return { hasConfirmed: false };
+    }
+}
+
+// ============================================================
 //  CHECK FOR DUPLICATE REQUEST (same branch + date + time)
 // ============================================================
 async function checkDuplicateRequest(branch, date, time12h) {
@@ -558,6 +587,19 @@ async function submitShutdownRequest() {
     const timeVal = $('#requestTime').val();
     if (!dateVal || !timeVal) {
         Swal.fire({ icon: 'warning', title: 'Incomplete', text: 'Date and Time are required.', confirmButtonColor: '#0b2b4a' });
+        return;
+    }
+
+    // NEW: Check if there's already a confirmed request on the same date
+    const existingConfirmed = await checkExistingConfirmedRequest(branch, dateVal);
+    if (existingConfirmed.hasConfirmed) {
+        Swal.fire({
+            icon: 'info',
+            title: 'Remote Shutdown Already Confirmed',
+            html: 'Remote Shut down is already with your Previous Request, and you can shut down the device after 1 min',
+            confirmButtonColor: '#0b2b4a',
+            confirmButtonText: 'OK'
+        });
         return;
     }
 
