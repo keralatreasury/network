@@ -47,6 +47,13 @@
     .dns-warning i { color: #DC3545; margin-right: 0.5rem; }
     kbd { background: var(--primary); padding: 0.2rem 0.6rem; border-radius: 4px; border: 1px solid #d0d7de; font-size: 0.85rem; }
     .ping-command-display { font-size: 1.1rem; font-weight: 600; color: var(--primary); }
+    .screenshot-preview { max-width: 100%; max-height: 200px; border-radius: 12px; border: 2px solid #e9ecef; margin-top: 10px; }
+    .crop-container { position: relative; max-width: 100%; overflow: hidden; border-radius: 12px; background: #000; }
+    .crop-container video, .crop-container img { width: 100%; display: block; }
+    .crop-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 2px dashed rgba(255,255,255,0.8); pointer-events: none; }
+    .image-controls { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 10px; }
+    .btn-crop-action { border-radius: 40px; padding: 0.5rem 1.2rem; font-weight: 500; border: none; transition: 0.2s; }
+    .btn-crop-action:hover { transform: scale(1.02); }
   </style>
 </head>
 <body>
@@ -61,6 +68,38 @@
 </div>
 <div class="wizard-container" id="app">
   <div id="wizardScreen" class="wizard-card slide-enter"></div>
+</div>
+
+<!-- Camera Modal -->
+<div class="modal fade" id="cameraModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-camera"></i> Capture Ping Screenshot</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="cameraContainer">
+          <div class="crop-container" id="cropContainer">
+            <video id="cameraVideo" autoplay playsinline style="width:100%;display:block;"></video>
+            <canvas id="cameraCanvas" style="display:none;"></canvas>
+            <div class="crop-overlay" id="cropOverlay"></div>
+          </div>
+          <div id="capturedPreview" style="display:none;">
+            <img id="capturedImage" class="screenshot-preview" alt="Captured screenshot">
+          </div>
+        </div>
+        <div class="image-controls mt-3">
+          <button class="btn btn-crop-action btn-primary" id="captureBtn"><i class="bi bi-camera"></i> Capture</button>
+          <button class="btn btn-crop-action btn-success" id="saveScreenshotBtn" disabled><i class="bi bi-check-circle"></i> Save</button>
+          <button class="btn btn-crop-action btn-secondary" id="retakeBtn" style="display:none;"><i class="bi bi-arrow-repeat"></i> Retake</button>
+          <button class="btn btn-crop-action btn-outline-secondary" id="toggleColorBtn"><i class="bi bi-palette"></i> B&W</button>
+          <button class="btn btn-crop-action btn-outline-danger" id="cancelCameraBtn" data-bs-dismiss="modal"><i class="bi bi-x-circle"></i> Cancel</button>
+        </div>
+        <div class="text-muted small mt-2 text-center">Drag to crop or use the crop handles. Save will compress the image.</div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- local JS -->
@@ -134,6 +173,9 @@ const L10N = {
     terminalShortcut: 'Press Ctrl + Alt + T to open Terminal',
     cmdShortcut: 'Press Win + R and type "cmd"',
     enterCommand: 'Enter this command in',
+    captureScreenshot: 'Capture Screenshot',
+    screenshotSaved: 'Screenshot captured!',
+    noCamera: 'Camera not available on this device.',
   }
 };
 
@@ -148,16 +190,23 @@ let pingResult = null;
 let step = 0;
 let branchList = [];
 let sheetData = [];
+let capturedImageData = null;
+let isColorMode = true;
+let cameraStream = null;
+let isCropping = false;
+let cropStartX, cropStartY, cropEndX, cropEndY;
+let cropRect = { x: 0, y: 0, w: 0, h: 0 };
+let isDragging = false;
 
 // ============================================================
 //  GOOGLE SHEET CONFIG FOR LOGGING
 // ============================================================
 const LOG_SHEET_ID = '1mAto6GBbwakTWbbYHLF9pWkfxkC5-Xj7rkPbmxx7uJc';
 const LOG_SHEET_NAME = 'Data';
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyLSisaA6pTHIRtWZ4Ohvp6dSCNzcUA4rdMPyOM2mmv4L3vajv_akvk6eebpIdCU2Ee/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwZsJlusV5agOwsd9n4TSOdI5Z_Q554dA2aW8qIVpgxoz4KmtX23-gTPgVpKNGt7MB1/exec';
 
 // ============================================================
-//  HELPER: get branch from storage (like reference HTML)
+//  HELPER: get branch from storage
 // ============================================================
 function getBranchFromStorage() {
     let branch = null;
@@ -211,9 +260,67 @@ function getGatewayFromBranch(branchName) {
 }
 
 // ============================================================
-//  SILENT LOG TO GOOGLE SHEET (no-cors, fire-and-forget)
+//  IMAGE COMPRESSION & CONVERSION
 // ============================================================
-function logTroubleshootingData(pingStatus) {
+function compressImage(imageData, isColor = true, quality = 0.5) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = function() {
+      const canvas = document.createElement('canvas');
+      const maxWidth = 800;
+      const maxHeight = 600;
+      let width = img.width;
+      let height = img.height;
+      
+      if (width > maxWidth) {
+        height = (height * maxWidth) / width;
+        width = maxWidth;
+      }
+      if (height > maxHeight) {
+        width = (width * maxHeight) / height;
+        height = maxHeight;
+      }
+      
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      
+      // Apply color or grayscale
+      if (!isColor) {
+        ctx.filter = 'grayscale(100%)';
+      }
+      
+      ctx.drawImage(img, 0, 0, width, height);
+      
+      // Get compressed data URL
+      const dataUrl = canvas.toDataURL('image/jpeg', quality);
+      resolve(dataUrl);
+    };
+    img.src = imageData;
+  });
+}
+
+function cropImage(imageData, cropRect) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = function() {
+      const canvas = document.createElement('canvas');
+      const width = cropRect.w;
+      const height = cropRect.h;
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, cropRect.x, cropRect.y, width, height, 0, 0, width, height);
+      resolve(canvas.toDataURL('image/jpeg', 0.9));
+    };
+    img.src = imageData;
+  });
+}
+
+// ============================================================
+//  SILENT LOG TO GOOGLE SHEET (with screenshot)
+// ============================================================
+function logTroubleshootingData(pingStatus, screenshotData = null) {
   // Fire-and-forget: don't await, don't block UI
   try {
     const now = new Date();
@@ -227,7 +334,8 @@ function logTroubleshootingData(pingStatus) {
       branch: currentBranch || 'Unknown',
       os: os || 'Unknown',
       configChecked: 'Yes',
-      pingStatus: pingStatus // 'Ping OK' or 'Ping Not OK'
+      pingStatus: pingStatus, // 'Ping OK' or 'Ping Not OK'
+      screenshot: screenshotData || '' // Base64 image data for column G
     };
 
     // Silent POST using no-cors mode - fire and forget
@@ -238,9 +346,101 @@ function logTroubleshootingData(pingStatus) {
       body: JSON.stringify(payload)
     }).catch(e => console.warn('Silent log failed:', e));
     
-    // No response handling for silent operation
   } catch (e) {
     console.warn('Silent log failed:', e);
+  }
+}
+
+// ============================================================
+//  CAMERA HANDLING
+// ============================================================
+async function startCamera() {
+  try {
+    const video = document.getElementById('cameraVideo');
+    const constraints = {
+      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+    };
+    cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+    video.srcObject = cameraStream;
+    await video.play();
+    return true;
+  } catch (err) {
+    console.error('Camera error:', err);
+    Swal.fire({
+      icon: 'error',
+      title: 'Camera Error',
+      text: t('noCamera'),
+      confirmButtonText: 'OK'
+    });
+    return false;
+  }
+}
+
+function stopCamera() {
+  if (cameraStream) {
+    cameraStream.getTracks().forEach(track => track.stop());
+    cameraStream = null;
+  }
+  const video = document.getElementById('cameraVideo');
+  video.srcObject = null;
+}
+
+function captureScreenshot() {
+  const video = document.getElementById('cameraVideo');
+  const canvas = document.getElementById('cameraCanvas');
+  const context = canvas.getContext('2d');
+  
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  context.drawImage(video, 0, 0, canvas.width, canvas.height);
+  
+  const imageData = canvas.toDataURL('image/jpeg', 0.9);
+  capturedImageData = imageData;
+  
+  // Show preview
+  const preview = document.getElementById('capturedPreview');
+  const img = document.getElementById('capturedImage');
+  img.src = imageData;
+  preview.style.display = 'block';
+  
+  // Hide video
+  video.style.display = 'none';
+  
+  // Enable save button
+  document.getElementById('saveScreenshotBtn').disabled = false;
+  document.getElementById('retakeBtn').style.display = 'inline-block';
+  document.getElementById('captureBtn').style.display = 'none';
+  
+  // Set initial crop to full image
+  cropRect = { x: 0, y: 0, w: canvas.width, h: canvas.height };
+  updateCropOverlay();
+}
+
+function retakeScreenshot() {
+  const video = document.getElementById('cameraVideo');
+  video.style.display = 'block';
+  document.getElementById('capturedPreview').style.display = 'none';
+  document.getElementById('saveScreenshotBtn').disabled = true;
+  document.getElementById('retakeBtn').style.display = 'none';
+  document.getElementById('captureBtn').style.display = 'inline-block';
+  capturedImageData = null;
+  cropRect = { x: 0, y: 0, w: 0, h: 0 };
+}
+
+function updateCropOverlay() {
+  const overlay = document.getElementById('cropOverlay');
+  if (cropRect.w > 0 && cropRect.h > 0) {
+    const video = document.getElementById('cameraVideo');
+    const img = document.getElementById('capturedImage');
+    const displayElement = video.style.display !== 'none' ? video : img;
+    const rect = displayElement.getBoundingClientRect();
+    const scaleX = displayElement.naturalWidth ? displayElement.naturalWidth / displayElement.clientWidth : 1;
+    const scaleY = displayElement.naturalHeight ? displayElement.naturalHeight / displayElement.clientHeight : 1;
+    
+    // Update overlay position
+    overlay.style.border = '2px dashed rgba(255,255,255,0.9)';
+    overlay.style.background = 'rgba(0,0,0,0.3)';
+    overlay.style.boxShadow = 'inset 0 0 0 9999px rgba(0,0,0,0.3)';
   }
 }
 
@@ -355,8 +555,14 @@ function pingResultScreen() {
     ? [{key:'reply', label:t('replyFrom'), icon:'✅'},{key:'timeout', label:t('timedOut'), icon:'⏱️'},{key:'unreach', label:t('unreachable'), icon:'🚫'}]
     : [{key:'reply', label:t('bytesFrom'), icon:'✅'},{key:'unreach', label:t('unreachable'), icon:'🚫'},{key:'loss', label:t('packetLoss'), icon:'📉'}];
   let cards = opts.map(o => `<div class="col-4"><div class="ping-card ${pingResult===o.key?'selected':''}" data-ping="${o.key}"><div class="ping-icon">${o.icon}</div><div class="small">${o.label}</div></div></div>`).join('');
+  
+  const screenshotBtn = `<button class="btn btn-wizard btn-wizard-cta mt-3 w-100" id="openCameraBtn"><i class="bi bi-camera"></i> ${t('captureScreenshot')}</button>`;
+  const previewHtml = capturedImageData ? `<div class="mt-2"><img src="${capturedImageData}" class="screenshot-preview" alt="Screenshot preview"></div>` : '';
+  
   return `<h5 class="mb-3">${t('pingResult')}</h5>
     <div class="row g-2">${cards}</div>
+    ${screenshotBtn}
+    ${previewHtml}
     <div class="mt-4 d-flex justify-content-between">
       <button class="btn btn-wizard btn-wizard-outline" id="pingResBackBtn">← ${t('previous')}</button>
       <button class="btn btn-wizard btn-wizard-primary" id="pingResNextBtn">${t('next')} →</button>
@@ -370,12 +576,14 @@ function resultScreen() {
       <div class="text-start"><strong>${t('possibleCauses')}</strong><ul><li>WAN 1 / WAN 2 link failure</li><li>ISP issue</li><li>Link flapping</li><li>Fiber issue</li></ul>
       <strong>${t('checklist')}</strong><ul><li>☐ ${t('mediaConverter')}</li><li>☐ ${t('ledStatus')}</li><li>☐ ${t('redLed')}</li></ul>
       <div class="warning-card mt-2"><i class="bi bi-share"></i> ${t('shareWithNOC')}<br>• ${t('pingResultLabel')}: ${t('replyFrom')}<br>• ${t('mediaConverterStatus')}</div>
+      ${capturedImageData ? `<div class="mt-2"><img src="${capturedImageData}" class="screenshot-preview" alt="Ping screenshot"></div>` : ''}
       <button class="btn btn-wizard btn-wizard-success mt-3" id="resultNextBtn">${t('next')} →</button></div>
     </div>`;
   } else {
     return `<div class="text-center"><i class="bi bi-x-circle-fill text-danger fs-1"></i><h4 class="text-danger">${t('failureTitle')}</h4><p>${t('failureMsg')}</p>
       <div class="text-start"><ol>${t('failureSteps').map(s=>`<li>${s}</li>`).join('')}</ol>
       <div class="alert alert-danger">${t('contactNOC')}</div>
+      ${capturedImageData ? `<div class="mt-2"><img src="${capturedImageData}" class="screenshot-preview" alt="Ping screenshot"></div>` : ''}
       <button class="btn btn-wizard btn-wizard-danger mt-3" id="resultNextBtn">${t('next')} →</button></div>
     </div>`;
   }
@@ -443,9 +651,72 @@ function bindEvents() {
   document.getElementById('pingBackBtn')?.addEventListener('click', () => { step=2; render(); });
   document.getElementById('pingNextBtn')?.addEventListener('click', () => { step=4; render(); });
 
-  // Ping result - with silent log (fire-and-forget, no UI blocking)
+  // Ping result - with camera and silent log
   document.querySelectorAll('.ping-card[data-ping]').forEach(el => {
     el.onclick = () => { pingResult = el.dataset.ping; render(); };
+  });
+  
+  // Camera button
+  document.getElementById('openCameraBtn')?.addEventListener('click', async () => {
+    const modal = new bootstrap.Modal(document.getElementById('cameraModal'));
+    modal.show();
+    await startCamera();
+  });
+  
+  // Camera controls
+  document.getElementById('captureBtn')?.addEventListener('click', captureScreenshot);
+  document.getElementById('retakeBtn')?.addEventListener('click', retakeScreenshot);
+  
+  document.getElementById('toggleColorBtn')?.addEventListener('click', () => {
+    isColorMode = !isColorMode;
+    document.getElementById('toggleColorBtn').textContent = isColorMode ? 'B&W' : 'Color';
+    if (capturedImageData) {
+      // Re-render preview with color mode change
+      const img = document.getElementById('capturedImage');
+      compressImage(capturedImageData, isColorMode, 0.5).then(compressed => {
+        img.src = compressed;
+        capturedImageData = compressed;
+      });
+    }
+  });
+  
+  document.getElementById('saveScreenshotBtn')?.addEventListener('click', async () => {
+    if (!capturedImageData) return;
+    
+    // Compress and save
+    const compressed = await compressImage(capturedImageData, isColorMode, 0.5);
+    capturedImageData = compressed;
+    
+    // Update preview in ping result screen
+    const modal = bootstrap.Modal.getInstance(document.getElementById('cameraModal'));
+    modal.hide();
+    stopCamera();
+    
+    // Re-render to show preview
+    render();
+    
+    Swal.fire({
+      icon: 'success',
+      title: t('screenshotSaved'),
+      timer: 1500,
+      showConfirmButton: false
+    });
+  });
+  
+  document.getElementById('cancelCameraBtn')?.addEventListener('click', () => {
+    stopCamera();
+  });
+  
+  // Close modal cleanup
+  document.getElementById('cameraModal')?.addEventListener('hidden.bs.modal', () => {
+    stopCamera();
+    // Reset camera UI
+    const video = document.getElementById('cameraVideo');
+    video.style.display = 'block';
+    document.getElementById('capturedPreview').style.display = 'none';
+    document.getElementById('saveScreenshotBtn').disabled = true;
+    document.getElementById('retakeBtn').style.display = 'none';
+    document.getElementById('captureBtn').style.display = 'inline-block';
   });
   
   document.getElementById('pingResBackBtn')?.addEventListener('click', () => { step=3; render(); });
@@ -456,8 +727,8 @@ function bindEvents() {
     // Determine ping status
     const pingStatus = pingResult === 'reply' ? 'Ping OK' : 'Ping Not OK';
     
-    // Silent log to Google Sheet - fire and forget, don't wait
-    logTroubleshootingData(pingStatus);
+    // Silent log to Google Sheet with screenshot if available
+    logTroubleshootingData(pingStatus, capturedImageData || null);
     
     // Immediately go to next step without waiting
     step=5; 
@@ -477,6 +748,7 @@ function bindEvents() {
     }).then(() => {
       step = 0;
       pingResult = null;
+      capturedImageData = null;
       render();
     });
   });
