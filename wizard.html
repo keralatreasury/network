@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>Network Troubleshooting Assistant | DoT Kerala</title>
+  <!-- local CSS (from provided list) -->
+  <link rel="stylesheet" href="css/bootstrap.min.css">
+  <link rel="stylesheet" href="css/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="css/select2.min.css">
+  <link rel="stylesheet" href="css/flatpickr.min.css">
+  <link rel="stylesheet" href="css/sweetalert2.min.css">
+  <link rel="stylesheet" href="css/all-in-one.css">
+  <!-- additional wizard-only styles -->
+  <style>
+    .wizard-container { max-width: 100%; margin: 0 auto; padding: 1rem 0.5rem; }
+    .wizard-card { background: #fff; border-radius: 28px; padding: 1.8rem 1.5rem; box-shadow: 0 16px 40px -12px rgba(0,0,0,0.08); transition: all 0.2s; }
+    .step-indicator { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.8rem; }
+    .step-badge { background: #eef2f6; padding: 0.3rem 1.2rem; border-radius: 40px; font-weight: 600; font-size: 0.8rem; color: #1e293b; }
+    .progress-track { flex: 1; height: 6px; background: #e9ecef; border-radius: 12px; margin: 0 1rem; overflow: hidden; }
+    .progress-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.35s ease; }
+    .lang-card, .os-card, .ping-card { border: 2px solid #e9ecef; border-radius: 24px; padding: 1.2rem 0.5rem; text-align: center; cursor: pointer; transition: all 0.2s; background: #fff; min-height: 90px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .lang-card:hover, .os-card:hover, .ping-card:hover { border-color: var(--primary); background: #f5f9ff; transform: translateY(-3px); }
+    .lang-card.selected, .os-card.selected, .ping-card.selected { border-color: var(--primary); background: #e6f0fa; box-shadow: 0 4px 14px rgba(0,91,172,0.10); }
+    .lang-flag { font-size: 2.8rem; line-height: 1; }
+    .lang-name, .os-name { font-weight: 600; margin-top: 0.4rem; }
+    .os-icon { font-size: 2.8rem; }
+    .code-block { background: #f1f5f9; padding: 0.8rem 1.2rem; border-radius: 16px; font-family: 'SF Mono', monospace; font-size: 0.95rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
+    .btn-wizard { border-radius: 60px; padding: 0.7rem 1.8rem; font-weight: 600; min-height: 52px; transition: 0.2s; }
+    .btn-wizard-primary { background: var(--primary); color: #fff; border: none; }
+    .btn-wizard-primary:hover { background: #004a8a; color: #fff; transform: scale(1.02); }
+    .btn-wizard-outline { background: transparent; border: 2px solid #d0d7de; color: #1e293b; }
+    .btn-wizard-outline:hover { background: #f1f5f9; border-color: var(--primary); }
+    .btn-wizard-success { background: #28A745; color: #fff; border: none; }
+    .btn-wizard-danger { background: #DC3545; color: #fff; border: none; }
+    .btn-wizard-cta { background: #6c757d; color: #fff; border: none; padding: 0.4rem 1.2rem; border-radius: 40px; font-size: 0.85rem; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; }
+    .btn-wizard-cta:hover { background: #5a6268; color: #fff; }
+    .slide-enter { animation: slideIn 0.3s ease forwards; }
+    @keyframes slideIn { 0% { opacity: 0; transform: translateX(20px); } 100% { opacity: 1; transform: translateX(0); } }
+    .warning-card { background: #fff9e6; border-left: 5px solid #FFC107; padding: 1rem 1.2rem; border-radius: 16px; }
+    .info-card { background: #e6f0fa; border-left: 5px solid var(--primary); padding: 1rem 1.2rem; border-radius: 16px; }
+    .contact-card { background: #f8fafc; border-radius: 24px; padding: 1.5rem; border: 1px solid #e9ecef; }
+    .cta-group { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .finish-btn { background: var(--primary); color: #fff; border: none; padding: 0.7rem 2.5rem; border-radius: 60px; font-weight: 600; transition: 0.2s; }
+    .finish-btn:hover { background: #004a8a; transform: scale(1.02); color: #fff; }
+    .dns-warning { background: #fee9e7; border-left: 5px solid #DC3545; padding: 0.8rem 1rem; border-radius: 12px; font-size: 0.9rem; margin-top: 0.5rem; }
+    .dns-warning i { color: #DC3545; margin-right: 0.5rem; }
+    kbd { background: var(--primary); padding: 0.2rem 0.6rem; border-radius: 4px; border: 1px solid #d0d7de; font-size: 0.85rem; }
+    .ping-command-display { font-size: 1.1rem; font-weight: 600; color: var(--primary); }
+  </style>
+</head>
+<body>
+<div class="page-header">
+  <div class="page-header-left">
+    <i class="bi bi-bank2"></i>
+    <div>
+      <h1>Network Troubleshooting Assistant</h1>
+      <p>NOC Treasury</p>
+    </div>
+  </div>
+</div>
+<div class="wizard-container" id="app">
+  <div id="wizardScreen" class="wizard-card slide-enter"></div>
+</div>
+
+<!-- local JS -->
+<script src="js/jquery.min.js"></script>
+<script src="js/bootstrap.bundle.min.js"></script>
+<script src="js/select2.min.js"></script>
+<script src="js/flatpickr.min.js"></script>
+<script src="js/sweetalert2.min.js"></script>
+
+<script>
+// ============================================================
+//  TRANSLATIONS (English only)
+// ============================================================
+const L10N = {
+  en: {
+    appTitle: 'Network Troubleshooting Assistant',
+    step: 'Step',
+    of: 'of',
+    branchSelect: 'Select Treasury Branch',
+    branchPlaceholder: 'Search branch...',
+    gatewayNotAvailable: 'Gateway IP Not Available',
+    osSelect: 'Select Operating System',
+    windows: 'Windows',
+    ubuntu: 'Ubuntu Linux',
+    step1Title: 'Check Network Configuration',
+    defaultGateway: 'Default Gateway',
+    preferredDNS: 'Preferred DNS',
+    alternateDNS: 'Alternate DNS',
+    dnsLabel: 'DNS Servers',
+    warningAutomaticDNS: 'Disable Automatic DNS. Disconnect any additional routers if present.',
+    dnsWarningMessage: 'Do not keep any other DNS like 8.8.8.8 as DNS. Only use the DNS servers provided above.',
+    pingTitle: 'Ping Test',
+    pingCommand: 'Ping Command',
+    pingResult: 'What is the Ping Result?',
+    replyFrom: 'Reply from...',
+    timedOut: 'Request Timed Out',
+    unreachable: 'Destination Host Unreachable',
+    bytesFrom: '64 bytes from...',
+    packetLoss: '100% Packet Loss',
+    successTitle: 'SUCCESS',
+    successMsg: 'FatPipe router is reachable.',
+    possibleCauses: 'Possible causes',
+    checklist: 'Checklist',
+    mediaConverter: 'Media Converter powered ON',
+    ledStatus: 'LED status normal',
+    redLed: 'Red LED may indicate fiber issue',
+    shareWithNOC: 'Share the following with the NOC Team',
+    pingResultLabel: 'Ping Result',
+    mediaConverterStatus: 'Media Converter Status',
+    failureTitle: 'FAILURE',
+    failureMsg: 'FatPipe router is not reachable.',
+    failureSteps: ['Turn OFF FatPipe router manually.', 'Wait five minutes.', 'Turn ON the router.', 'Run Ping again.'],
+    contactNOC: 'If issue persists, contact NOC Team.',
+    needMoreHelp: 'Need More Help?',
+    phone: 'Phone',
+    email: 'Email',
+    restartWizard: 'Restart Wizard',
+    finish: 'Finish',
+    previous: 'Previous',
+    next: 'Next',
+    loading: 'Loading...',
+    nocTeam: 'NOC Team',
+    gatewayIpLabel: 'Gateway IP',
+    copySuccess: 'Copied!',
+    selectBranchFirst: 'Please select a Treasury Branch first.',
+    selectOsFirst: 'Please select your Operating System.',
+    selectPingResult: 'Please select a ping result.',
+    openCmd: 'Open Command Prompt',
+    openTerminal: 'Open Terminal',
+    ctaHint: 'Click to open',
+    terminalShortcut: 'Press Ctrl + Alt + T to open Terminal',
+    cmdShortcut: 'Press Win + R and type "cmd"',
+    enterCommand: 'Enter this command in',
+  }
+};
+
+// ============================================================
+//  STATE
+// ============================================================
+const currentLang = 'en';
+let currentBranch = '';
+let gatewayIP = '';
+let os = localStorage.getItem('wizardOS') || '';
+let pingResult = null;
+let step = 0;
+let branchList = [];
+let sheetData = [];
+
+// ============================================================
+//  GOOGLE SHEET CONFIG FOR LOGGING
+// ============================================================
+const LOG_SHEET_ID = '1mAto6GBbwakTWbbYHLF9pWkfxkC5-Xj7rkPbmxx7uJc';
+const LOG_SHEET_NAME = 'Data';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyLSisaA6pTHIRtWZ4Ohvp6dSCNzcUA4rdMPyOM2mmv4L3vajv_akvk6eebpIdCU2Ee/exec';
+
+// ============================================================
+//  HELPER: get branch from storage (like reference HTML)
+// ============================================================
+function getBranchFromStorage() {
+    let branch = null;
+    const sessionUser = sessionStorage.getItem('currentUser');
+    if (sessionUser) {
+        try {
+            const userData = JSON.parse(sessionUser);
+            branch = userData.username;
+        } catch (e) { /* ignore */ }
+    }
+    if (!branch) {
+        const localUser = localStorage.getItem('currentUser');
+        if (localUser) {
+            try {
+                const userData = JSON.parse(localUser);
+                branch = userData.username;
+            } catch (e) { /* ignore */ }
+        }
+    }
+    if (!branch) {
+        branch = localStorage.getItem('selectedBranch');
+    }
+    return branch;
+}
+
+// ============================================================
+//  GOOGLE SHEET CONFIG FOR BRANCH DATA
+// ============================================================
+const BRANCH_SHEET_ID = '105FU8biUFJETqboPumblZ1BJYv7TzKiOy7Jwfbn3zTw';
+const BRANCH_SHEET_NAME = 'Treasuries';
+const BRANCH_API_KEY = 'AIzaSyDc8tegwi2rgHyDFYm7uWBqVqQ7Fwb3uWM';
+
+async function fetchBranchData() {
+  if (sheetData.length) return sheetData;
+  try {
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${BRANCH_SHEET_ID}/values/${BRANCH_SHEET_NAME}!P:R?key=${BRANCH_API_KEY}`;
+    const resp = await fetch(url);
+    const data = await resp.json();
+    if (data.values && data.values.length > 1) {
+      sheetData = data.values.slice(1).filter(row => row.length >= 3);
+      branchList = sheetData.map(row => ({ branch: row[0]?.trim() || '', gateway: row[2]?.trim() || '' }));
+    }
+    return sheetData;
+  } catch (e) { console.warn('Sheet fetch error', e); return sheetData; }
+}
+
+function getGatewayFromBranch(branchName) {
+  if (!branchName) return '';
+  const row = sheetData.find(r => (r[0] || '').trim() === branchName.trim());
+  return row && row[2] ? row[2].trim() : '';
+}
+
+// ============================================================
+//  SILENT LOG TO GOOGLE SHEET (no-cors, fire-and-forget)
+// ============================================================
+function logTroubleshootingData(pingStatus) {
+  // Fire-and-forget: don't await, don't block UI
+  try {
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+    
+    const payload = {
+      action: 'ADD_TROUBLESHOOTING',
+      date: dateStr,
+      time: timeStr,
+      branch: currentBranch || 'Unknown',
+      os: os || 'Unknown',
+      configChecked: 'Yes',
+      pingStatus: pingStatus // 'Ping OK' or 'Ping Not OK'
+    };
+
+    // Silent POST using no-cors mode - fire and forget
+    fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).catch(e => console.warn('Silent log failed:', e));
+    
+    // No response handling for silent operation
+  } catch (e) {
+    console.warn('Silent log failed:', e);
+  }
+}
+
+// ============================================================
+//  RENDER ENGINE
+// ============================================================
+const t = (key) => L10N.en[key] || key;
+
+function render() {
+  const container = document.getElementById('wizardScreen');
+  if (!container) return;
+  const totalSteps = 7;
+  let html = `<div class="step-indicator">
+    <span class="step-badge">${t('step')} ${Math.min(step+1,totalSteps)} ${t('of')} ${totalSteps}</span>
+    <div class="progress-track"><div class="progress-fill" style="width:${((step+1)/totalSteps)*100}%"></div></div>
+  </div>`;
+  html += getScreenHTML();
+  container.innerHTML = html;
+  bindEvents();
+}
+
+function getScreenHTML() {
+  switch(step) {
+    case 0: return branchScreen();
+    case 1: return osScreen();
+    case 2: return ipConfigScreen();
+    case 3: return pingTestScreen();
+    case 4: return pingResultScreen();
+    case 5: return resultScreen();
+    case 6: return finalScreen();
+    default: return '<div class="text-center py-5"><i class="bi bi-check-circle-fill text-success fs-1"></i><p class="mt-3">Done</p></div>';
+  }
+}
+
+// ----- SCREENS -----
+function branchScreen() {
+  const opts = branchList.map(b => `<option value="${b.branch}" ${b.branch===currentBranch?'selected':''}>${b.branch}</option>`).join('');
+  return `<h5 class="mb-3">${t('branchSelect')}</h5>
+    <select class="form-select form-select-lg mb-3" id="branchSelect" style="border-radius:60px;padding:0.8rem 1.2rem;">
+      <option value="">${t('branchPlaceholder')}</option>
+      ${opts}
+    </select>
+    <div id="gatewayDisplay" class="info-card mb-3"><i class="bi bi-router"></i> ${t('gatewayIpLabel')}: <strong id="gatewayIpText">${gatewayIP || t('gatewayNotAvailable')}</strong></div>
+    <div class="mt-4 text-end">
+      <button class="btn btn-wizard btn-wizard-primary" id="branchNextBtn">${t('next')} →</button>
+    </div>`;
+}
+
+function osScreen() {
+  return `<h5 class="mb-3">${t('osSelect')}</h5>
+    <div class="row g-3">
+      <div class="col-6"><div class="os-card ${os==='windows'?'selected':''}" data-os="windows"><div class="os-icon">🪟</div><div class="os-name">${t('windows')}</div></div></div>
+      <div class="col-6"><div class="os-card ${os==='ubuntu'?'selected':''}" data-os="ubuntu"><div class="os-icon">🐧</div><div class="os-name">${t('ubuntu')}</div></div></div>
+    </div>
+    <div class="mt-4 d-flex justify-content-between">
+      <button class="btn btn-wizard btn-wizard-outline" id="osBackBtn">← ${t('previous')}</button>
+      <button class="btn btn-wizard btn-wizard-primary" id="osNextBtn">${t('next')} →</button>
+    </div>`;
+}
+
+function ipConfigScreen() {
+  const gw = gatewayIP || '—';
+  const isWin = os === 'windows';
+  
+  let dnsDisplay = '';
+  if (isWin) {
+    dnsDisplay = `<strong>10.5.141.72</strong> (${t('preferredDNS')})<br><strong>10.5.141.73</strong> (${t('alternateDNS')})`;
+  } else {
+    dnsDisplay = `<strong>10.5.141.72, 10.5.141.73</strong>`;
+  }
+  
+  return `<h5 class="mb-3">${t('step1Title')}</h5>
+    <div class="info-card mb-3">
+      <i class="bi bi-info-circle"></i>
+      ${t('defaultGateway')}: <strong>${gw}</strong><br>
+      ${isWin ? t('preferredDNS') : t('dnsLabel')}: ${dnsDisplay}
+    </div>
+    <div class="warning-card">
+      <i class="bi bi-exclamation-triangle-fill text-warning"></i> ${t('warningAutomaticDNS')}
+    </div>
+    <div class="dns-warning mt-2">
+      <i class="bi bi-exclamation-circle-fill"></i> ${t('dnsWarningMessage')}
+    </div>
+    <div class="mt-4 d-flex justify-content-between">
+      <button class="btn btn-wizard btn-wizard-outline" id="ipBackBtn">← ${t('previous')}</button>
+      <button class="btn btn-wizard btn-wizard-primary" id="ipNextBtn">${t('next')} →</button>
+    </div>`;
+}
+
+function pingTestScreen() {
+  const gw = gatewayIP || '192.168.1.1';
+  const isWin = os === 'windows';
+  const appName = isWin ? 'Command Prompt' : 'Terminal';
+  const shortcutHint = isWin ? t('cmdShortcut') : t('terminalShortcut');
+  
+  return `<h5 class="mb-3">${t('pingTitle')}</h5>
+    <p class="text-muted">${t('enterCommand')} <strong>${appName}</strong></p>
+    <div class="code-block">
+      <code class="ping-command-display">ping ${gw}</code>
+      <a href="#" class="btn-wizard-cta" id="openTerminalCta" data-os="${os}"><i class="bi bi-box-arrow-up-right"></i> ${isWin ? t('openCmd') : t('openTerminal')}</a>
+    </div>
+    <div class="text-muted small mt-2">${shortcutHint}</div>
+    <div class="mt-4 d-flex justify-content-between">
+      <button class="btn btn-wizard btn-wizard-outline" id="pingBackBtn">← ${t('previous')}</button>
+      <button class="btn btn-wizard btn-wizard-primary" id="pingNextBtn">${t('next')} →</button>
+    </div>`;
+}
+
+function pingResultScreen() {
+  const isWin = os === 'windows';
+  const opts = isWin 
+    ? [{key:'reply', label:t('replyFrom'), icon:'✅'},{key:'timeout', label:t('timedOut'), icon:'⏱️'},{key:'unreach', label:t('unreachable'), icon:'🚫'}]
+    : [{key:'reply', label:t('bytesFrom'), icon:'✅'},{key:'unreach', label:t('unreachable'), icon:'🚫'},{key:'loss', label:t('packetLoss'), icon:'📉'}];
+  let cards = opts.map(o => `<div class="col-4"><div class="ping-card ${pingResult===o.key?'selected':''}" data-ping="${o.key}"><div class="ping-icon">${o.icon}</div><div class="small">${o.label}</div></div></div>`).join('');
+  return `<h5 class="mb-3">${t('pingResult')}</h5>
+    <div class="row g-2">${cards}</div>
+    <div class="mt-4 d-flex justify-content-between">
+      <button class="btn btn-wizard btn-wizard-outline" id="pingResBackBtn">← ${t('previous')}</button>
+      <button class="btn btn-wizard btn-wizard-primary" id="pingResNextBtn">${t('next')} →</button>
+    </div>`;
+}
+
+function resultScreen() {
+  const success = pingResult === 'reply';
+  if (success) {
+    return `<div class="text-center"><i class="bi bi-check-circle-fill text-success fs-1"></i><h4 class="text-success">${t('successTitle')}</h4><p>${t('successMsg')}</p>
+      <div class="text-start"><strong>${t('possibleCauses')}</strong><ul><li>WAN 1 / WAN 2 link failure</li><li>ISP issue</li><li>Link flapping</li><li>Fiber issue</li></ul>
+      <strong>${t('checklist')}</strong><ul><li>☐ ${t('mediaConverter')}</li><li>☐ ${t('ledStatus')}</li><li>☐ ${t('redLed')}</li></ul>
+      <div class="warning-card mt-2"><i class="bi bi-share"></i> ${t('shareWithNOC')}<br>• ${t('pingResultLabel')}: ${t('replyFrom')}<br>• ${t('mediaConverterStatus')}</div>
+      <button class="btn btn-wizard btn-wizard-success mt-3" id="resultNextBtn">${t('next')} →</button></div>
+    </div>`;
+  } else {
+    return `<div class="text-center"><i class="bi bi-x-circle-fill text-danger fs-1"></i><h4 class="text-danger">${t('failureTitle')}</h4><p>${t('failureMsg')}</p>
+      <div class="text-start"><ol>${t('failureSteps').map(s=>`<li>${s}</li>`).join('')}</ol>
+      <div class="alert alert-danger">${t('contactNOC')}</div>
+      <button class="btn btn-wizard btn-wizard-danger mt-3" id="resultNextBtn">${t('next')} →</button></div>
+    </div>`;
+  }
+}
+
+function finalScreen() {
+  return `<div class="text-center"><i class="bi bi-headset fs-1 text-primary"></i><h5>${t('needMoreHelp')}</h5>
+    <div class="contact-card mt-3">
+      <p class="mb-2"><i class="bi bi-telephone text-primary"></i> <strong>${t('phone')}:</strong> 0471 - 2322533 (ext: 410)</p>
+      <p class="mb-0"><i class="bi bi-envelope text-primary"></i> <strong>${t('email')}:</strong> network.treasury@supportgov.nic.in</p>
+    </div>
+    <button class="finish-btn mt-4" id="finishBtn"><i class="bi bi-check-circle"></i> ${t('finish')}</button>
+  </div>`;
+}
+
+// ============================================================
+//  EVENT BINDING
+// ============================================================
+function bindEvents() {
+  // Branch
+  const sel = document.getElementById('branchSelect');
+  if (sel) {
+    sel.onchange = () => { 
+      currentBranch = sel.value; 
+      gatewayIP = getGatewayFromBranch(currentBranch); 
+      const ipText = document.getElementById('gatewayIpText');
+      if (ipText) ipText.innerText = gatewayIP || t('gatewayNotAvailable');
+    };
+  }
+  document.getElementById('branchNextBtn')?.addEventListener('click', () => { 
+    if (!currentBranch) { Swal.fire(t('selectBranchFirst')); return; } 
+    step=1; render(); 
+  });
+
+  // OS
+  document.querySelectorAll('.os-card[data-os]').forEach(el => {
+    el.onclick = () => { os = el.dataset.os; localStorage.setItem('wizardOS', os); render(); };
+  });
+  document.getElementById('osBackBtn')?.addEventListener('click', () => { step=0; render(); });
+  document.getElementById('osNextBtn')?.addEventListener('click', () => { 
+    if (!os) { Swal.fire(t('selectOsFirst')); return; } 
+    step=2; render(); 
+  });
+
+  // IP config
+  document.getElementById('ipBackBtn')?.addEventListener('click', () => { step=1; render(); });
+  document.getElementById('ipNextBtn')?.addEventListener('click', () => { step=3; render(); });
+
+  // Ping test - open terminal/CMD
+  document.querySelectorAll('#openTerminalCta, #openTerminalCtaFinal').forEach(el => {
+    el?.addEventListener('click', (e) => {
+      e.preventDefault();
+      const isWindows = el.dataset.os === 'windows';
+      const title = isWindows ? 'Open Command Prompt' : 'Open Terminal';
+      const shortcut = isWindows ? 'Press <kbd>Win</kbd> + <kbd>R</kbd> and type <code>cmd</code>' : 'Press <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>T</kbd> to open Terminal';
+      Swal.fire({
+        icon: 'info',
+        title: title,
+        html: shortcut,
+        confirmButtonText: 'OK'
+      });
+    });
+  });
+
+  document.getElementById('pingBackBtn')?.addEventListener('click', () => { step=2; render(); });
+  document.getElementById('pingNextBtn')?.addEventListener('click', () => { step=4; render(); });
+
+  // Ping result - with silent log (fire-and-forget, no UI blocking)
+  document.querySelectorAll('.ping-card[data-ping]').forEach(el => {
+    el.onclick = () => { pingResult = el.dataset.ping; render(); };
+  });
+  
+  document.getElementById('pingResBackBtn')?.addEventListener('click', () => { step=3; render(); });
+  
+  document.getElementById('pingResNextBtn')?.addEventListener('click', () => { 
+    if (!pingResult) { Swal.fire(t('selectPingResult')); return; }
+    
+    // Determine ping status
+    const pingStatus = pingResult === 'reply' ? 'Ping OK' : 'Ping Not OK';
+    
+    // Silent log to Google Sheet - fire and forget, don't wait
+    logTroubleshootingData(pingStatus);
+    
+    // Immediately go to next step without waiting
+    step=5; 
+    render(); 
+  });
+
+  // Result -> final
+  document.getElementById('resultNextBtn')?.addEventListener('click', () => { step=6; render(); });
+
+  // Finish button - restarts wizard
+  document.getElementById('finishBtn')?.addEventListener('click', () => { 
+    Swal.fire({
+      icon: 'success',
+      title: 'Troubleshooting Complete',
+      text: 'You can restart the wizard anytime.',
+      confirmButtonText: 'OK'
+    }).then(() => {
+      step = 0;
+      pingResult = null;
+      render();
+    });
+  });
+}
+
+// ============================================================
+//  INIT
+// ============================================================
+(async function init() {
+  await fetchBranchData();
+  
+  // Get branch from storage (like reference HTML)
+  const storedBranch = getBranchFromStorage();
+  if (storedBranch) {
+    currentBranch = storedBranch;
+    gatewayIP = getGatewayFromBranch(storedBranch);
+  }
+  
+  render();
+})();
+</script>
+</body>
+</html>
